@@ -417,7 +417,15 @@ flowchart LR
 
 ## 📝 Licença
 
-Este projeto é privado e de uso exclusivo da empresa.
+Este projeto está sob **Licença Proprietária** da **pedroaba tech**.
+
+**⚠️ TODOS OS DIREITOS RESERVADOS** - Uso, cópia ou distribuição não autorizada é **PROIBIDA**.
+
+Para licenciamento comercial ou autorizações especiais, entre em contato:
+- 📧 **Email:** pedr.augustobarbosa.aparecido@gmail.com
+- 🏢 **Empresa:** pedroaba tech (CNPJ: 57.593.443/0001-50)
+
+Veja o arquivo [`LICENSE`](./LICENSE) para detalhes completos.
 
 ## 📞 Suporte
 
