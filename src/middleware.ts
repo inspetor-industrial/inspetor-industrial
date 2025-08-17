@@ -5,7 +5,11 @@ const authPrefix = '/auth'
 
 export async function middleware(request: NextRequest) {
   const nextCookies = await cookies()
-  const token = nextCookies.get('authjs.session-token')
+  let token = nextCookies.get('authjs.session-token')
+
+  if (!token) {
+    token = nextCookies.get('__Secure-authjs.session-token')
+  }
 
   if (!token && !request.nextUrl.pathname.startsWith(authPrefix)) {
     return NextResponse.redirect(new URL('/auth/sign-in', request.url))
