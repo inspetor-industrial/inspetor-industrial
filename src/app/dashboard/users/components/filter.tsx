@@ -60,11 +60,11 @@ export function UserFilter() {
   }
 
   return (
-    <div className="flex sm:items-center gap-2 sm:justify-between flex-col sm:flex-row">
-      <div className="flex gap-2 sm:items-center flex-col sm:flex-row ">
+    <div className="@container/filter flex @items-center gap-2 @justify-between flex-col md:flex-row">
+      <div className="flex gap-2 @items-center flex-col @md:flex-row w-full">
         <Input
           placeholder="Pesquisar pelo nome"
-          className="w-full sm:w-96"
+          className="w-full"
           value={searchCache}
           onChange={(e) => {
             setSearchCache(e.target.value)
@@ -72,7 +72,7 @@ export function UserFilter() {
           }}
         />
         <Select onValueChange={handleStatusChange} value={status}>
-          <SelectTrigger className="sm:w-96 w-full">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecionar status" />
           </SelectTrigger>
           <SelectContent>

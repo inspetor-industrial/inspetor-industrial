@@ -306,7 +306,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                       src={user?.image || ''}
                       alt={user?.name || 'Usuário'}
                     />
-                    <AvatarFallback className="rounded-lg">
+                    <AvatarFallback className="rounded-lg text-black">
                       {user?.name ? formatUsername(user.name) : 'UU'}
                     </AvatarFallback>
                   </Avatar>

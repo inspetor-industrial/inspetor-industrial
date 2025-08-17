@@ -2,6 +2,7 @@
 
 import { useRouter } from '@bprogress/next'
 import { deleteCompanyAction } from '@inspetor/actions/delete-company'
+import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
 import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
 import {
@@ -57,8 +58,14 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
 
   const editModalRef = useRef<any>(null)
 
-  function handlePageChange(page: number) {
+  async function handlePageChange(page: number) {
     setPage(page)
+
+    try {
+      await invalidatePageCache('/dashboard/company')
+    } finally {
+      router.refresh()
+    }
   }
 
   async function handleDeleteCompany(companyId: string) {
@@ -79,122 +86,126 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded border">
-      <Table>
-        <TableHeader className="bg-muted">
-          <TableRow className="divide-x">
-            <TableHead>Nome</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-20">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {companies.length === 0 && (
+    <div className="bg-background @container/table rounded-md border">
+      <div className="relative w-full overflow-auto">
+        <Table>
+          <TableHeader className="bg-muted">
+            <TableRow className="divide-x">
+              <TableHead>Nome</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-20">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {companies.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  <div className="flex flex-col items-center gap-2 py-20">
+                    <Inbox className="size-10 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Nenhuma empresa encontrada
+                    </span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+
+            {companies.map((company) => (
+              <TableRow key={company.id} className="divide-x">
+                <TableCell>{company.name}</TableCell>
+                <TableCell>
+                  <Badge
+                    className={cn(
+                      'capitalize',
+                      company.status === 'ACTIVE' && 'bg-green-500',
+                      company.status === 'INACTIVE' && 'bg-red-500',
+                    )}
+                  >
+                    {company.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-center items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" icon={Ellipsis} size="icon">
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => editModalRef.current.open(company)}
+                        >
+                          <Edit className="size-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            editModalRef.current.open(company, true)
+                          }
+                        >
+                          <View className="size-4" />
+                          Visualizar
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteCompany(company.id)}
+                        >
+                          <Trash className="size-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
             <TableRow>
-              <TableCell colSpan={3} className="text-center">
-                <div className="flex flex-col items-center gap-2 py-20">
-                  <Inbox className="size-10 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    Nenhuma empresa encontrada
+              <TableCell colSpan={2}>
+                <div className="flex items-center gap-2 justify-start">
+                  <span>
+                    Página {page} de {totalPages}
                   </span>
                 </div>
               </TableCell>
-            </TableRow>
-          )}
+              <TableCell colSpan={1} className="flex justify-end">
+                <div className="flex items-center gap-2 justify-end">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handlePageChange(page - 1)}
+                          disabled={page === 1 || totalPages === 0}
+                        >
+                          <ChevronLeftIcon className="size-4" />
+                        </Button>
+                      </PaginationItem>
 
-          {companies.map((company) => (
-            <TableRow key={company.id} className="divide-x">
-              <TableCell>{company.name}</TableCell>
-              <TableCell>
-                <Badge
-                  className={cn(
-                    'capitalize',
-                    company.status === 'ACTIVE' && 'bg-green-500',
-                    company.status === 'INACTIVE' && 'bg-red-500',
-                  )}
-                >
-                  {company.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex justify-center items-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" icon={Ellipsis} size="icon">
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onClick={() => editModalRef.current.open(company)}
-                      >
-                        <Edit className="size-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => editModalRef.current.open(company, true)}
-                      >
-                        <View className="size-4" />
-                        Visualizar
-                      </DropdownMenuItem>
-
-                      <DropdownMenuSeparator />
-
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteCompany(company.id)}
-                      >
-                        <Trash className="size-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <PaginationItem>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handlePageChange(page + 1)}
+                          disabled={page === totalPages || totalPages === 0}
+                        >
+                          <ChevronRightIcon className="size-4" />
+                        </Button>
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                 </div>
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-        <TableFooter>
-          <TableRow>
-            <TableCell colSpan={2}>
-              <div className="flex items-center gap-2 justify-start">
-                <span>
-                  Página {page} de {totalPages}
-                </span>
-              </div>
-            </TableCell>
-            <TableCell colSpan={1} className="flex justify-end">
-              <div className="flex items-center gap-2 justify-end">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handlePageChange(page - 1)}
-                        disabled={page === 1}
-                      >
-                        <ChevronLeftIcon className="size-4" />
-                      </Button>
-                    </PaginationItem>
-
-                    <PaginationItem>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handlePageChange(page + 1)}
-                        disabled={page === totalPages}
-                      >
-                        <ChevronRightIcon className="size-4" />
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            </TableCell>
-          </TableRow>
-        </TableFooter>
-      </Table>
+          </TableFooter>
+        </Table>
+      </div>
 
       <CompanyEditModal ref={editModalRef} />
     </div>

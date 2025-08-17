@@ -21,10 +21,10 @@ export function StorageFilter() {
   }, 300)
 
   return (
-    <div className="flex sm:items-center gap-2 justify-between flex-col sm:flex-row">
+    <div className="@container/filter flex @items-center gap-2 @justify-between flex-col md:flex-row">
       <Input
         placeholder="Pesquisar pelo nome da empresa"
-        className="w-full sm:w-96"
+        className="w-full"
         value={searchCache}
         onChange={(e) => {
           setSearchCache(e.target.value)
