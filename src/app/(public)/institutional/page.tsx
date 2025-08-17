@@ -1,4 +1,5 @@
 import { BubbleFooter } from '@inspetor/components/bubble-footer'
+import Link from 'next/link'
 import { FiAward } from 'react-icons/fi'
 import { GiGearHammer } from 'react-icons/gi'
 import { RiExchangeDollarFill } from 'react-icons/ri'
@@ -27,12 +28,12 @@ export default async function InstitutionalPage() {
           </p>
           <p className="text-lg leading-relaxed text-white/90 max-sm:text-base max-sm:text-center">
             Conheça mais sobre nossos serviços:{' '}
-            <a
+            <Link
               href="/services"
               className="inline-flex items-center gap-1 rounded-md bg-white/10 px-3 py-1 font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent"
             >
               Ver Serviços →
-            </a>
+            </Link>
           </p>
           <p className="text-lg leading-relaxed text-white/90 max-sm:text-base max-sm:text-center">
             Nosso escritório está localizado em{' '}
