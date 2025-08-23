@@ -37,6 +37,8 @@ export class Permission {
         '/dashboard/storage',
         '/dashboard/users',
         '/dashboard/client',
+        '/dashboard/instruments',
+        '/dashboard/documents',
       ]
     }
 
@@ -47,6 +49,8 @@ export class Permission {
         '/dashboard/users',
         '/dashboard/client',
         '/dashboard/maintenance/daily',
+        '/dashboard/instruments',
+        '/dashboard/documents',
       ]
     }
 

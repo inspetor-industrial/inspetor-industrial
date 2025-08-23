@@ -11,6 +11,7 @@ import {
   Database,
   HardDrive,
   Home,
+  InspectionPanel,
   Notebook,
   Settings,
   User,
@@ -90,6 +91,18 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     (session.data?.user.role || '') as UserRole,
     '/dashboard/client',
   )
+
+  const mustBeHideInstrumentsManagement = Permission.canNotAccess(
+    (session.data?.user.role || '') as UserRole,
+    '/dashboard/instruments',
+  )
+
+  const mustBeHideDocumentsManagement = Permission.canNotAccess(
+    (session.data?.user.role || '') as UserRole,
+    '/dashboard/documents',
+  )
+
+  const mustBeHideInspectionManagement = mustBeHideInstrumentsManagement
 
   const mustBeHideDatabaseManagement =
     mustBeHideCompanyManagement &&
@@ -194,6 +207,22 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                           )}
+
+                          {!mustBeHideDocumentsManagement && (
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton
+                                isActive={
+                                  pathname === '/dashboard/documents' &&
+                                  pathname.startsWith('/dashboard/documents')
+                                }
+                                asChild
+                              >
+                                <Link href="/dashboard/documents">
+                                  <span>Documentos</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          )}
                         </SidebarMenuSub>
                       </CollapsibleContent>
                     </SidebarMenuItem>
@@ -260,6 +289,47 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                                 >
                                   <Link href="/dashboard/users">
                                     <span>Usuários</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+
+            {!mustBeHideInspectionManagement && (
+              <SidebarGroup className="py-0">
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <Collapsible asChild className="group/collapsible">
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton tooltip="Inspeções">
+                            <InspectionPanel />
+                            <span>Inspeções</span>
+                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
+                            {!mustBeHideStorageManagement && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  isActive={
+                                    pathname === '/dashboard/instruments' &&
+                                    pathname.startsWith(
+                                      '/dashboard/instruments',
+                                    )
+                                  }
+                                  asChild
+                                >
+                                  <Link href="/dashboard/instruments">
+                                    <span>Instrumentos</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>

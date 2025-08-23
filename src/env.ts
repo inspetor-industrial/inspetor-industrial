@@ -21,6 +21,12 @@ export const env = createEnv({
     GOOGLE_AUTH_PROVIDER_X509_CERT_URL: z.string(),
     GOOGLE_CLIENT_X509_CERT_URL: z.string(),
     GOOGLE_UNIVERSE_DOMAIN: z.string(),
+
+    CLOUDFLARE_R2_BUCKET_ENDPOINT: z.string(),
+    CLOUDFLARE_ACCOUNT_KEY_ID: z.string(),
+    CLOUDFLARE_SECRET_ACCESS_KEY: z.string(),
+    CLOUDFLARE_ENDPOINT: z.string(),
+    CLOUDFLARE_R2_BUCKET_NAME: z.string(),
   },
   client: {},
   // If you're using Next.js < 13.4.4, you'll need to specify the runtimeEnv manually
@@ -46,6 +52,12 @@ export const env = createEnv({
       process.env.GOOGLE_AUTH_PROVIDER_X509_CERT_URL,
     GOOGLE_CLIENT_X509_CERT_URL: process.env.GOOGLE_CLIENT_X509_CERT_URL,
     GOOGLE_UNIVERSE_DOMAIN: process.env.GOOGLE_UNIVERSE_DOMAIN,
+
+    CLOUDFLARE_R2_BUCKET_ENDPOINT: process.env.CLOUDFLARE_R2_BUCKET_ENDPOINT,
+    CLOUDFLARE_ACCOUNT_KEY_ID: process.env.CLOUDFLARE_ACCOUNT_KEY_ID,
+    CLOUDFLARE_SECRET_ACCESS_KEY: process.env.CLOUDFLARE_SECRET_ACCESS_KEY,
+    CLOUDFLARE_ENDPOINT: process.env.CLOUDFLARE_ENDPOINT,
+    CLOUDFLARE_R2_BUCKET_NAME: process.env.CLOUDFLARE_R2_BUCKET_NAME,
   },
   // For Next.js >= 13.4.4, you only need to destructure client variables:
   // experimental__runtimeEnv: {

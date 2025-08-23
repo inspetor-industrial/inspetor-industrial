@@ -75,7 +75,6 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
 
     if (resultError) {
       toast.error('Erro ao deletar empresa')
-      return
     }
 
     if (result?.success) {

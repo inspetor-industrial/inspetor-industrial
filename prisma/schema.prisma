@@ -36,8 +36,9 @@ model User {
   company   Company? @relation(fields: [companyId], references: [id])
   companyId String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Documents Documents[]
 }
 
 model Account {
@@ -122,6 +123,8 @@ model Company {
   storage          Storage[]
   users            User[]
   DailyMaintenance DailyMaintenance[]
+  Instruments      Instruments[]
+  Documents        Documents[]
 
   @@unique([cnpj])
 }
@@ -169,6 +172,41 @@ model Clients {
   zipCode String
 
   phone String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Instruments {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  type              String
+  manufacturer      String
+  serialNumber      String
+  certificateNumber String
+
+  validationDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Documents {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  name String
+  type String
+  size Int
+
+  cloudflareR2Key String
+  owner           User   @relation(fields: [ownerId], references: [id])
+  ownerId         String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,9 +1,8 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
-import { deleteCompanyAction } from '@inspetor/actions/delete-company'
+import { deleteDocumentsAction } from '@inspetor/actions/delete-documents'
 import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
-import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -27,54 +26,55 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
-import { cn } from '@inspetor/lib/utils'
-import type { Company } from '@prisma/client'
+import { FileSizeFormatter } from '@inspetor/utils/file'
+import type { Documents } from '@prisma/client'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  Edit,
   Ellipsis,
-  Inbox,
+  FolderOpen,
   Trash,
   View,
 } from 'lucide-react'
 import { parseAsInteger, useQueryState } from 'nuqs'
-import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
-import { CompanyEditModal } from './edit-modal'
+type DocumentWithOwner = Documents & {
+  owner: {
+    name: string
+  }
+}
 
-type CompanyTableProps = {
-  companies: Company[]
+type DocumentsTableProps = {
+  documents: DocumentWithOwner[]
   totalPages: number
 }
 
-export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
-  const deleteAction = useServerAction(deleteCompanyAction)
+export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
+  const deleteAction = useServerAction(deleteDocumentsAction)
   const router = useRouter()
 
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
-
-  const editModalRef = useRef<any>(null)
 
   async function handlePageChange(page: number) {
     setPage(page)
 
     try {
-      await invalidatePageCache('/dashboard/company')
+      await invalidatePageCache('/dashboard/documents')
     } finally {
       router.refresh()
     }
   }
 
-  async function handleDeleteCompany(companyId: string) {
+  async function handleDeleteDocument(documentId: string) {
     const [result, resultError] = await deleteAction.execute({
-      companyId,
+      documentId,
     })
 
     if (resultError) {
-      toast.error('Erro ao deletar empresa')
+      console.log(resultError)
+      toast.error('Erro ao deletar documento')
       return
     }
 
@@ -93,37 +93,41 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
               <TableHead>Nome</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Tamanho</TableHead>
+              <TableHead>Dono</TableHead>
+              <TableHead>Criado em</TableHead>
               <TableHead className="w-20">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {companies.length === 0 && (
+            {documents.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   <div className="flex flex-col items-center gap-2 py-20">
-                    <Inbox className="size-10 text-muted-foreground" />
+                    <FolderOpen className="size-10 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Nenhuma empresa encontrada
+                      Nenhum documento criado ainda.
                     </span>
                   </div>
                 </TableCell>
               </TableRow>
             )}
 
-            {companies.map((company) => (
-              <TableRow key={company.id} className="divide-x">
-                <TableCell>{company.name}</TableCell>
+            {documents.map((document) => (
+              <TableRow key={document.id} className="divide-x">
+                <TableCell>{document.name}</TableCell>
+                <TableCell>{document.type}</TableCell>
+                <TableCell>{FileSizeFormatter.format(document.size)}</TableCell>
+                <TableCell>{document.owner.name}</TableCell>
                 <TableCell>
-                  <Badge
-                    className={cn(
-                      'capitalize',
-                      company.status === 'ACTIVE' && 'bg-green-500',
-                      company.status === 'INACTIVE' && 'bg-red-500',
-                    )}
-                  >
-                    {company.status}
-                  </Badge>
+                  {document.createdAt.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-center items-center">
@@ -135,17 +139,7 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(company)}
-                        >
-                          <Edit className="size-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            editModalRef.current.open(company, true)
-                          }
-                        >
+                        <DropdownMenuItem>
                           <View className="size-4" />
                           Visualizar
                         </DropdownMenuItem>
@@ -153,7 +147,7 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
                         <DropdownMenuSeparator />
 
                         <DropdownMenuItem
-                          onClick={() => handleDeleteCompany(company.id)}
+                          onClick={() => handleDeleteDocument(document.id)}
                         >
                           <Trash className="size-4" />
                           Excluir
@@ -167,7 +161,7 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2}>
+              <TableCell colSpan={5}>
                 <div className="flex items-center gap-2 justify-start">
                   <span>
                     Página {page} de {totalPages}
@@ -207,8 +201,6 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
           </TableFooter>
         </Table>
       </div>
-
-      <CompanyEditModal ref={editModalRef} />
     </div>
   )
 }
