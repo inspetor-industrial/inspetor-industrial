@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from '@bprogress/next'
 import { Permission } from '@inspetor/permission'
 import { formatUsername } from '@inspetor/utils/format-username'
 import type { UserRole } from '@prisma/client'
@@ -63,6 +64,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const session = useSession()
+  const router = useRouter()
 
   const mustBeHideStorageManagement = Permission.canNotAccess(
     (session.data?.user.role || '') as UserRole,
@@ -84,8 +86,15 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     '/dashboard/maintenance/daily',
   )
 
+  const mustBeHideClientManagement = Permission.canNotAccess(
+    (session.data?.user.role || '') as UserRole,
+    '/dashboard/client',
+  )
+
   const mustBeHideDatabaseManagement =
-    mustBeHideCompanyManagement && mustBeHideUsersManagement
+    mustBeHideCompanyManagement &&
+    mustBeHideUsersManagement &&
+    mustBeHideClientManagement
 
   const mustBeHideMaintenanceManagement = mustBeHideDailyMaintenance
 
@@ -223,6 +232,23 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
                             )}
+
+                            {!mustBeHideClientManagement && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  isActive={
+                                    pathname === '/dashboard/client' &&
+                                    pathname.startsWith('/dashboard/client')
+                                  }
+                                  asChild
+                                >
+                                  <Link href="/dashboard/client">
+                                    <span>Clientes</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )}
+
                             {!mustBeHideUsersManagement && (
                               <SidebarMenuSubItem>
                                 <SidebarMenuSubButton
@@ -348,7 +374,11 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    router.push('/dashboard/profile')
+                  }}
+                >
                   <User />
                   Perfil
                 </DropdownMenuItem>

@@ -71,10 +71,12 @@ export async function Header() {
               <Small>Configurações</Small>
             </DropdownMenuItem>
             {/* <ModeToggleSub /> */}
-            <DropdownMenuItem className="text-foreground">
-              <User className="size-4 text-foreground" />
-              <Small>Perfil</Small>
-            </DropdownMenuItem>
+            <Link href="/dashboard/profile">
+              <DropdownMenuItem className="text-foreground">
+                <User className="size-4 text-foreground" />
+                <Small>Perfil</Small>
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
             <LogoutButton />
           </DropdownMenuContent>

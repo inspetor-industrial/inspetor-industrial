@@ -1,9 +1,8 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
-import { toggleUserStatusAction } from '@inspetor/actions/toggle-user-status'
+import { deleteClientAction } from '@inspetor/actions/delete-client'
 import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
-import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -27,16 +26,14 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
-import { cn } from '@inspetor/lib/utils'
-import type { User, UserStatus } from '@prisma/client'
+import type { Clients } from '@prisma/client'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   Edit,
   Ellipsis,
   Inbox,
-  ToggleLeft,
-  ToggleRight,
+  Trash,
   View,
 } from 'lucide-react'
 import { parseAsInteger, useQueryState } from 'nuqs'
@@ -44,21 +41,15 @@ import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
-import { UserEditModal } from './edit-modal'
+import { ClientEditModal } from './edit-modal'
 
-type UserWithCompany = User & {
-  company: {
-    name: string
-  }
-}
-
-type UserTableProps = {
-  users: UserWithCompany[]
+type ClientTableProps = {
+  clients: Clients[]
   totalPages: number
 }
 
-export function UserTable({ users, totalPages }: UserTableProps) {
-  const toggleStatusAction = useServerAction(toggleUserStatusAction)
+export function ClientTable({ clients, totalPages }: ClientTableProps) {
+  const deleteAction = useServerAction(deleteClientAction)
   const router = useRouter()
 
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
@@ -69,21 +60,19 @@ export function UserTable({ users, totalPages }: UserTableProps) {
     setPage(page)
 
     try {
-      await invalidatePageCache('/dashboard/company')
+      await invalidatePageCache('/dashboard/client')
     } finally {
       router.refresh()
     }
   }
 
-  async function handleToggleUserStatus(userId: string, status: UserStatus) {
-    const [result, resultError] = await toggleStatusAction.execute({
-      userId,
-      status: status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+  async function handleDeleteClient(clientId: string) {
+    const [result, resultError] = await deleteAction.execute({
+      clientId,
     })
 
     if (resultError) {
-      toast.error('Erro ao atualizar status do usuário')
-      return
+      toast.error('Erro ao deletar cliente')
     }
 
     if (result?.success) {
@@ -101,43 +90,41 @@ export function UserTable({ users, totalPages }: UserTableProps) {
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
               <TableHead>Nome</TableHead>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Data de criação</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>CNPJ/CPF</TableHead>
+              <TableHead>Inscrição estadual</TableHead>
+              <TableHead>Telefone</TableHead>
+              <TableHead>Criado em</TableHead>
               <TableHead className="w-20">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 && (
+            {clients.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center">
                   <div className="flex flex-col items-center gap-2 py-20">
                     <Inbox className="size-10 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Nenhum usuário encontrado
+                      Nenhum cliente encontrado
                     </span>
                   </div>
                 </TableCell>
               </TableRow>
             )}
 
-            {users.map((user) => (
-              <TableRow key={user.id} className="divide-x">
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.company?.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.createdAt.toLocaleDateString()}</TableCell>
+            {clients.map((client) => (
+              <TableRow key={client.id} className="divide-x">
+                <TableCell>{client.companyName}</TableCell>
+                <TableCell>{client.taxId}</TableCell>
+                <TableCell>{client.taxRegistration}</TableCell>
+                <TableCell>{client.phone}</TableCell>
                 <TableCell>
-                  <Badge
-                    className={cn(
-                      'capitalize',
-                      user.status === 'ACTIVE' && 'bg-green-500',
-                      user.status === 'INACTIVE' && 'bg-red-500',
-                    )}
-                  >
-                    {user.status}
-                  </Badge>
+                  {client.createdAt.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-center items-center">
@@ -150,13 +137,15 @@ export function UserTable({ users, totalPages }: UserTableProps) {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(user)}
+                          onClick={() => editModalRef.current.open(client)}
                         >
                           <Edit className="size-4" />
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(user, true)}
+                          onClick={() =>
+                            editModalRef.current.open(client, true)
+                          }
                         >
                           <View className="size-4" />
                           Visualizar
@@ -165,16 +154,10 @@ export function UserTable({ users, totalPages }: UserTableProps) {
                         <DropdownMenuSeparator />
 
                         <DropdownMenuItem
-                          onClick={() =>
-                            handleToggleUserStatus(user.id, user.status)
-                          }
+                          onClick={() => handleDeleteClient(client.id)}
                         >
-                          {user.status === 'INACTIVE' ? (
-                            <ToggleRight className="size-4" />
-                          ) : (
-                            <ToggleLeft className="size-4" />
-                          )}
-                          {user.status === 'INACTIVE' ? 'Ativar' : 'Desativar'}
+                          <Trash className="size-4" />
+                          Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -225,7 +208,8 @@ export function UserTable({ users, totalPages }: UserTableProps) {
           </TableFooter>
         </Table>
       </div>
-      <UserEditModal ref={editModalRef} />
+
+      <ClientEditModal ref={editModalRef} />
     </div>
   )
 }

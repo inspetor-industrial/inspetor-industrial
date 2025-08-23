@@ -156,3 +156,20 @@ model DailyMaintenance {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Clients {
+  id              String @id @default(cuid())
+  companyName     String
+  taxId           String @unique // CNPJ or CPF
+  taxRegistration String @unique // State registration
+
+  state   String
+  city    String
+  address String
+  zipCode String
+
+  phone String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

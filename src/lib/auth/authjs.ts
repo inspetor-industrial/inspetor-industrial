@@ -71,8 +71,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           return user
-        } catch (error) {
-          console.log(error)
+        } catch {
           throw new InvalidLoginError()
         }
       },

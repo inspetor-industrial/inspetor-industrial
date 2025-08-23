@@ -32,7 +32,12 @@ export class Permission {
     }
 
     if (this.isOperatorUser(role)) {
-      return ['/dashboard/company', '/dashboard/storage', '/dashboard/users']
+      return [
+        '/dashboard/company',
+        '/dashboard/storage',
+        '/dashboard/users',
+        '/dashboard/client',
+      ]
     }
 
     if (this.isCommonUser(role)) {
@@ -40,6 +45,7 @@ export class Permission {
         '/dashboard/company',
         '/dashboard/storage',
         '/dashboard/users',
+        '/dashboard/client',
         '/dashboard/maintenance/daily',
       ]
     }
