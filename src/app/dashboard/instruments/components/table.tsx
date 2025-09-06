@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
-import { deleteCompanyAction } from '@inspetor/actions/delete-company'
+import { deleteInstrumentAction } from '@inspetor/actions/delete-instrument'
 import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
 import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
@@ -27,8 +27,9 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
+import { INSTRUMENT_TYPE } from '@inspetor/constants/instrument-type'
 import { cn } from '@inspetor/lib/utils'
-import type { Company } from '@prisma/client'
+import type { Instruments } from '@prisma/client'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -43,15 +44,18 @@ import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
-import { CompanyEditModal } from './edit-modal'
+import { InstrumentEditModal } from './edit-modal'
 
-type CompanyTableProps = {
-  companies: Company[]
+type InstrumentTableProps = {
+  instruments: Instruments[]
   totalPages: number
 }
 
-export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
-  const deleteAction = useServerAction(deleteCompanyAction)
+export function InstrumentTable({
+  instruments,
+  totalPages,
+}: InstrumentTableProps) {
+  const deleteAction = useServerAction(deleteInstrumentAction)
   const router = useRouter()
 
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
@@ -62,26 +66,35 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
     setPage(page)
 
     try {
-      await invalidatePageCache('/dashboard/company')
+      await invalidatePageCache('/dashboard/instruments')
     } finally {
       router.refresh()
     }
   }
 
-  async function handleDeleteCompany(companyId: string) {
+  async function handleDeleteInstrument(instrumentId: string) {
+    toast.loading('Deletando instrumento...', {
+      id: 'delete-instrument',
+    })
     const [result, resultError] = await deleteAction.execute({
-      companyId,
+      instrumentId,
     })
 
     if (resultError) {
-      toast.error('Erro ao deletar empresa')
+      toast.error('Erro ao deletar instrumento', {
+        id: 'delete-instrument',
+      })
     }
 
     if (result?.success) {
-      toast.success(result.message)
+      toast.success(result.message, {
+        id: 'delete-instrument',
+      })
       router.refresh()
     } else {
-      toast.error(result?.message)
+      toast.error(result?.message, {
+        id: 'delete-instrument',
+      })
     }
   }
 
@@ -91,37 +104,55 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
         <Table>
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
-              <TableHead>Nome</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Número de série</TableHead>
+              <TableHead>Número de certificado</TableHead>
+              <TableHead>Fabricante</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Data de validade</TableHead>
               <TableHead className="w-20">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {companies.length === 0 && (
+            {instruments.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   <div className="flex flex-col items-center gap-2 py-20">
                     <Inbox className="size-10 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Nenhuma empresa encontrada
+                      Nenhum instrumento encontrado
                     </span>
                   </div>
                 </TableCell>
               </TableRow>
             )}
 
-            {companies.map((company) => (
-              <TableRow key={company.id} className="divide-x">
-                <TableCell>{company.name}</TableCell>
+            {instruments.map((instrument) => (
+              <TableRow key={instrument.id} className="divide-x">
+                <TableCell>{instrument.serialNumber}</TableCell>
+                <TableCell>{instrument.certificateNumber}</TableCell>
+                <TableCell>{instrument.manufacturer}</TableCell>
+                <TableCell>
+                  {
+                    INSTRUMENT_TYPE[
+                      instrument.type as keyof typeof INSTRUMENT_TYPE
+                    ]
+                  }
+                </TableCell>
                 <TableCell>
                   <Badge
                     className={cn(
                       'capitalize',
-                      company.status === 'ACTIVE' && 'bg-green-500',
-                      company.status === 'INACTIVE' && 'bg-red-500',
+                      instrument.validationDate > new Date() && 'bg-green-500',
+                      instrument.validationDate < new Date() && 'bg-red-500',
+                      instrument.validationDate === new Date() &&
+                        'bg-yellow-500',
                     )}
                   >
-                    {company.status}
+                    {instrument.validationDate > new Date()
+                      ? 'Válido'
+                      : instrument.validationDate === new Date()
+                        ? 'Vencendo'
+                        : 'Inválido'}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -135,14 +166,14 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(company)}
+                          onClick={() => editModalRef.current.open(instrument)}
                         >
                           <Edit className="size-4" />
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
-                            editModalRef.current.open(company, true)
+                            editModalRef.current.open(instrument, true)
                           }
                         >
                           <View className="size-4" />
@@ -152,7 +183,7 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
                         <DropdownMenuSeparator />
 
                         <DropdownMenuItem
-                          onClick={() => handleDeleteCompany(company.id)}
+                          onClick={() => handleDeleteInstrument(instrument.id)}
                         >
                           <Trash className="size-4" />
                           Excluir
@@ -166,7 +197,7 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2}>
+              <TableCell colSpan={5}>
                 <div className="flex items-center gap-2 justify-start">
                   <span>
                     Página {page} de {totalPages}
@@ -207,7 +238,7 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
         </Table>
       </div>
 
-      <CompanyEditModal ref={editModalRef} />
+      <InstrumentEditModal ref={editModalRef} />
     </div>
   )
 }

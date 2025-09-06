@@ -1,6 +1,6 @@
 import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createCompanyAction } from '@inspetor/actions/create-company'
+import { createInstrumentAction } from '@inspetor/actions/create-instrument'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -21,6 +21,14 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
+import { MonthInput } from '@inspetor/components/ui/month-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@inspetor/components/ui/select'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -29,19 +37,29 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
-  name: z.string({
-    message: 'Nome é obrigatório',
+  type: z.string({
+    message: 'Tipo é obrigatório',
   }),
-  cnpj: z.string({
-    message: 'CNPJ é obrigatório',
+  manufacturer: z.string({
+    message: 'Fabricante é obrigatório',
+  }),
+  serialNumber: z.string({
+    message: 'Número de série é obrigatório',
+  }),
+  certificateNumber: z.string({
+    message: 'Número de certificado é obrigatório',
+  }),
+  validationDate: z.object({
+    month: z.string(),
+    year: z.string(),
   }),
 })
 
 type Schema = z.infer<typeof schema>
 
-export function CompanyCreationModal() {
+export function InstrumentCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const action = useServerAction(createCompanyAction)
+  const action = useServerAction(createInstrumentAction)
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
@@ -49,11 +67,12 @@ export function CompanyCreationModal() {
 
   const router = useRouter()
 
-  async function handleCreateCompany(data: Schema) {
+  async function handleCreateInstrument(data: Schema) {
     const [result, resultError] = await action.execute(data)
 
     if (resultError) {
-      toast.error('Erro ao criar empresa')
+      console.log(resultError)
+      toast.error('Erro ao criar instrumento')
       return
     }
 
@@ -65,12 +84,24 @@ export function CompanyCreationModal() {
     }
 
     form.reset({
-      name: '',
-      cnpj: '',
+      type: '',
+      manufacturer: '',
+      serialNumber: '',
+      certificateNumber: '',
+      validationDate: {
+        month: '',
+        year: '',
+      },
     })
 
-    form.setValue('name', '')
-    form.setValue('cnpj', '')
+    form.setValue('type', '')
+    form.setValue('manufacturer', '')
+    form.setValue('serialNumber', '')
+    form.setValue('certificateNumber', '')
+    form.setValue('validationDate', {
+      month: '',
+      year: '',
+    })
 
     setIsModalOpen(false)
   }
@@ -78,31 +109,43 @@ export function CompanyCreationModal() {
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button icon={IconPlus}>Cadastrar empresa</Button>
+        <Button icon={IconPlus}>Cadastrar instrumento</Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cadastrar empresa</DialogTitle>
+          <DialogTitle>Cadastrar instrumento</DialogTitle>
           <DialogDescription>
-            Preencha os campos abaixo para cadastrar uma nova empresa.
+            Preencha os campos abaixo para cadastrar um novo instrumento.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleCreateCompany)}
+            id="instrument-creation-form"
+            onSubmit={form.handleSubmit(handleCreateInstrument)}
             className="space-y-4"
           >
             <FormField
               control={form.control}
-              name="name"
+              name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>Tipo</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g pedroaba tech" />
+                    <Select {...field} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard-manometer">
+                          Manômetro padrão
+                        </SelectItem>
+                        <SelectItem value="ultrasonic-thickness-gauge">
+                          Medidor de espessura Ultrassônico
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -111,12 +154,63 @@ export function CompanyCreationModal() {
 
             <FormField
               control={form.control}
-              name="cnpj"
+              name="manufacturer"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CNPJ</FormLabel>
+                  <FormLabel>Fabricante</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g 12345678901234" />
+                    <Input {...field} placeholder="e.g. Pedroaba Tech" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="serialNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número de série</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. 1234567890" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="certificateNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número de certificado</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. 1234567890" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="validationDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de validação</FormLabel>
+                  <FormControl>
+                    <MonthInput
+                      onChange={(event) => {
+                        const value = event.target.value
+
+                        field.onChange({
+                          month: value.split('/')[0],
+                          year: value.split('/')[1],
+                        })
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -132,7 +226,7 @@ export function CompanyCreationModal() {
 
           <Button
             type="submit"
-            form="company-creation-form"
+            form="instrument-creation-form"
             isLoading={form.formState.isSubmitting}
           >
             Cadastrar

@@ -7,9 +7,9 @@ import { useDebouncedCallback } from '@mantine/hooks'
 import { parseAsString, useQueryState } from 'nuqs'
 import { useState } from 'react'
 
-import { CompanyCreationModal } from './creation-modal'
+import { InstrumentCreationModal } from './creation-modal'
 
-export function CompanyFilter() {
+export function InstrumentFilter() {
   const [searchCache, setSearchCache] = useState('')
   const [, setSearch] = useQueryState('search', parseAsString.withDefault(''))
 
@@ -19,7 +19,7 @@ export function CompanyFilter() {
     setSearch(value)
 
     try {
-      await invalidatePageCache('/dashboard/company')
+      await invalidatePageCache('/dashboard/instruments')
     } finally {
       router.refresh()
     }
@@ -28,7 +28,7 @@ export function CompanyFilter() {
   return (
     <div className="@container/filter flex @items-center gap-2 @justify-between flex-col md:flex-row">
       <Input
-        placeholder="Pesquisar pelo nome"
+        placeholder="Pesquisar pelo número de série"
         className="w-full"
         value={searchCache}
         onChange={(e) => {
@@ -37,7 +37,7 @@ export function CompanyFilter() {
         }}
       />
 
-      <CompanyCreationModal />
+      <InstrumentCreationModal />
     </div>
   )
 }

@@ -1,9 +1,9 @@
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import { Company } from '@prisma/client'
+import { type Instruments } from '@prisma/client'
 
-import { CompanyFilter } from './components/filter'
-import { CompanyTable } from './components/table'
+import { InstrumentFilter } from './components/filter'
+import { InstrumentTable } from './components/table'
 
 type InstrumentsPageProps = {
   searchParams: Promise<{
@@ -16,39 +16,41 @@ export default async function InstrumentsPage({
   searchParams,
 }: InstrumentsPageProps) {
   const { search, page } = await searchParams
-  let companies: Company[] = []
-  let totalCompanies = 0
+  let instruments: Instruments[] = []
+  let totalInstruments = 0
 
   try {
-    companies = await prisma.company.findMany({
+    instruments = await prisma.instruments.findMany({
       where: {
-        name: {
+        serialNumber: {
           contains: search,
+          mode: 'insensitive',
         },
       },
       ...calculatePagination(page),
     })
 
-    totalCompanies = await prisma.company.count({
+    totalInstruments = await prisma.instruments.count({
       where: {
-        name: {
+        serialNumber: {
           contains: search,
+          mode: 'insensitive',
         },
       },
     })
   } catch {
-    companies = []
-    totalCompanies = 0
+    instruments = []
+    totalInstruments = 0
   }
 
-  const totalPages = Math.ceil(totalCompanies / 10)
+  const totalPages = Math.ceil(totalInstruments / 10)
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Instrumentos</h1>
 
-      <CompanyFilter />
-      <CompanyTable companies={companies} totalPages={totalPages} />
+      <InstrumentFilter />
+      <InstrumentTable instruments={instruments} totalPages={totalPages} />
     </div>
   )
 }

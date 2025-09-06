@@ -1,6 +1,6 @@
 import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { updateCompanyAction } from '@inspetor/actions/update-company'
+import { updateInstrumentAction } from '@inspetor/actions/update-instrument'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -20,7 +20,15 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
-import type { Company } from '@prisma/client'
+import { MonthInput } from '@inspetor/components/ui/month-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@inspetor/components/ui/select'
+import type { Instruments } from '@prisma/client'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -28,45 +36,62 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
-  name: z.string({
-    message: 'Nome é obrigatório',
+  type: z.string({
+    message: 'Tipo é obrigatório',
   }),
-  cnpj: z.string({
-    message: 'CNPJ é obrigatório',
+  manufacturer: z.string({
+    message: 'Fabricante é obrigatório',
+  }),
+  serialNumber: z.string({
+    message: 'Número de série é obrigatório',
+  }),
+  certificateNumber: z.string({
+    message: 'Número de certificado é obrigatório',
+  }),
+  validationDate: z.object({
+    month: z.string(),
+    year: z.string(),
   }),
 })
 
 type Schema = z.infer<typeof schema>
 
-type CompanyEditModalProps = {
+type InstrumentEditModalProps = {
   ref?: RefObject<any>
 }
 
-export function CompanyEditModal({ ref }: CompanyEditModalProps) {
+export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const action = useServerAction(updateCompanyAction)
+  const action = useServerAction(updateInstrumentAction)
 
-  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [instrumentId, setInstrumentId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '',
-      cnpj: '',
+      type: '',
+      manufacturer: '',
+      serialNumber: '',
+      certificateNumber: '',
+      validationDate: {
+        month: '',
+        year: '',
+      },
     },
   })
 
   const router = useRouter()
 
-  async function handleUpdateCompany(data: Schema) {
+  async function handleUpdateInstrument(data: Schema) {
     const [result, resultError] = await action.execute({
-      companyId: companyId,
+      instrumentId: instrumentId,
       ...data,
     })
 
     if (resultError) {
-      toast.error('Erro ao criar empresa')
+      console.log(resultError)
+      toast.error('Erro ao editar instrumento')
       return
     }
 
@@ -78,28 +103,55 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
     }
 
     form.reset({
-      name: '',
-      cnpj: '',
+      type: '',
+      manufacturer: '',
+      serialNumber: '',
+      certificateNumber: '',
+      validationDate: {
+        month: '',
+        year: '',
+      },
     })
 
-    form.setValue('name', '')
-    form.setValue('cnpj', '')
+    form.setValue('type', '')
+    form.setValue('manufacturer', '')
+    form.setValue('serialNumber', '')
+    form.setValue('certificateNumber', '')
+    form.setValue('validationDate', {
+      month: '',
+      year: '',
+    })
 
     setIsModalOpen(false)
   }
 
   useImperativeHandle(ref, () => ({
-    open: (company: Company, isOnlyRead: boolean = false) => {
+    open: (instrument: Instruments, isOnlyRead: boolean = false) => {
       setIsOnlyRead(isOnlyRead)
-      setCompanyId(company.id)
+      setInstrumentId(instrument.id)
       setIsModalOpen(true)
       form.reset({
-        name: company.name,
-        cnpj: company.cnpj,
+        type: instrument.type,
+        manufacturer: instrument.manufacturer,
+        serialNumber: instrument.serialNumber,
+        certificateNumber: instrument.certificateNumber,
+        validationDate: {
+          month: instrument.validationDate.getMonth().toString(),
+          year: instrument.validationDate.getFullYear().toString(),
+        },
       })
 
-      form.setValue('name', company.name)
-      form.setValue('cnpj', company.cnpj)
+      form.setValue('type', instrument.type)
+      form.setValue('manufacturer', instrument.manufacturer)
+      form.setValue('serialNumber', instrument.serialNumber)
+      form.setValue('certificateNumber', instrument.certificateNumber)
+      form.setValue('validationDate', {
+        month: String(instrument.validationDate.getUTCMonth() + 1).padStart(
+          2,
+          '0',
+        ),
+        year: instrument.validationDate.getFullYear().toString().slice(-2),
+      })
     },
     close: () => setIsModalOpen(false),
   }))
@@ -108,30 +160,38 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Editar empresa</DialogTitle>
+          <DialogTitle>Editar instrumento</DialogTitle>
           <DialogDescription>
-            Preencha os campos abaixo para editar a empresa.
+            Preencha os campos abaixo para editar o instrumento.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleUpdateCompany)}
+            id="instrument-creation-form"
+            onSubmit={form.handleSubmit(handleUpdateInstrument)}
             className="space-y-4"
           >
             <FormField
               control={form.control}
-              name="name"
+              name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>Tipo</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g pedroaba tech"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
+                    <Select {...field} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard-manometer">
+                          Manômetro padrão
+                        </SelectItem>
+                        <SelectItem value="ultrasonic-thickness-gauge">
+                          Medidor de espessura Ultrassônico
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -140,15 +200,68 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
 
             <FormField
               control={form.control}
-              name="cnpj"
+              name="manufacturer"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CNPJ</FormLabel>
+                  <FormLabel>Fabricante</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g 12345678901234"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
+                    <Input {...field} placeholder="e.g. Pedroaba Tech" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="serialNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número de série</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. 1234567890" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="certificateNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número de certificado</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. 1234567890" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="validationDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de validação</FormLabel>
+                  <FormControl>
+                    <MonthInput
+                      value={
+                        form.getValues('validationDate.month') &&
+                        form.getValues('validationDate.year')
+                          ? `${form.getValues('validationDate.month')}/${form.getValues('validationDate.year')}`
+                          : ''
+                      }
+                      onChange={(event) => {
+                        const value = event.target.value
+
+                        field.onChange({
+                          month: value.split('/')[0],
+                          year: value.split('/')[1],
+                        })
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -168,7 +281,7 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
           {!isOnlyRead && (
             <Button
               type="submit"
-              form="company-creation-form"
+              form="instrument-creation-form"
               isLoading={form.formState.isSubmitting}
             >
               Editar
