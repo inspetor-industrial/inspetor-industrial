@@ -1,5 +1,5 @@
 import { cn } from '@inspetor/lib/utils'
-import { IconUpload } from '@tabler/icons-react'
+import { IconUpload, IconX } from '@tabler/icons-react'
 import { motion } from 'motion/react'
 import React, {
   type RefObject,
@@ -34,19 +34,34 @@ type FileUploadProps = {
   files?: File[]
   onChange?: (files: File[]) => void
   ref?: RefObject<any>
+  accept?: string
 }
 
 export const FileUpload = ({
   onChange,
   files: initialFiles = [],
   ref,
+  accept = 'image/*',
 }: FileUploadProps) => {
   const [files, setFiles] = useState<File[]>(initialFiles)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (newFiles: File[]) => {
-    setFiles((prevFiles) => [...prevFiles, ...newFiles])
-    onChange?.(newFiles)
+    // Filtrar arquivos baseado no accept
+    const validFiles =
+      accept === 'image/*'
+        ? newFiles.filter((file) => file.type.startsWith('image/'))
+        : newFiles
+    setFiles((prevFiles) => [...prevFiles, ...validFiles])
+    onChange?.(validFiles)
+  }
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    setFiles((prevFiles) => {
+      const newFiles = prevFiles.filter((_, index) => index !== indexToRemove)
+      onChange?.(newFiles)
+      return newFiles
+    })
   }
 
   const handleClick = () => {
@@ -56,6 +71,12 @@ export const FileUpload = ({
   const { getRootProps, isDragActive } = useDropzone({
     multiple: false,
     noClick: true,
+    accept:
+      accept === 'image/*'
+        ? {
+            'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.bmp', '.webp'],
+          }
+        : undefined,
     onDrop: handleFileChange,
     onDropRejected: (error) => {
       console.log(error)
@@ -79,6 +100,7 @@ export const FileUpload = ({
           ref={fileInputRef}
           id="file-upload-handle"
           type="file"
+          accept={accept}
           onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
           className="hidden"
         />
@@ -87,17 +109,17 @@ export const FileUpload = ({
         </div>
         <div className="flex flex-col items-center justify-center">
           <p className="relative z-20 font-sans font-bold text-neutral-700 dark:text-neutral-300 text-base">
-            Upload file
+            Upload de Imagem
           </p>
           <p className="relative z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
-            Drag or drop your files here or click to upload
+            Arraste e solte uma imagem aqui ou clique para selecionar
           </p>
           <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&
               files.map((file, idx) => (
                 <motion.div
                   key={'file' + idx}
-                  layoutId={idx === 0 ? 'file-upload' : 'file-upload-' + idx}
+                  layoutId={'file-upload-' + idx}
                   className={cn(
                     'relative overflow-hidden z-40 bg-white dark:bg-neutral-900 flex flex-col items-start justify-start md:h-24 p-4 mt-4 w-full mx-auto rounded-md',
                     'shadow-sm',
@@ -112,14 +134,29 @@ export const FileUpload = ({
                     >
                       {file.name}
                     </motion.p>
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      layout
-                      className="rounded-lg px-2 py-1 w-fit shrink-0 text-sm text-neutral-600 bg-neutral-100 dark:bg-neutral-800 dark:text-white shadow-input"
-                    >
-                      {(file.size / (1024 * 1024)).toFixed(2)} MB
-                    </motion.p>
+                    <div className="flex items-center gap-2">
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        layout
+                        className="rounded-lg px-2 py-1 w-fit shrink-0 text-sm text-neutral-600 bg-neutral-100 dark:bg-neutral-800 dark:text-white shadow-input"
+                      >
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+                      </motion.p>
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        layout
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveFile(idx)
+                        }}
+                        className="p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                        type="button"
+                      >
+                        <IconX className="h-4 w-4 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300" />
+                      </motion.button>
+                    </div>
                   </div>
 
                   <div className="flex text-sm gap-4 md:flex-row flex-col items-start md:items-center w-full mt-2 justify-between text-neutral-600 dark:text-neutral-400">
@@ -144,9 +181,11 @@ export const FileUpload = ({
                   </div>
                 </motion.div>
               ))}
-            {!files.length && (
+
+            {/* Ícone de upload sempre visível */}
+            {files.length === 0 && (
               <motion.div
-                layoutId="file-upload"
+                layoutId="file-upload-icon"
                 variants={mainVariant}
                 transition={{
                   type: 'spring',
@@ -154,8 +193,9 @@ export const FileUpload = ({
                   damping: 20,
                 }}
                 className={cn(
-                  'relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md',
-                  'shadow-[0px_10px_50px_rgba(0,0,0,0.1)]',
+                  'relative z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md',
+                  'shadow-[0px_10px_50px_rgba(0,0,0,0.1)] group-hover/file:shadow-2xl',
+                  '!opacity-100',
                 )}
               >
                 {isDragActive ? (
@@ -173,10 +213,11 @@ export const FileUpload = ({
               </motion.div>
             )}
 
-            {!files.length && (
+            {/* Overlay para hover quando não há arquivos */}
+            {files.length === 0 && (
               <motion.div
                 variants={secondaryVariant}
-                className="absolute opacity-0 border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md"
+                className="absolute opacity-0 border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md group-hover/file:opacity-100 transition-opacity"
               ></motion.div>
             )}
           </div>

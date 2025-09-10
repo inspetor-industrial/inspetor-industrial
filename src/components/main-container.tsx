@@ -16,7 +16,7 @@ export function MainContainer({ children, className }: MainContainerProps) {
   return (
     <ScrollArea
       className={cn(
-        'h-full w-full p-4',
+        'h-full w-full p-4 overflow-y-hidden',
         state === 'collapsed' && 'max-h-[calc(100vh-49px)]',
         state === 'expanded' && 'max-h-[calc(100vh-65px)]',
         className,

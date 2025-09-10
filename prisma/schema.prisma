@@ -36,9 +36,10 @@ model User {
   company   Company? @relation(fields: [companyId], references: [id])
   companyId String?
 
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  Documents Documents[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Documents    Documents[]
+  BoilerReport BoilerReport[]
 }
 
 model Account {
@@ -125,6 +126,7 @@ model Company {
   DailyMaintenance DailyMaintenance[]
   Instruments      Instruments[]
   Documents        Documents[]
+  BoilerReport     BoilerReport[]
 
   @@unique([cnpj])
 }
@@ -173,8 +175,9 @@ model Clients {
 
   phone String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  BoilerReport BoilerReport[]
 }
 
 model Instruments {
@@ -208,6 +211,312 @@ model Documents {
   owner           User   @relation(fields: [ownerId], references: [id])
   ownerId         String
 
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  BoilerReportAttachment BoilerReportAttachment[]
+}
+
+enum BoilerReportAttachmentFieldName {
+  OPERATOR_CERTIFICATION
+
+  EXAMINATIONS_PERFORMED_RECORD
+  EXAMINATIONS_PERFORMED_BOOK
+
+  EXTERNAL_EXAMINATIONS_PERFORMED_PLATE_IDENTIFICATION
+  EXTERNAL_EXAMINATIONS_PERFORMED_BOILER
+  EXTERNAL_EXAMINATIONS_PERFORMED_EXTRA_PHOTOS
+
+  INTERNAL_EXAMINATIONS_PERFORMED_TUBES
+  INTERNAL_EXAMINATIONS_PERFORMED_FURNACE
+  INTERNAL_EXAMINATIONS_PERFORMED_INTERNAL_BOILER
+  INTERNAL_EXAMINATIONS_PERFORMED_EXTRA_PHOTOS
+
+  LOCAL_INSTALLATION_EXAMINATIONS_PERFORMED_BOILER_HOUSE
+
+  INJECTOR_GAUGE_PHOTOS
+
+  CALIBRATION_OF_THE_LEVEL_INDICATOR_ASSEMBLY_PHOTOS
+
+  SAFETY_VALVE_GAUGE_PHOTOS
+
+  PRESSURE_GAUGE_CALIBRATION_PHOTOS
+
+  CONTROL_DEVICES_AND_COMMANDS_PHOTOS
+
+  WATER_QUALITY_PHOTOS
+
+  BOTTOM_DISCHARGE_SYSTEM_CHECKS_PHOTOS
+
+  HYDROSTATIC_TEST_PHOTOS
+
+  ULTRASOUND_TESTS_BODY_EXAMINATION_A_PHOTOS
+  ULTRASOUND_TESTS_BODY_EXAMINATION_B_PHOTOS
+  ULTRASOUND_TESTS_BODY_EXAMINATION_C_PHOTOS
+  ULTRASOUND_TESTS_BODY_EXAMINATION_D_PHOTOS
+}
+
+model BoilerReportAttachment {
+  id       String       @id @default(cuid())
+  report   BoilerReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId String
+
+  document   Documents @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+
+  fieldName BoilerReportAttachmentFieldName // eg.: "hydrostaticTestPhotos", "internalTubes", "operatorCertification"
+  sortOrder Int? // if needed to order images
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([reportId, documentId, fieldName]) // prevents duplicate attachments in the same field
+  @@index([reportId, fieldName, sortOrder])
+  @@index([documentId])
+}
+
+enum BoilerReportType {
+  INITIAL
+  PERIODIC
+  EXTRAORDINARY
+}
+
+enum BoilerType {
+  FIRE_TUBE_HORIZONTAL
+  FIRE_TUBE_VERTICAL
+  WATER_TUBE_HORIZONTAL
+  WATER_TUBE_VERTICAL
+  MIXED
+}
+
+enum BoilerFuel {
+  FIRE_WOOD
+  WOOD_CHIPS
+  BAGASSE
+  STRAW
+  LPG
+  NG
+  DIESEL_OIL
+  BPF_OIL
+  BLACK_LIQUOR
+  BRIQUETTE
+}
+
+enum BoilerCategory {
+  A
+  B
+}
+
+enum StructureFurnaceType {
+  REFRACTORY
+  COOLED
+  WATER_TUBE
+}
+
+enum BoilerBodyMaterial {
+  ASTMA285GRC
+  ASTMA516
+  NOT_SPECIFIED
+}
+
+enum BoilerTubeMaterial {
+  ASTMA178
+  NOT_SPECIFIED
+}
+
+enum InjectorGaugeFuel {
+  LIQUID
+  GASEOUS
+  SOLID
+}
+
+model BoilerReport {
+  id String @id @default(cuid())
+
+  service String
+  type    BoilerReportType
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client   Clients @relation(fields: [clientId], references: [id])
+  clientId String
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  motivation String?
+
+  date                  DateTime?
+  startTimeOfInspection DateTime?
+  endTimeOfInspection   DateTime?
+  durationOfInspection  Int?
+
+  inspectionValidation String? // eg. 2 years, 5 years, etc.
+  nextInspectionDate   DateTime?
+
+  engineer   User   @relation(fields: [engineerId], references: [id])
+  engineerId String
+
+  operatorName            String
+  operatorNr13            String
+  operatorProvidence      String?
+  operatorCertificationId String?
+  operatorObservations    String?
+
+  boilerManufacturer        String?
+  boilerBrand               String?
+  boilerType                BoilerType?
+  boilerModel               String?
+  boilerManufacturerYear    String?
+  boilerCapacity            Float?
+  boilerMaxPressureWorkable Float?
+  boilerPressureOperating   Float?
+  boilerSerie               String?
+  boilerFuel                BoilerFuel?
+  boilerCategory            BoilerCategory?
+
+  structureHeatingSurface String?
+
+  structureFurnaceType                   StructureFurnaceType?
+  structureFurnaceInfos                  String?
+  structureFurnaceDimensionWidth         Float?
+  structureFurnaceDimensionHeight        Float?
+  structureFurnaceDimensionLength        Float?
+  structureFurnaceDimensionDiameter      Float?
+  structureFurnaceDimensionTubeDiameter  Float?
+  structureFurnaceDimensionTubeThickness Float?
+  structureFreeLengthWithoutStaysOrTube  String?
+
+  structureMirrorThickness Float?
+  structureMirrorDiameter  Float?
+
+  structureBodyThickness                 Float?
+  structureBodyDiameter                  Float?
+  structureBodyLength                    Float?
+  structureBodyMaterial                  BoilerBodyMaterial?
+  structureBodyCertificateOfManufacturer String?
+
+  structureTubeQuantity                  Float?
+  structureTubeDiameter                  Float?
+  structureTubeLength                    Float?
+  structureTubeThickness                 Float?
+  structureTubeMaterial                  BoilerTubeMaterial?
+  structureTubeCertificateOfManufacturer String?
+  structureTubeIsNaturalOrForced         String?
+
+  structureQuantityOfSafetyFuse Float?
+
+  examinationsPerformedTests        String?
+  examinationsPerformedObservations String?
+
+  externalExaminationsPerformedTests        String?
+  externalExaminationsPerformedObservations String?
+
+  internalExaminationsPerformedTests        String?
+  internalExaminationsPerformedObservations String?
+
+  localInstallationExaminationsPerformedTests        String?
+  localInstallationExaminationsPerformedObservations String?
+
+  injectorGaugeSerialNumber String?
+  injectorGaugeMark         String?
+  injectorGaugeDiameter     Float?
+  injectorGaugeFuel         InjectorGaugeFuel?
+  injectorGaugeTests        String?
+  injectorGaugeObservations String?
+
+  powerSupplyBombs        String?
+  powerSupplyTests        String?
+  powerSupplyObservations String?
+
+  calibrationOfTheLevelIndicatorAssemblyTests         String?
+  calibrationOfTheLevelIndicatorAssemblyObservations  String?
+  calibrationOfTheLevelIndicatorAssemblyMark          String?
+  calibrationOfTheLevelIndicatorAssemblyGlassDiameter Float?
+  calibrationOfTheLevelIndicatorAssemblyGlassLength   Float?
+
+  safetyValveGaugeQuantity                     String?
+  safetyValveGaugeValves                       String?
+  safetyValveGaugeIsThereSafetyValveRedundancy String?
+  safetyValveGaugeObservations                 String?
+
+  pressureGaugeCalibrationOrderNumber  String?
+  pressureGaugeCalibrationBrand        String?
+  pressureGaugeCalibrationDiameter     Float?
+  pressureGaugeCalibrationCapacity     Float?
+  pressureGaugeCalibrationTests        String?
+  pressureGaugeCalibrationObservations String?
+
+  gaugeOfElectricOrElectronicControlDevicesAndCommandsTests        String?
+  gaugeOfElectricOrElectronicControlDevicesAndCommandsObservations String?
+
+  waterQualityTests        String?
+  waterQualityObservations String?
+  waterQualityPh           String?
+
+  bottomDischargeSystemChecksTests        String?
+  bottomDischargeSystemChecksObservations String?
+
+  hydrostaticTestTests        String?
+  hydrostaticTestObservations String?
+  hydrostaticTestPressure     Float?
+  hydrostaticTestDuration     Float?
+  hydrostaticTestProcedure    String?
+
+  accumulationTestTests        String?
+  accumulationTestObservations String?
+  accumulationTestPressure     Float?
+  accumulationTestDuration     Float?
+
+  ultrasoundTestsBodyExaminationATotal                           Float?
+  ultrasoundTestsBodyExaminationAMean                            Float?
+  ultrasoundTestsBodyExaminationAThicknessProvidedByManufacturer Float?
+  ultrasoundTestsBodyExaminationACorrosionRate                   Float?
+  ultrasoundTestsBodyExaminationAAllowableThickness              Float?
+  ultrasoundTestsBodyExaminationAIsRegularizedAccordingToASME1   Boolean?
+
+  ultrasoundTestsBodyExaminationBTotal                           Float?
+  ultrasoundTestsBodyExaminationBMean                            Float?
+  ultrasoundTestsBodyExaminationBThicknessProvidedByManufacturer Float?
+  ultrasoundTestsBodyExaminationBCorrosionRate                   Float?
+  ultrasoundTestsBodyExaminationBAllowableThickness              Float?
+
+  ultrasoundTestsBodyExaminationCTotal                           Float?
+  ultrasoundTestsBodyExaminationCMean                            Float?
+  ultrasoundTestsBodyExaminationCThicknessProvidedByManufacturer Float?
+  ultrasoundTestsBodyExaminationCCorrosionRate                   Float?
+  ultrasoundTestsBodyExaminationCAllowableThickness              Float?
+
+  ultrasoundTestsBodyExaminationDTotal                           Float?
+  ultrasoundTestsBodyExaminationDMean                            Float?
+  ultrasoundTestsBodyExaminationDThicknessProvidedByManufacturer Float?
+  ultrasoundTestsBodyExaminationDCorrosionRate                   Float?
+  ultrasoundTestsBodyExaminationDAllowableThickness              Float?
+
+  pmtaCanBeMaintained   Boolean?
+  pmtaMustBeIncreasedTo String?
+  pmtaMustBeDecreasedTo String?
+  pmtaObservations      String?
+
+  conclusionsDeadlineForNextInspection  String?
+  conclusionsNrItemsThatNotBeingMet     String?
+  conclusionsImmediateMeasuresNecessary String?
+  conclusionsNecessaryRecommendations   String?
+  conclusionsCanBeOperateNormally       Boolean?
+
+  attachments BoilerReportAttachment[]
+
+  // Company-based queries with date filtering and sorting
+  @@index([companyId, date]) // company listings by period (filter + sort by date)
+  @@index([companyId, type, date]) // dashboard by type within period
+  @@index([companyId, nextInspectionDate]) // upcoming inspections schedule by company
+  // Client and engineer-based queries
+  @@index([clientId, date]) // client history within period
+  @@index([engineerId, date]) // engineer productivity/schedule
+  // Simple filters (FK lookup, fast counts)
+  @@index([companyId])
+  @@index([clientId])
+  @@index([engineerId])
+  // Activity feeds and recent sorting
+  @@index([createdAt]) // recent sorting (activity feed)
 }

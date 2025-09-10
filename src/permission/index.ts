@@ -39,6 +39,7 @@ export class Permission {
         '/dashboard/client',
         '/dashboard/instruments',
         '/dashboard/documents',
+        '/dashboard/reports/boiler',
       ]
     }
 
@@ -51,6 +52,7 @@ export class Permission {
         '/dashboard/maintenance/daily',
         '/dashboard/instruments',
         '/dashboard/documents',
+        '/dashboard/reports/boiler',
       ]
     }
 

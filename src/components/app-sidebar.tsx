@@ -97,12 +97,18 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     '/dashboard/instruments',
   )
 
+  const mustBeHideBoilerManagement = Permission.canNotAccess(
+    (session.data?.user.role || '') as UserRole,
+    '/dashboard/reports/boiler',
+  )
+
   const mustBeHideDocumentsManagement = Permission.canNotAccess(
     (session.data?.user.role || '') as UserRole,
     '/dashboard/documents',
   )
 
-  const mustBeHideInspectionManagement = mustBeHideInstrumentsManagement
+  const mustBeHideInspectionManagement =
+    mustBeHideInstrumentsManagement && mustBeHideBoilerManagement
 
   const mustBeHideDatabaseManagement =
     mustBeHideCompanyManagement &&
@@ -330,6 +336,24 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                                 >
                                   <Link href="/dashboard/instruments">
                                     <span>Instrumentos</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )}
+
+                            {!mustBeHideStorageManagement && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  isActive={
+                                    pathname === '/dashboard/reports/boiler' &&
+                                    pathname.startsWith(
+                                      '/dashboard/reports/boiler',
+                                    )
+                                  }
+                                  asChild
+                                >
+                                  <Link href="/dashboard/reports/boiler">
+                                    <span>Inspeções de Caldeiras</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
