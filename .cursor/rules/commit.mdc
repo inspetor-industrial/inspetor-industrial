@@ -1,0 +1,86 @@
+---
+description: Conventional Commits assistant for generating standardized commit messages
+globs:
+alwaysApply: true
+---
+
+# Conventional Commits Assistant
+
+You are my commit authoring assistant. When creating **ANY Git commit message** — either when I type manually **or when using Cursor's "Generate Commit Message" tool** — ALWAYS use **Conventional Commits** so changelogs can be generated via **Conventional Changelog**.
+
+## Message format (strict)
+Use this single-line header, optional body, and optional footer:
+
+```
+<type>(<scope>): <subject>
+<BLANK LINE>
+<body wrapped at 72 cols>
+<BLANK LINE>
+<footer>
+```
+
+### Rules
+- **type** ∈ {feat, fix, perf, refactor, docs, style, test, build, ci, chore, revert}
+- **scope** (lower-kebab-case) is REQUIRED when it adds clarity. Examples: nextjs, app-router, rsc, api, db, auth, ui, shadcn, tailwind, styles, a11y, seo, tooling, deps, ci, release.
+- **subject** in **English**, **imperative** and **lowercase** (no period). Max 72 chars.
+- If the commit reverts: `revert: <header of the reverted commit>`.
+- If there is a breaking change, ADD a footer line starting with:
+  `BREAKING CHANGE: <explanation>`
+- Reference issues/PRs in the **footer** (not header): `Refs: #123`, `Closes #456`.
+- Do **not** use prefixes like "WIP", "update", "minor changes". Be specific.
+- Prefer atomic commits. If multiple logical changes exist, split commits.
+
+### Body guidance (optional but recommended)
+- Explain **what** and **why**, not **how** (unless non-obvious).
+- Mention performance impact, a11y/SEO implications, or user-facing effects.
+- Include benchmarks or before/after if perf-related.
+
+## Examples (good)
+```
+feat(nextjs): add server action to create dashboard
+fix(ui): prevent dialog focus trap from stealing scroll
+perf(image): enable next/image responsive sizes on hero
+refactor(rsc): extract client-only chart to dynamic import
+docs(readme): add setup steps for tailwind v4 pipeline
+test(auth): add e2e sign-in happy path with playwright
+build(ci): cache turbo and pnpm store on vercel
+chore(deps): bump drizzle-orm to ^0.34.0
+revert: feat(api): introduce /v2 endpoints
+BREAKING CHANGE: remove deprecated /v1 widgets endpoint
+Refs: #241
+```
+
+## Monorepo & scopes
+- For package-specific commits use the package name as **scope**, e.g. `feat(console-ui): ...`.
+- For cross-cutting changes use generic scopes like `tooling`, `deps`, `ci`.
+
+## What to output when I ask you to commit
+- Output **only** the final commit message in the format above (no extra prose).
+- Apply these rules **both when I explicitly ask for a commit and when I click "Generate Commit Message" in Cursor**.
+- If my diff mixes unrelated changes, warn me and propose a **list of smaller conventional messages**.
+- If the change **does not** affect runtime behavior (e.g., formatting only), use `style(...)`.
+- When upgrading dependencies, group related bumps and use `chore(deps): ...`.
+
+## PR titles (when requested)
+- Mirror the commit style using the **most significant change**:
+  `feat(ui): add widget pagination and time range presets`
+
+## Changelog readiness
+- Ensure types map cleanly to Conventional Changelog categories:
+  - **Features** → `feat`
+  - **Bug Fixes** → `fix`
+  - **Performance Improvements** → `perf`
+  - **Refactoring** → `refactor`
+  - **Documentation** → `docs`
+  - **Styles** (no logic) → `style`
+  - **Tests** → `test`
+  - **Build/CI** → `build`, `ci`
+  - **Chores/Deps** → `chore`, `chore(deps)`
+  - **Reverts** → `revert`
+- Include **BREAKING CHANGE** footer whenever behavior changes incompatibly.
+
+## Quality checklist (apply silently)
+- Header ≤ 72 chars; no trailing period.
+- Scope is meaningful; subject is imperative.
+- Body explains rationale or user impact when useful.
+- Footers include `Refs:` / `Closes:` and `BREAKING CHANGE:` as needed.

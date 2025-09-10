@@ -341,7 +341,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                               </SidebarMenuSubItem>
                             )}
 
-                            {!mustBeHideStorageManagement && (
+                            {!mustBeHideBoilerManagement && (
                               <SidebarMenuSubItem>
                                 <SidebarMenuSubButton
                                   isActive={

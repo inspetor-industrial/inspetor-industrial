@@ -2,9 +2,9 @@ import { UserRole } from '@prisma/client'
 
 export class Permission {
   static canNotAccess(role: UserRole, path: string): boolean {
-    if (this.isAdminUser(role)) {
-      return false
-    }
+    // if (this.isAdminUser(role)) {
+    //   return false
+    // }
 
     const routes = this.getRoutesByRole(role)
     if (routes === '*') {
@@ -28,7 +28,7 @@ export class Permission {
 
   private static getRoutesByRole(role: UserRole): '*' | string[] {
     if (this.isAdminUser(role)) {
-      return '*'
+      return ['/dashboard/reports/boiler']
     }
 
     if (this.isOperatorUser(role)) {
