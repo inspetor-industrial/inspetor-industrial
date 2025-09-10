@@ -55,7 +55,9 @@ export default async function StorageReportsPage({
     return redirect('/access-denied')
   }
 
-  const folderIdToLoadFiles = folderId || storage.relativeLink.replace('/', '')
+  const folderIdToLoadFiles = (
+    folderId || storage.relativeLink.replace('/', '')
+  ).replace(/\?.*$/, '')
 
   const drive = getGoogleDriveClient()
   const res = await drive.files.list({
