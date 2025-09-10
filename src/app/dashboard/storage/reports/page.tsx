@@ -66,7 +66,6 @@ export default async function StorageReportsPage({
   })
 
   const files = res.data.files as GoogleDriveFile[]
-  console.log(files)
 
   return (
     <div className="flex flex-col gap-4">

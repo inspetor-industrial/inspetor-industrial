@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@inspetor/components/ui/card'
+import { FileUpload } from '@inspetor/components/ui/file-upload'
 import {
   FormControl,
   FormField,
@@ -22,7 +23,6 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import { FileUpload } from '@inspetor/components/ui/file-upload'
 import { injectorQuestions } from '@inspetor/constants/tests'
 import { Control } from 'react-hook-form'
 

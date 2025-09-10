@@ -1,13 +1,13 @@
 import { BoilerFilter } from './components/filter'
 
-type BoilerPageProps = {
-  searchParams: Promise<{
-    search: string
-    page: string
-  }>
-}
+// type BoilerPageProps = {
+//   searchParams: Promise<{
+//     search: string
+//     page: string
+//   }>
+// }
 
-export default async function BoilerPage({ searchParams }: BoilerPageProps) {
+export default async function BoilerPage() {
   // const { search, page } = await searchParams
   // let companies: Company[] = []
   // let totalCompanies = 0

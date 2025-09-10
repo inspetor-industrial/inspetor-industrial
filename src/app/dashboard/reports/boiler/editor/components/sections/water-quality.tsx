@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@inspetor/components/ui/card'
+import { FileUpload } from '@inspetor/components/ui/file-upload'
 import {
   FormControl,
   FormField,
@@ -15,7 +16,6 @@ import {
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import { FileUpload } from '@inspetor/components/ui/file-upload'
 import { waterQualityQuestions } from '@inspetor/constants/tests'
 import { Control } from 'react-hook-form'
 
@@ -52,10 +52,7 @@ export function WaterQualitySection({ control }: WaterQualitySectionProps) {
               <FormItem>
                 <FormLabel>Testes Realizados</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Descreva os testes..."
-                  />
+                  <Input {...field} placeholder="Descreva os testes..." />
                 </FormControl>
                 <FormMessage />
               </FormItem>
