@@ -64,8 +64,10 @@ export function FileCard({
   }
 
   const FileIcon = getFileIcon(file.mimeType)
-  const isFile =
-    file.mimeType.toLowerCase() !== 'application/vnd.google-apps.folder'
+  const isFile = ![
+    'application/vnd.google-apps.folder',
+    'application/vnd.google-apps.shortcut',
+  ].includes(file.mimeType.toLowerCase())
 
   return (
     <Card className="group relative w-full p-0 h-80 transition-all duration-300 hover:shadow-lg hover:scale-105 border border-border/50 hover:border-border">
@@ -81,7 +83,16 @@ export function FileCard({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <FileIcon className="w-16 h-16 text-muted-foreground/50" />
+              {file.iconLink ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={file.iconLink}
+                  alt={file.name}
+                  className="w-16 h-16 text-muted-foreground/50"
+                />
+              ) : (
+                <FileIcon className="w-16 h-16 text-muted-foreground/50" />
+              )}
             </div>
           )}
 

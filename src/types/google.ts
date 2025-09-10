@@ -1,5 +1,6 @@
 export interface GoogleDriveFile {
   parents: string[]
+  shortcutDetails: ShortcutDetails
   lastModifyingUser: LastModifyingUser
   owners: Owner[]
   spaces: string[]
@@ -40,6 +41,11 @@ export interface GoogleDriveFile {
   headRevisionId: string
   isAppAuthorized: boolean
   inheritedPermissionsDisabled: boolean
+}
+
+export interface ShortcutDetails {
+  targetId: string
+  targetMimeType: string
 }
 
 export interface LastModifyingUser {

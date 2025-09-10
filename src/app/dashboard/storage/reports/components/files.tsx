@@ -22,7 +22,15 @@ export function Files({ files }: FilesProps) {
   const router = useRouter()
 
   async function handleNavigateToFolder(targetFile: GoogleDriveFile) {
-    setSelectedFolderId(targetFile.id)
+    let targetFileId = targetFile.id.replace(/\?.*$/, '')
+    if (
+      targetFile.mimeType.toLowerCase() ===
+      'application/vnd.google-apps.shortcut'
+    ) {
+      targetFileId = targetFile.shortcutDetails?.targetId
+    }
+
+    setSelectedFolderId(targetFileId)
 
     try {
       await invalidatePageCache('/dashboard/storage/reports')
