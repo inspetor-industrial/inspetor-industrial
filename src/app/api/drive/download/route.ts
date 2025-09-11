@@ -7,6 +7,15 @@ import { prisma } from '@inspetor/lib/prisma'
 export const runtime = 'nodejs' // garante Node (necessário para Node streams)
 export const dynamic = 'force-dynamic'
 
+function toAscii(text: string) {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // diacríticos
+    .replace(/[^\x20-\x7E]/g, '') // não-ASCII
+    .replace(/["\\]/g, '') // aspas/escape
+    .replace(/[^A-Za-z0-9._-]+/g, '_') // caracteres fora do permitido
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const fileId = searchParams.get('fileId')
@@ -48,9 +57,9 @@ export async function GET(request: Request) {
 
   // dica: filename com caracteres especiais
   const encodedFilename = encodeURIComponent(filename)
-    .replace(/'/g, '%27')
+    .replace(/['()]/g, '') // %27 %28 %29
     .replace(/\*/g, '%2A')
-  const contentDisposition = `attachment; filename="${filename}"; filename*=UTF-8''${encodedFilename}`
+  const contentDisposition = `attachment; filename="${toAscii(filename)}"; filename*=UTF-8''${encodedFilename}`
 
   return new Response(webStream, {
     headers: {

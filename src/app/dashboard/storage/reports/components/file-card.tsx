@@ -57,10 +57,14 @@ export function FileCard({
 
   function getFileExtension(file: GoogleDriveFile) {
     if (file.mimeType.toLowerCase() === 'application/vnd.google-apps.folder') {
-      return 'pasta'
+      return 'pasta'.toUpperCase()
     }
 
-    return file.fileExtension?.toUpperCase() || 'arquivo'
+    return file.mimeType.toLocaleLowerCase() ===
+      'application/vnd.google-apps.shortcut' ||
+      file.mimeType.toLocaleLowerCase() === 'application/vnd.google-apps.folder'
+      ? 'PASTA'
+      : 'ARQUIVO'
   }
 
   const FileIcon = getFileIcon(file.mimeType)
