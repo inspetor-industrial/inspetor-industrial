@@ -38,7 +38,7 @@ export function GoBackButton({ parentFolderId }: GoBackButtonProps) {
       )}
     >
       <ArrowLeft className="size-4" />
-      Voltar para pasta raiz
+      Voltar ao início
     </Button>
   )
 }
