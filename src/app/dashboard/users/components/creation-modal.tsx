@@ -44,9 +44,14 @@ const schema = z
     name: z.string({
       message: 'Nome é obrigatório',
     }),
-    email: z.string({
-      message: 'Email é obrigatório',
+    username: z.string({
+      message: 'Username é obrigatório',
     }),
+    email: z
+      .string({
+        message: 'Email é obrigatório',
+      })
+      .optional(),
     password: z.string({
       message: 'Senha é obrigatória',
     }),
@@ -95,6 +100,7 @@ export function UserCreationModal() {
 
     form.reset({
       name: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -103,6 +109,7 @@ export function UserCreationModal() {
     })
 
     form.setValue('name', '')
+    form.setValue('username', '')
     form.setValue('email', '')
     form.setValue('password', '')
     form.setValue('confirmPassword', '')
@@ -158,6 +165,20 @@ export function UserCreationModal() {
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="e.g pedro augusto" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g pedroaba" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

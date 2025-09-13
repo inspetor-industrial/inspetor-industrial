@@ -7,12 +7,14 @@ import type { UserRole } from '@prisma/client'
 import z from 'zod'
 
 import { authProcedure } from './procedures/auth'
+import { getUserByUsernameOrEmail } from './utils/get-user-by-username-or-email'
 
 export const createUserAction = authProcedure
   .createServerAction()
   .input(
     z.object({
       name: z.string(),
+      username: z.string(),
       email: z.string(),
       password: z.string(),
       companyId: z.string(),
@@ -20,12 +22,11 @@ export const createUserAction = authProcedure
     }),
   )
   .handler(async ({ input }) => {
-    const { name, email, password, companyId } = input
+    const { name, username, email, password, companyId } = input
 
-    const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+    const user = await getUserByUsernameOrEmail({
+      email,
+      username,
     })
 
     if (user) {
@@ -39,6 +40,7 @@ export const createUserAction = authProcedure
     await prisma.user.create({
       data: {
         name,
+        username,
         email,
         password: hashedPassword,
         companyId,

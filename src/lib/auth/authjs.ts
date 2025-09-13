@@ -19,10 +19,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     jwt: async ({ token, user, session, trigger }) => {
       if (user) {
         token.role = user.role as UserRole
+        token.username = user.username
       }
 
       if (trigger === 'update' && session) {
         token.role = session?.user?.role as UserRole
+        token.username = session?.user?.username
       }
 
       return token
@@ -33,6 +35,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       session.user.role = token.role as UserRole
+      session.user.username = token.username as string
       return session
     },
   },
@@ -50,12 +53,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             throw new InvalidLoginError()
           }
 
-          const user = await prisma.user.findUnique({
+          let user = await prisma.user.findUnique({
             where: {
               email: email as string,
               status: 'ACTIVE',
             },
           })
+
+          if (!user) {
+            user = await prisma.user.findUnique({
+              where: {
+                username: email as string,
+                status: 'ACTIVE',
+              },
+            })
+          }
 
           if (!user || !user?.password) {
             throw new InvalidLoginError()
@@ -70,7 +82,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             throw new InvalidLoginError()
           }
 
-          return user
+          return {
+            ...user,
+            username: user.username as string,
+          }
         } catch {
           throw new InvalidLoginError()
         }

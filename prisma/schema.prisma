@@ -29,6 +29,7 @@ model User {
   status        UserStatus @default(ACTIVE)
   role          UserRole   @default(USER)
 
+  username String? @unique
   password String?
 
   Authenticator Authenticator[]

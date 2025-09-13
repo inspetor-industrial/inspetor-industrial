@@ -41,9 +41,14 @@ const schema = z.object({
   name: z.string({
     message: 'Nome é obrigatório',
   }),
-  email: z.string({
-    message: 'Email é obrigatório',
+  username: z.string({
+    message: 'Username é obrigatório',
   }),
+  email: z
+    .string({
+      message: 'Email é obrigatório',
+    })
+    .optional(),
   companyId: z.string({
     message: 'Empresa é obrigatória',
   }),
@@ -74,6 +79,7 @@ export function UserEditModal({ ref }: UserEditModalProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
+      username: '',
       email: '',
       companyId: '',
       role: '',
@@ -118,6 +124,7 @@ export function UserEditModal({ ref }: UserEditModalProps) {
     })
 
     form.setValue('name', '')
+    form.setValue('username', '')
     form.setValue('email', '')
     form.setValue('companyId', '')
     form.setValue('role', '')
@@ -132,12 +139,14 @@ export function UserEditModal({ ref }: UserEditModalProps) {
       setIsModalOpen(true)
       form.reset({
         name: user.name ?? '',
+        username: user.username ?? '',
         email: user.email,
         companyId: user.companyId ?? '',
         role: user.role,
       })
 
       form.setValue('name', user.name ?? '')
+      form.setValue('username', user.username ?? '')
       form.setValue('email', user.email)
       form.setValue('companyId', user.companyId ?? '')
       form.setValue('role', user.role.toLowerCase())
@@ -191,6 +200,20 @@ export function UserEditModal({ ref }: UserEditModalProps) {
                       placeholder="e.g pedro augusto"
                       disabled={isOnlyRead}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g pedroaba" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

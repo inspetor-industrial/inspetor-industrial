@@ -3,17 +3,18 @@ import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { createServerActionProcedure } from 'zsa'
 
+import { getUserByUsernameOrEmail } from '../utils/get-user-by-username-or-email'
+
 export const authProcedure = createServerActionProcedure().handler(async () => {
   const session = await auth()
 
-  if (!session || !session?.user?.email) {
+  if (!session || (!session?.user?.email && !session?.user?.username)) {
     throw new InvalidCredentialsError()
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      email: session.user.email,
-    },
+  const user = await getUserByUsernameOrEmail({
+    email: session?.user?.email as string,
+    username: session?.user?.username as string,
   })
 
   if (!user || !user?.companyId) {
@@ -36,7 +37,7 @@ export const authProcedure = createServerActionProcedure().handler(async () => {
 
   return {
     user: {
-      ...session.user,
+      ...user,
       organization,
     },
   }

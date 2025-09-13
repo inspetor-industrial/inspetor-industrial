@@ -8,6 +8,7 @@ import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-act
 import z from 'zod'
 
 import { authProcedure } from './procedures/auth'
+import { getUserByUsernameOrEmail } from './utils/get-user-by-username-or-email'
 
 export const deleteDocumentsAction = authProcedure
   .createServerAction()
@@ -20,10 +21,9 @@ export const deleteDocumentsAction = authProcedure
       })
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        email: ctx.user.email,
-      },
+    const user = await getUserByUsernameOrEmail({
+      email: ctx.user.email,
+      username: ctx.user.username,
     })
 
     if (!user || !user.companyId) {
@@ -36,12 +36,8 @@ export const deleteDocumentsAction = authProcedure
     const documentOnDatabase = await prisma.documents.findUnique({
       where: {
         id: input.documentId,
-        owner: {
-          email: ctx.user.email,
-        },
-        company: {
-          id: user.companyId,
-        },
+        ownerId: user.id,
+        companyId: user.companyId,
       },
     })
 

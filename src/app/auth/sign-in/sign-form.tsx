@@ -21,9 +21,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 const schema = z.object({
-  email: z.email({
-    message: 'Formato de e-mail inválido',
-  }),
+  email: z.string(),
   password: z
     .string({
       message: 'Por favor, digite sua senha',
@@ -85,12 +83,11 @@ export function SignInForm() {
             <FormItem>
               <FormLabel className="flex items-center gap-2 text-white font-medium">
                 <Mail className="h-4 w-4" />
-                E-mail
+                E-mail ou Nome de usuário
               </FormLabel>
               <FormControl>
                 <Input
                   {...field}
-                  type="email"
                   placeholder="Digite seu e-mail corporativo"
                   className="bg-white/90 text-gray-900 border-white/20 focus:border-white focus:ring-2 focus:ring-white/50"
                 />

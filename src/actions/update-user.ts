@@ -13,6 +13,7 @@ export const updateUserAction = authProcedure
     z.object({
       userId: z.string(),
       name: z.string(),
+      username: z.string(),
       email: z.string(),
       companyId: z.string(),
       role: z.string(),
@@ -33,12 +34,27 @@ export const updateUserAction = authProcedure
       })
     }
 
+    const userByUsername = await prisma.user.findUnique({
+      where: {
+        username: input.username,
+      },
+    })
+
+    if (userByUsername && userByUsername.id !== input.userId) {
+      return returnsDefaultActionMessage({
+        message:
+          'Usuário já existe, com este nome de usuário. Por favor, use outro nome de usuário.',
+        success: false,
+      })
+    }
+
     await prisma.user.update({
       where: {
         id: input.userId,
       },
       data: {
         name: input.name,
+        username: input.username,
         email: input.email,
         companyId: input.companyId,
         role: input.role.toUpperCase() as UserRole,

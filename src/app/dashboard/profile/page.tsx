@@ -21,15 +21,13 @@ import {
 import { auth } from '@inspetor/lib/auth/authjs'
 import { dayjsApi } from '@inspetor/lib/dayjs'
 import { prisma } from '@inspetor/lib/prisma'
+import { cn } from '@inspetor/lib/utils'
 import { formatUsername } from '@inspetor/utils/format-username'
-import {
-  AlertCircle,
-  Building2,
-  CheckCircle,
-  Mail,
-  Shield,
-  User,
-} from 'lucide-react'
+import { AlertCircle, Building2, CheckCircle, Shield, User } from 'lucide-react'
+import { notFound } from 'next/navigation'
+
+import { ChangePersonalInfo } from './components/change-personal-info'
+import { SendEmailVerificationButton } from './components/send-email-verification-button'
 
 export default async function ProfilePage() {
   const session = await auth()
@@ -38,7 +36,7 @@ export default async function ProfilePage() {
     return null
   }
 
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { email: session.user.email as string },
     include: {
       company: {
@@ -52,7 +50,22 @@ export default async function ProfilePage() {
   })
 
   if (!user) {
-    return null
+    user = await prisma.user.findUnique({
+      where: { username: session.user.username as string },
+      include: {
+        company: {
+          select: {
+            name: true,
+            cnpj: true,
+            status: true,
+          },
+        },
+      },
+    })
+  }
+
+  if (!user) {
+    return notFound()
   }
 
   const getRoleBadgeVariant = (
@@ -144,33 +157,7 @@ export default async function ProfilePage() {
 
                   <Separator />
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Nome Completo</label>
-                    <div className="flex items-center gap-2 p-3 rounded-md border bg-muted/50">
-                      <span className="text-sm">
-                        {user.name || 'Nome não informado'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Use seu nome completo ou um nome de exibição com o qual
-                      você se sinta confortável
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      Endereço de Email
-                    </label>
-                    <div className="flex items-center gap-2 p-3 rounded-md border bg-muted/50">
-                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm truncate min-w-0">
-                        {user.email}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Este é o email usado para fazer login na sua conta
-                    </p>
-                  </div>
+                  <ChangePersonalInfo user={user} />
                 </CardContent>
               </Card>
 
@@ -191,13 +178,13 @@ export default async function ProfilePage() {
                         <label className="text-sm font-medium">
                           Nome da Empresa
                         </label>
-                        <div className="p-3 rounded-md border bg-muted/50">
+                        <div className="rounded-md border bg-muted/50 h-9 flex items-center justify-start px-3">
                           <span className="text-sm">{user.company.name}</span>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">CNPJ</label>
-                        <div className="p-3 rounded-md border bg-muted/50">
+                        <div className="rounded-md border bg-muted/50 h-9 flex items-center justify-start px-3">
                           <span className="text-sm font-mono">
                             {user.company.cnpj}
                           </span>
@@ -245,22 +232,34 @@ export default async function ProfilePage() {
 
                   <Separator />
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      Verificação de Email
-                    </label>
-                    <div className="flex items-center gap-2">
-                      {user.emailVerified ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      )}
-                      <span className="text-sm">
-                        {user.emailVerified
-                          ? 'Email verificado'
-                          : 'Email não verificado'}
-                      </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2 sm:justify-between">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Verificação de Email
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {user.emailVerified ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-yellow-600" />
+                        )}
+                        <span className="text-sm">
+                          {user.emailVerified
+                            ? 'Email verificado'
+                            : 'Email não verificado'}
+                        </span>
+                      </div>
                     </div>
+                    {!user.emailVerified ? (
+                      <SendEmailVerificationButton email={user.email} />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Verificado em{' '}
+                        {dayjsApi(user.emailVerified).format(
+                          'DD/MM/YYYY HH:mm',
+                        )}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -325,7 +324,7 @@ export default async function ProfilePage() {
                   <span className="text-sm text-muted-foreground">Status</span>
                   <div className="flex items-center gap-2">
                     <StatusIcon
-                      className={`h-4 w-4 ${getStatusColor(user.status)}`}
+                      className={cn('size-4', getStatusColor(user.status))}
                     />
                     <span className="text-sm">
                       {user.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
@@ -356,7 +355,7 @@ export default async function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="text-lg">Links Rápidos</CardTitle>
             </CardHeader>
@@ -388,7 +387,7 @@ export default async function ProfilePage() {
                 </a>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>
