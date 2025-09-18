@@ -1,33 +1,32 @@
 import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { UserStatus } from '@prisma/client'
 
-import { UserFilter } from './components/filter'
-import { UserTable } from './components/table'
+import { EquipmentFilter } from './components/filter'
+import { EquipmentTable } from './components/table'
 
-type UsersPageProps = {
+type EquipmentPageProps = {
   searchParams: Promise<{
     search: string
-    page: string
-    status: string
+    page: number
   }>
 }
 
-export default async function UsersPage({ searchParams }: UsersPageProps) {
-  const { search, page, status } = await searchParams
-  let users: any[] = []
-  let totalUsers = 0
+export default async function EquipmentPage({
+  searchParams,
+}: EquipmentPageProps) {
+  const { search, page } = await searchParams
+  let equipments: any[] = []
+  let totalEquipments = 0
 
   const session = await auth()
 
   try {
-    users = await prisma.user.findMany({
+    equipments = await prisma.equipment.findMany({
       where: {
         name: {
           contains: search,
         },
-        status: status as UserStatus | undefined,
         company:
           session?.user.role.toLowerCase() !== 'admin'
             ? {
@@ -49,7 +48,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
       ...calculatePagination(page),
     })
 
-    totalUsers = await prisma.user.count({
+    totalEquipments = await prisma.equipment.count({
       where: {
         name: {
           contains: search,
@@ -67,18 +66,18 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
       },
     })
   } catch {
-    users = []
-    totalUsers = 0
+    equipments = []
+    totalEquipments = 0
   }
 
-  const totalPages = Math.ceil(totalUsers / 10)
+  const totalPages = Math.ceil(totalEquipments / 10)
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Usuários</h1>
+      <h1 className="text-2xl font-bold">Equipamentos</h1>
 
-      <UserFilter />
-      <UserTable users={users} totalPages={totalPages} />
+      <EquipmentFilter />
+      <EquipmentTable equipments={equipments} totalPages={totalPages} />
     </div>
   )
 }

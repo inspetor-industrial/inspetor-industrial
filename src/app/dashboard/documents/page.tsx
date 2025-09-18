@@ -33,8 +33,18 @@ export default async function DocumentsPage({
           contains: search,
         },
         owner: {
-          email: session?.user.email ?? 'unknown',
+          username: session?.user.username ?? 'unknown',
         },
+        company:
+          session?.user.role.toLowerCase() !== 'admin'
+            ? {
+                users: {
+                  some: {
+                    username: session?.user.username ?? 'unknown',
+                  },
+                },
+              }
+            : undefined,
       },
       include: {
         owner: {
@@ -51,6 +61,16 @@ export default async function DocumentsPage({
         name: {
           contains: search,
         },
+        company:
+          session?.user.role.toLowerCase() !== 'admin'
+            ? {
+                users: {
+                  some: {
+                    username: session?.user.username ?? 'unknown',
+                  },
+                },
+              }
+            : undefined,
       },
     })
   } catch {

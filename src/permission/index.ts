@@ -53,6 +53,7 @@ export class Permission {
         '/dashboard/instruments',
         '/dashboard/documents',
         '/dashboard/reports/boiler',
+        '/dashboard/maintenance/equipment',
       ]
     }
 

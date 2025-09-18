@@ -87,6 +87,11 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     '/dashboard/maintenance/daily',
   )
 
+  const mustBeHideEquipmentManagement = Permission.canNotAccess(
+    (session.data?.user.role || '') as UserRole,
+    '/dashboard/maintenance/equipment',
+  )
+
   const mustBeHideClientManagement = Permission.canNotAccess(
     (session.data?.user.role || '') as UserRole,
     '/dashboard/client',
@@ -115,7 +120,8 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     mustBeHideUsersManagement &&
     mustBeHideClientManagement
 
-  const mustBeHideMaintenanceManagement = mustBeHideDailyMaintenance
+  const mustBeHideMaintenanceManagement =
+    mustBeHideDailyMaintenance && mustBeHideEquipmentManagement
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -382,7 +388,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <SidebarMenuSub>
-                            {!mustBeHideDailyMaintenance && (
+                            {/* {!mustBeHideDailyMaintenance && (
                               <SidebarMenuSubItem>
                                 <SidebarMenuSubButton
                                   isActive={
@@ -396,6 +402,16 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                                 >
                                   <Link href="/dashboard/maintenance/daily">
                                     <span>Diárias</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )} */}
+
+                            {!mustBeHideEquipmentManagement && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild>
+                                  <Link href="/dashboard/maintenance/equipment">
+                                    <span>Equipamentos</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>

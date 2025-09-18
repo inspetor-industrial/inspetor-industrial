@@ -128,6 +128,7 @@ model Company {
   Instruments      Instruments[]
   Documents        Documents[]
   BoilerReport     BoilerReport[]
+  Equipment        Equipment[]
 
   @@unique([cnpj])
 }
@@ -156,7 +157,8 @@ model DailyMaintenance {
   companyId String
 
   description  String
-  equipment    String
+  equipment    Equipment @relation(fields: [equipmentId], references: [id])
+  equipmentId  String
   operatorName String
 
   createdAt DateTime @default(now())
@@ -520,4 +522,30 @@ model BoilerReport {
   @@index([engineerId])
   // Activity feeds and recent sorting
   @@index([createdAt]) // recent sorting (activity feed)
+}
+
+model Equipment {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  name String
+  mark String
+
+  identificationNumber String @unique
+
+  type String
+
+  manufactorYear String @db.VarChar(10)
+  model          String
+  category       String
+  pmta           String
+
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  DailyMaintenance DailyMaintenance[]
+
+  @@index([companyId])
+  @@index([id, companyId])
 }

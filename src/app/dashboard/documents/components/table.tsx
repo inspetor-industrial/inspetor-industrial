@@ -68,21 +68,30 @@ export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
   }
 
   async function handleDeleteDocument(documentId: string) {
+    toast.loading('Deletando documento...', {
+      id: 'delete-document',
+    })
     const [result, resultError] = await deleteAction.execute({
       documentId,
     })
 
     if (resultError) {
       console.log(resultError)
-      toast.error('Erro ao deletar documento')
+      toast.error('Erro ao deletar documento', {
+        id: 'delete-document',
+      })
       return
     }
 
     if (result?.success) {
-      toast.success(result.message)
+      toast.success(result.message, {
+        id: 'delete-document',
+      })
       router.refresh()
     } else {
-      toast.error(result?.message)
+      toast.error(result?.message, {
+        id: 'delete-document',
+      })
     }
   }
 

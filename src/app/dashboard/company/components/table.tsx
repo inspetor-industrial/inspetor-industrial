@@ -69,20 +69,29 @@ export function CompanyTable({ companies, totalPages }: CompanyTableProps) {
   }
 
   async function handleDeleteCompany(companyId: string) {
+    toast.loading('Deletando empresa...', {
+      id: 'delete-company',
+    })
     const [result, resultError] = await deleteAction.execute({
       companyId,
     })
 
     if (resultError) {
-      toast.error('Erro ao deletar empresa')
+      toast.error('Erro ao deletar empresa', {
+        id: 'delete-company',
+      })
       return
     }
 
     if (result?.success) {
-      toast.success(result.message)
+      toast.success(result.message, {
+        id: 'delete-company',
+      })
       router.refresh()
     } else {
-      toast.error(result?.message)
+      toast.error(result?.message, {
+        id: 'delete-company',
+      })
     }
   }
 

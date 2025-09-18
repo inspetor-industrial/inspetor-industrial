@@ -21,7 +21,7 @@ import {
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import type { DailyMaintenance } from '@prisma/client'
+import type { DailyMaintenance, Equipment } from '@prisma/client'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -44,10 +44,12 @@ type Schema = z.infer<typeof schema>
 
 type DailyMaintenanceEditModalProps = {
   ref?: RefObject<any>
+  equipment: Equipment
 }
 
 export function DailyMaintenanceEditModal({
   ref,
+  equipment,
 }: DailyMaintenanceEditModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(updateMaintenanceAction)
@@ -60,7 +62,7 @@ export function DailyMaintenanceEditModal({
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
-      equipment: '',
+      equipment: equipment.id,
       operatorName: '',
       description: '',
     },
@@ -105,12 +107,12 @@ export function DailyMaintenanceEditModal({
       setDailyMaintenanceId(dailyMaintenance.id)
       setIsModalOpen(true)
       form.reset({
-        equipment: dailyMaintenance.equipment,
+        equipment: dailyMaintenance.equipmentId,
         operatorName: dailyMaintenance.operatorName,
         description: dailyMaintenance.description,
       })
 
-      form.setValue('equipment', dailyMaintenance.equipment)
+      form.setValue('equipment', dailyMaintenance.equipmentId)
       form.setValue('operatorName', dailyMaintenance.operatorName)
       form.setValue('description', dailyMaintenance.description)
     },
@@ -140,11 +142,7 @@ export function DailyMaintenanceEditModal({
                 <FormItem>
                   <FormLabel>Equipamento</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g Válvula de segurança - SN98921"
-                      disabled={isOnlyRead}
-                    />
+                    <Input {...field} disabled value={equipment.name} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -178,7 +176,9 @@ export function DailyMaintenanceEditModal({
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="e.g Manutenção de software"
+                      placeholder={`• Limpeza dos componentes
+• Verificação de funcionamento
+• Troca de peças defeituosas`}
                       className="h-40"
                       disabled={isOnlyRead}
                     />

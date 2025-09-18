@@ -23,6 +23,7 @@ import {
 import { Input } from '@inspetor/components/ui/input'
 import { Label } from '@inspetor/components/ui/label'
 import { Textarea } from '@inspetor/components/ui/textarea'
+import type { Equipment } from '@prisma/client'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -31,9 +32,11 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
-  equipment: z.string({
-    message: 'Equipamento é obrigatório',
-  }),
+  equipment: z
+    .string({
+      message: 'Equipamento é obrigatório',
+    })
+    .optional(),
   operatorName: z.string({
     message: 'Nome do operador é obrigatório',
   }),
@@ -44,19 +47,33 @@ const schema = z.object({
 
 type Schema = z.infer<typeof schema>
 
-export function DailyMaintenanceCreationModal() {
+type DailyMaintenanceCreationModalProps = {
+  equipment: Equipment
+}
+
+export function DailyMaintenanceCreationModal({
+  equipment,
+}: DailyMaintenanceCreationModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const action = useServerAction(registerMaintenanceAction)
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      equipment: equipment.id,
+      operatorName: '',
+      description: '',
+    },
   })
 
   const router = useRouter()
 
   async function handleRegisterMaintenance(data: Schema) {
-    const [result, resultError] = await action.execute(data)
+    const [result, resultError] = await action.execute({
+      ...data,
+      equipmentId: equipment.id,
+    })
 
     if (resultError) {
       toast.error('Erro ao registrar manutenção diária')
@@ -71,12 +88,12 @@ export function DailyMaintenanceCreationModal() {
     }
 
     form.reset({
-      equipment: '',
+      equipment: equipment.id,
       operatorName: '',
       description: '',
     })
 
-    form.setValue('equipment', '')
+    form.setValue('equipment', equipment.id)
     form.setValue('operatorName', '')
     form.setValue('description', '')
 
@@ -110,10 +127,7 @@ export function DailyMaintenanceCreationModal() {
                 <FormItem>
                   <FormLabel>Equipamento</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g Válvula de segurança - SN98921"
-                    />
+                    <Input {...field} disabled value={equipment.name} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,11 +167,13 @@ export function DailyMaintenanceCreationModal() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel>Descrição dos serviços</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="e.g Manutenção de software"
+                      placeholder={`• Limpeza dos componentes
+• Verificação de funcionamento
+• Troca de peças defeituosas`}
                       className="h-40"
                     />
                   </FormControl>

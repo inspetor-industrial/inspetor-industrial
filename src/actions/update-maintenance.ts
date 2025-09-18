@@ -22,7 +22,7 @@ export const updateMaintenanceAction = authProcedure
         id: input.dailyMaintenanceId,
       },
       data: {
-        equipment: input.equipment,
+        equipmentId: input.equipment,
         operatorName: input.operatorName,
         description: input.description,
       },

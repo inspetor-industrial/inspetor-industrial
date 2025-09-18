@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
-import type { Company, DailyMaintenance } from '@prisma/client'
+import type { Company, DailyMaintenance, Equipment } from '@prisma/client'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -50,11 +50,13 @@ type DailyMaintenanceWithCompany = DailyMaintenance & {
 type DailyMaintenanceTableProps = {
   dailyMaintenances: DailyMaintenanceWithCompany[]
   totalPages: number
+  equipment: Equipment
 }
 
 export function DailyMaintenanceTable({
   dailyMaintenances,
   totalPages,
+  equipment,
 }: DailyMaintenanceTableProps) {
   const deleteAction = useServerAction(deleteMaintenanceAction)
   const router = useRouter()
@@ -67,26 +69,35 @@ export function DailyMaintenanceTable({
     setPage(page)
 
     try {
-      await invalidatePageCache('/dashboard/company')
+      await invalidatePageCache('/dashboard/maintenance/daily')
     } finally {
       router.refresh()
     }
   }
 
   async function handleDeleteDailyMaintenance(dailyMaintenanceId: string) {
+    toast.loading('Deletando manutenção diária...', {
+      id: 'delete-daily-maintenance',
+    })
     const [result, resultError] = await deleteAction.execute({
       dailyMaintenanceId,
     })
 
     if (resultError) {
-      toast.error('Erro ao deletar manutenção diária')
+      toast.error('Erro ao deletar manutenção diária', {
+        id: 'delete-daily-maintenance',
+      })
     }
 
     if (result?.success) {
-      toast.success(result.message)
+      toast.success(result.message, {
+        id: 'delete-daily-maintenance',
+      })
       router.refresh()
     } else {
-      toast.error(result?.message)
+      toast.error(result?.message, {
+        id: 'delete-daily-maintenance',
+      })
     }
   }
 
@@ -121,7 +132,7 @@ export function DailyMaintenanceTable({
             {dailyMaintenances.map((dailyMaintenance) => (
               <TableRow key={dailyMaintenance.id} className="divide-x">
                 <TableCell>{dailyMaintenance.company.name}</TableCell>
-                <TableCell>{dailyMaintenance.equipment}</TableCell>
+                <TableCell>{equipment.name}</TableCell>
                 <TableCell>{dailyMaintenance.operatorName}</TableCell>
                 <TableCell>
                   {dailyMaintenance.createdAt.toLocaleDateString('pt-BR', {
@@ -227,7 +238,7 @@ export function DailyMaintenanceTable({
           </TableFooter>
         </Table>
       </div>
-      <DailyMaintenanceEditModal ref={editModalRef} />
+      <DailyMaintenanceEditModal ref={editModalRef} equipment={equipment} />
     </div>
   )
 }

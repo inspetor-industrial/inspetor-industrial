@@ -10,7 +10,7 @@ export const registerMaintenanceAction = authProcedure
   .createServerAction()
   .input(
     z.object({
-      equipment: z.string(),
+      equipmentId: z.string(),
       operatorName: z.string(),
       description: z.string(),
     }),
@@ -43,7 +43,7 @@ export const registerMaintenanceAction = authProcedure
     await prisma.dailyMaintenance.create({
       data: {
         companyId: company?.id,
-        equipment: input.equipment,
+        equipmentId: input.equipmentId,
         operatorName: input.operatorName,
         description: input.description,
       },

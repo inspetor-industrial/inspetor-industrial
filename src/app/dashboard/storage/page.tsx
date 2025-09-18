@@ -30,7 +30,7 @@ export default async function StoragePage({ searchParams }: CompanyPageProps) {
             session?.user.role.toLowerCase() !== 'admin'
               ? {
                   some: {
-                    email: session?.user.email ?? 'unknown',
+                    username: session?.user.username ?? 'unknown',
                   },
                 }
               : undefined,
@@ -53,6 +53,14 @@ export default async function StoragePage({ searchParams }: CompanyPageProps) {
           name: {
             contains: search,
           },
+          users:
+            session?.user.role.toLowerCase() !== 'admin'
+              ? {
+                  some: {
+                    username: session?.user.username ?? 'unknown',
+                  },
+                }
+              : undefined,
         },
       },
     })

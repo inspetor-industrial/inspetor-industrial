@@ -73,19 +73,28 @@ export function StorageTable({ storages, totalPages }: StorageTableProps) {
   }
 
   async function handleDeleteStorage(storageId: string) {
+    toast.loading('Deletando pasta...', {
+      id: 'delete-storage',
+    })
     const [result, resultError] = await deleteAction.execute({
       storageId,
     })
 
     if (resultError) {
-      toast.error('Erro ao deletar pasta')
+      toast.error('Erro ao deletar pasta', {
+        id: 'delete-storage',
+      })
     }
 
     if (result?.success) {
-      toast.success(result.message)
+      toast.success(result.message, {
+        id: 'delete-storage',
+      })
       router.refresh()
     } else {
-      toast.error(result?.message)
+      toast.error(result?.message, {
+        id: 'delete-storage',
+      })
     }
   }
 

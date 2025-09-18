@@ -1,9 +1,8 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
-import { toggleUserStatusAction } from '@inspetor/actions/toggle-user-status'
+import { deleteEquipmentAction } from '@inspetor/actions/delete-equipment'
 import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
-import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -27,16 +26,15 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
-import { cn } from '@inspetor/lib/utils'
-import type { User, UserStatus } from '@prisma/client'
+import type { Company, Equipment } from '@prisma/client'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   Edit,
   Ellipsis,
   Inbox,
-  ToggleLeft,
-  ToggleRight,
+  Notebook,
+  Trash,
   View,
 } from 'lucide-react'
 import { parseAsInteger, useQueryState } from 'nuqs'
@@ -44,21 +42,22 @@ import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
-import { UserEditModal } from './edit-modal'
+import { EquipmentEditModal } from './edit-modal'
 
-type UserWithCompany = User & {
-  company: {
-    name: string
-  }
+type EquipmentWithCompany = Equipment & {
+  company: Company
 }
 
-type UserTableProps = {
-  users: UserWithCompany[]
+type EquipmentTableProps = {
+  equipments: EquipmentWithCompany[]
   totalPages: number
 }
 
-export function UserTable({ users, totalPages }: UserTableProps) {
-  const toggleStatusAction = useServerAction(toggleUserStatusAction)
+export function EquipmentTable({
+  equipments,
+  totalPages,
+}: EquipmentTableProps) {
+  const deleteAction = useServerAction(deleteEquipmentAction)
   const router = useRouter()
 
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
@@ -69,38 +68,41 @@ export function UserTable({ users, totalPages }: UserTableProps) {
     setPage(page)
 
     try {
-      await invalidatePageCache('/dashboard/users')
+      await invalidatePageCache('/dashboard/maintenance/equipment')
     } finally {
       router.refresh()
     }
   }
 
-  async function handleToggleUserStatus(userId: string, status: UserStatus) {
-    toast.loading('Atualizando status do usuário...', {
-      id: 'toggle-user-status',
+  async function handleDeleteEquipment(equipmentId: string) {
+    toast.loading('Deletando equipamento...', {
+      id: 'delete-equipment',
     })
-    const [result, resultError] = await toggleStatusAction.execute({
-      userId,
-      status: status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+    const [result, resultError] = await deleteAction.execute({
+      equipmentId,
     })
 
     if (resultError) {
-      toast.error('Erro ao atualizar status do usuário', {
-        id: 'toggle-user-status',
+      toast.error('Erro ao deletar equipamento', {
+        id: 'delete-equipment',
       })
       return
     }
 
     if (result?.success) {
       toast.success(result.message, {
-        id: 'toggle-user-status',
+        id: 'delete-equipment',
       })
       router.refresh()
     } else {
       toast.error(result?.message, {
-        id: 'toggle-user-status',
+        id: 'delete-equipment',
       })
     }
+  }
+
+  function handleRedirectToDailyMaintenance(equipmentId: string) {
+    router.push(`/dashboard/maintenance/equipment/${equipmentId}/daily`)
   }
 
   return (
@@ -109,44 +111,52 @@ export function UserTable({ users, totalPages }: UserTableProps) {
         <Table>
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
-              <TableHead>Nome</TableHead>
               <TableHead>Empresa</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead>Equipamento</TableHead>
+              <TableHead>Marca</TableHead>
+              <TableHead>Número de identificação</TableHead>
               <TableHead>Data de criação</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Data de atualização</TableHead>
               <TableHead className="w-20">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 && (
+            {equipments.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   <div className="flex flex-col items-center gap-2 py-20">
                     <Inbox className="size-10 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Nenhum usuário encontrado
+                      Nenhum equipamento encontrado
                     </span>
                   </div>
                 </TableCell>
               </TableRow>
             )}
 
-            {users.map((user) => (
-              <TableRow key={user.id} className="divide-x">
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.company?.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.createdAt.toLocaleDateString()}</TableCell>
+            {equipments.map((equipment) => (
+              <TableRow key={equipment.id} className="divide-x">
+                <TableCell>{equipment.company.name}</TableCell>
+                <TableCell>{equipment.name}</TableCell>
+                <TableCell>{equipment.mark}</TableCell>
+                <TableCell>{equipment.identificationNumber}</TableCell>
                 <TableCell>
-                  <Badge
-                    className={cn(
-                      'capitalize',
-                      user.status === 'ACTIVE' && 'bg-green-500',
-                      user.status === 'INACTIVE' && 'bg-red-500',
-                    )}
-                  >
-                    {user.status}
-                  </Badge>
+                  {equipment.createdAt.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {equipment.updatedAt.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-center items-center">
@@ -159,31 +169,36 @@ export function UserTable({ users, totalPages }: UserTableProps) {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(user)}
+                          onClick={() => editModalRef.current.open(equipment)}
                         >
                           <Edit className="size-4" />
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(user, true)}
+                          onClick={() =>
+                            editModalRef.current.open(equipment, true)
+                          }
                         >
                           <View className="size-4" />
                           Visualizar
                         </DropdownMenuItem>
 
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleRedirectToDailyMaintenance(equipment.id)
+                          }
+                        >
+                          <Notebook className="size-4" />
+                          Manutenções diárias
+                        </DropdownMenuItem>
+
                         <DropdownMenuSeparator />
 
                         <DropdownMenuItem
-                          onClick={() =>
-                            handleToggleUserStatus(user.id, user.status)
-                          }
+                          onClick={() => handleDeleteEquipment(equipment.id)}
                         >
-                          {user.status === 'INACTIVE' ? (
-                            <ToggleRight className="size-4" />
-                          ) : (
-                            <ToggleLeft className="size-4" />
-                          )}
-                          {user.status === 'INACTIVE' ? 'Ativar' : 'Desativar'}
+                          <Trash className="size-4" />
+                          Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -194,7 +209,7 @@ export function UserTable({ users, totalPages }: UserTableProps) {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={5}>
+              <TableCell colSpan={6}>
                 <div className="flex items-center gap-2 justify-start">
                   <span>
                     Página {page} de {totalPages}
@@ -234,7 +249,7 @@ export function UserTable({ users, totalPages }: UserTableProps) {
           </TableFooter>
         </Table>
       </div>
-      <UserEditModal ref={editModalRef} />
+      <EquipmentEditModal ref={editModalRef} />
     </div>
   )
 }

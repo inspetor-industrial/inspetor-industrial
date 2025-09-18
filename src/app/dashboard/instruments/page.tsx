@@ -1,3 +1,4 @@
+import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import { type Instruments } from '@prisma/client'
@@ -16,6 +17,8 @@ export default async function InstrumentsPage({
   searchParams,
 }: InstrumentsPageProps) {
   const { search, page } = await searchParams
+  const session = await auth()
+
   let instruments: Instruments[] = []
   let totalInstruments = 0
 
@@ -26,6 +29,16 @@ export default async function InstrumentsPage({
           contains: search,
           mode: 'insensitive',
         },
+        company:
+          session?.user.role.toLowerCase() !== 'admin'
+            ? {
+                users: {
+                  some: {
+                    username: session?.user.username ?? 'unknown',
+                  },
+                },
+              }
+            : undefined,
       },
       ...calculatePagination(page),
     })
@@ -36,6 +49,16 @@ export default async function InstrumentsPage({
           contains: search,
           mode: 'insensitive',
         },
+        company:
+          session?.user.role.toLowerCase() !== 'admin'
+            ? {
+                users: {
+                  some: {
+                    username: session?.user.username ?? 'unknown',
+                  },
+                },
+              }
+            : undefined,
       },
     })
   } catch {

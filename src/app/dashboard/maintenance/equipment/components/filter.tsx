@@ -7,9 +7,9 @@ import { useDebouncedCallback } from '@mantine/hooks'
 import { parseAsString, useQueryState } from 'nuqs'
 import { useState } from 'react'
 
-import { DailyMaintenanceCreationModal } from './creation-modal'
+import { EquipmentCreationModal } from './creation-modal'
 
-export function DailyMaintenanceFilter() {
+export function EquipmentFilter() {
   const [searchCache, setSearchCache] = useState('')
   const [, setSearch] = useQueryState('search', parseAsString.withDefault(''))
 
@@ -19,7 +19,7 @@ export function DailyMaintenanceFilter() {
     setSearch(value)
 
     try {
-      await invalidatePageCache('/dashboard/maintenance/daily')
+      await invalidatePageCache('/dashboard/maintenance/equipment')
     } finally {
       router.refresh()
     }
@@ -28,7 +28,7 @@ export function DailyMaintenanceFilter() {
   return (
     <div className="@container/filter flex @items-center gap-2 @justify-between flex-col md:flex-row">
       <Input
-        placeholder="Pesquisar pelo equipamento"
+        placeholder="Pesquisar pelo nome"
         className="w-full"
         value={searchCache}
         onChange={(e) => {
@@ -37,7 +37,7 @@ export function DailyMaintenanceFilter() {
         }}
       />
 
-      <DailyMaintenanceCreationModal />
+      <EquipmentCreationModal />
     </div>
   )
 }
