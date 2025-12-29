@@ -29,7 +29,7 @@ import {
 } from '@inspetor/components/ui/table'
 import { INSTRUMENT_TYPE } from '@inspetor/constants/instrument-type'
 import { cn } from '@inspetor/lib/utils'
-import type { Instruments } from '@prisma/client'
+import type { Instruments } from '@inspetor/generated/prisma/browser'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

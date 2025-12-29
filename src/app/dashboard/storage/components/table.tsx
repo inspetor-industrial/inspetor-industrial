@@ -28,7 +28,7 @@ import {
   TableRow,
 } from '@inspetor/components/ui/table'
 import { cn } from '@inspetor/lib/utils'
-import type { Company, Storage } from '@prisma/client'
+import type { Company, Storage } from '@inspetor/generated/prisma/browser'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

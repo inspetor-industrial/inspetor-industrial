@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
+import type { UserRole } from '@inspetor/generated/prisma/enums'
 import { Permission } from '@inspetor/permission'
 import { formatUsername } from '@inspetor/utils/format-username'
-import type { UserRole } from '@prisma/client'
 import {
   ChevronRight,
   ChevronsUpDown,

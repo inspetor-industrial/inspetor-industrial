@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 const authPrefix = '/auth'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nextCookies = await cookies()
   let token = nextCookies.get('authjs.session-token')
 

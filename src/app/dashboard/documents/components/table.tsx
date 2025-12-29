@@ -27,7 +27,7 @@ import {
   TableRow,
 } from '@inspetor/components/ui/table'
 import { FileSizeFormatter } from '@inspetor/utils/file'
-import type { Documents } from '@prisma/client'
+import type { Documents } from '@inspetor/generated/prisma/browser'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

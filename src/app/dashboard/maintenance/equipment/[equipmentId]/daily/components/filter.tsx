@@ -1,6 +1,6 @@
 'use client'
 
-import type { Equipment } from '@prisma/client'
+import type { Equipment } from '@inspetor/generated/prisma/browser'
 
 import { DailyMaintenanceCreationModal } from './creation-modal'
 

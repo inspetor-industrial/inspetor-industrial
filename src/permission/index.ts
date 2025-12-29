@@ -1,10 +1,10 @@
-import { UserRole } from '@prisma/client'
+import { UserRole } from '@inspetor/generated/prisma/enums'
 
 export class Permission {
   static canNotAccess(role: UserRole, path: string): boolean {
-    // if (this.isAdminUser(role)) {
-    //   return false
-    // }
+    if (this.isAdminUser(role)) {
+      return false
+    }
 
     const routes = this.getRoutesByRole(role)
     if (routes === '*') {

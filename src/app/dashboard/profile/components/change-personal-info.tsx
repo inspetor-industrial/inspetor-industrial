@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
-import type { User } from '@prisma/client'
+import type { User } from '@inspetor/generated/prisma/browser'
 import { Save } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { useForm } from 'react-hook-form'

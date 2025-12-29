@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
-import type { Company, Equipment } from '@prisma/client'
+import type { Company, Equipment } from '@inspetor/generated/prisma/browser'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
