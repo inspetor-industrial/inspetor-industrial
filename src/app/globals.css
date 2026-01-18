@@ -46,6 +46,8 @@
   --color-inspetor-dark-blue-700: var(--inspetor-dark-blue-700);
   --color-inspetor-dark-blue-800: var(--inspetor-dark-blue-800);
 
+  --color-inspetor-opaque-blue: var(--inspetor-opaque-blue);
+
   --color-inspetor-gray-300: var(--inspetor-gray-300);
   --color-inspetor-gray-400: var(--inspetor-gray-400);
   --color-inspetor-gray-600: var(--inspetor-gray-600);
@@ -94,6 +96,8 @@
   --inspetor-dark-blue-700: #004059;
   --inspetor-dark-blue-800: #002b3f;
 
+  --inspetor-opaque-blue: #676766;
+
   --inspetor-gray-300: #d9d9d9;
   --inspetor-gray-400: #bfbfbf;
   --inspetor-gray-600: #aaa4a4;
@@ -139,6 +143,8 @@
 
   --inspetor-dark-blue-700: #004059;
   --inspetor-dark-blue-800: #002b3f;
+
+  --inspetor-opaque-blue: #676766;
 
   --inspetor-gray-300: #d9d9d9;
   --inspetor-gray-400: #bfbfbf;

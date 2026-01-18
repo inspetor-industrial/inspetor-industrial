@@ -18,29 +18,40 @@ enum UserRole {
   USER
 }
 
+enum UserResponsibility {
+  ENGINEER
+  SECRETARY
+  OPERATOR
+}
+
 model User {
-  id            String     @id @default(cuid())
-  name          String?
-  email         String     @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  status        UserStatus @default(ACTIVE)
-  role          UserRole   @default(USER)
+  id             String              @id @default(cuid())
+  name           String?
+  email          String              @unique
+  emailVerified  DateTime?
+  image          String?
+  accounts       Account[]
+  sessions       Session[]
+  status         UserStatus          @default(ACTIVE)
+  role           UserRole            @default(USER)
+  responsibility UserResponsibility? @default(OPERATOR)
+
+  crea String? @default("N-A") // N-A: Not Available
 
   username String? @unique
   password String?
+
+  registrationNumber String? @default("N-A") // N-A: Not Available
 
   Authenticator Authenticator[]
 
   company   Company? @relation(fields: [companyId], references: [id])
   companyId String?
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  Documents    Documents[]
-  BoilerReport BoilerReport[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  documents     Documents[]
+  boilerReports BoilerReport[]
 }
 
 model Account {
@@ -127,8 +138,11 @@ model Company {
   DailyMaintenance DailyMaintenance[]
   Instruments      Instruments[]
   Documents        Documents[]
-  BoilerReport     BoilerReport[]
   Equipment        Equipment[]
+  valves           Valve[]
+  bombs            Bomb[]
+  boilerReports    BoilerReport[]
+  clients          Clients[]
 
   @@unique([cnpj])
 }
@@ -171,6 +185,9 @@ model Clients {
   taxId           String @unique // CNPJ or CPF
   taxRegistration String @unique // State registration
 
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+
   state   String
   city    String
   address String
@@ -178,9 +195,9 @@ model Clients {
 
   phone String
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  BoilerReport BoilerReport[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  boilerReports BoilerReport[]
 }
 
 model Instruments {
@@ -217,6 +234,7 @@ model Documents {
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
   BoilerReportAttachment BoilerReportAttachment[]
+  bombs                  Bomb[]
 }
 
 enum BoilerReportAttachmentFieldName {
@@ -259,9 +277,7 @@ enum BoilerReportAttachmentFieldName {
 }
 
 model BoilerReportAttachment {
-  id       String       @id @default(cuid())
-  report   BoilerReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  reportId String
+  id String @id @default(cuid())
 
   document   Documents @relation(fields: [documentId], references: [id], onDelete: Cascade)
   documentId String
@@ -272,8 +288,6 @@ model BoilerReportAttachment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([reportId, documentId, fieldName]) // prevents duplicate attachments in the same field
-  @@index([reportId, fieldName, sortOrder])
   @@index([documentId])
 }
 
@@ -332,196 +346,75 @@ enum InjectorGaugeFuel {
   SOLID
 }
 
-model BoilerReport {
+model Valve {
   id String @id @default(cuid())
-
-  service String
-  type    BoilerReportType
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  client   Clients @relation(fields: [clientId], references: [id])
-  clientId String
 
   company   Company @relation(fields: [companyId], references: [id])
   companyId String
 
+  serialNumber String @unique @map("serial_number")
+  model        String
+
+  diameter Decimal
+  flow     Decimal
+
+  openingPressure Decimal @map("opening_pressure")
+  closingPressure Decimal @map("closing_pressure")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tests Json
+
+  @@index([companyId])
+  @@index([id, companyId])
+}
+
+model Bomb {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  mark   String
+  model  String
+  stages String
+
+  potency Decimal
+
+  photo   Documents @relation(fields: [photoId], references: [id])
+  photoId String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model BoilerReport {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  type BoilerReportType
+
+  client   Clients @relation(fields: [clientId], references: [id])
+  clientId String
+
   motivation String?
 
-  date                  DateTime?
-  startTimeOfInspection DateTime?
-  endTimeOfInspection   DateTime?
-  durationOfInspection  Int?
+  date               DateTime?
+  nextInspectionDate DateTime?
 
-  inspectionValidation String? // eg. 2 years, 5 years, etc.
-  nextInspectionDate   DateTime?
+  startTimeOfInspection String?
+  endTimeOfInspection   String?
+
+  inspectionValidation String?
 
   engineer   User   @relation(fields: [engineerId], references: [id])
   engineerId String
 
-  operatorName            String
-  operatorNr13            String
-  operatorProvidence      String?
-  operatorCertificationId String?
-  operatorObservations    String?
-
-  boilerManufacturer        String?
-  boilerBrand               String?
-  boilerType                BoilerType?
-  boilerModel               String?
-  boilerManufacturerYear    String?
-  boilerCapacity            Float?
-  boilerMaxPressureWorkable Float?
-  boilerPressureOperating   Float?
-  boilerSerie               String?
-  boilerFuel                BoilerFuel?
-  boilerCategory            BoilerCategory?
-
-  structureHeatingSurface String?
-
-  structureFurnaceType                   StructureFurnaceType?
-  structureFurnaceInfos                  String?
-  structureFurnaceDimensionWidth         Float?
-  structureFurnaceDimensionHeight        Float?
-  structureFurnaceDimensionLength        Float?
-  structureFurnaceDimensionDiameter      Float?
-  structureFurnaceDimensionTubeDiameter  Float?
-  structureFurnaceDimensionTubeThickness Float?
-  structureFreeLengthWithoutStaysOrTube  String?
-
-  structureMirrorThickness Float?
-  structureMirrorDiameter  Float?
-
-  structureBodyThickness                 Float?
-  structureBodyDiameter                  Float?
-  structureBodyLength                    Float?
-  structureBodyMaterial                  BoilerBodyMaterial?
-  structureBodyCertificateOfManufacturer String?
-
-  structureTubeQuantity                  Float?
-  structureTubeDiameter                  Float?
-  structureTubeLength                    Float?
-  structureTubeThickness                 Float?
-  structureTubeMaterial                  BoilerTubeMaterial?
-  structureTubeCertificateOfManufacturer String?
-  structureTubeIsNaturalOrForced         String?
-
-  structureQuantityOfSafetyFuse Float?
-
-  examinationsPerformedTests        String?
-  examinationsPerformedObservations String?
-
-  externalExaminationsPerformedTests        String?
-  externalExaminationsPerformedObservations String?
-
-  internalExaminationsPerformedTests        String?
-  internalExaminationsPerformedObservations String?
-
-  localInstallationExaminationsPerformedTests        String?
-  localInstallationExaminationsPerformedObservations String?
-
-  injectorGaugeSerialNumber String?
-  injectorGaugeMark         String?
-  injectorGaugeDiameter     Float?
-  injectorGaugeFuel         InjectorGaugeFuel?
-  injectorGaugeTests        String?
-  injectorGaugeObservations String?
-
-  powerSupplyBombs        String?
-  powerSupplyTests        String?
-  powerSupplyObservations String?
-
-  calibrationOfTheLevelIndicatorAssemblyTests         String?
-  calibrationOfTheLevelIndicatorAssemblyObservations  String?
-  calibrationOfTheLevelIndicatorAssemblyMark          String?
-  calibrationOfTheLevelIndicatorAssemblyGlassDiameter Float?
-  calibrationOfTheLevelIndicatorAssemblyGlassLength   Float?
-
-  safetyValveGaugeQuantity                     String?
-  safetyValveGaugeValves                       String?
-  safetyValveGaugeIsThereSafetyValveRedundancy String?
-  safetyValveGaugeObservations                 String?
-
-  pressureGaugeCalibrationOrderNumber  String?
-  pressureGaugeCalibrationBrand        String?
-  pressureGaugeCalibrationDiameter     Float?
-  pressureGaugeCalibrationCapacity     Float?
-  pressureGaugeCalibrationTests        String?
-  pressureGaugeCalibrationObservations String?
-
-  gaugeOfElectricOrElectronicControlDevicesAndCommandsTests        String?
-  gaugeOfElectricOrElectronicControlDevicesAndCommandsObservations String?
-
-  waterQualityTests        String?
-  waterQualityObservations String?
-  waterQualityPh           String?
-
-  bottomDischargeSystemChecksTests        String?
-  bottomDischargeSystemChecksObservations String?
-
-  hydrostaticTestTests        String?
-  hydrostaticTestObservations String?
-  hydrostaticTestPressure     Float?
-  hydrostaticTestDuration     Float?
-  hydrostaticTestProcedure    String?
-
-  accumulationTestTests        String?
-  accumulationTestObservations String?
-  accumulationTestPressure     Float?
-  accumulationTestDuration     Float?
-
-  ultrasoundTestsBodyExaminationATotal                           Float?
-  ultrasoundTestsBodyExaminationAMean                            Float?
-  ultrasoundTestsBodyExaminationAThicknessProvidedByManufacturer Float?
-  ultrasoundTestsBodyExaminationACorrosionRate                   Float?
-  ultrasoundTestsBodyExaminationAAllowableThickness              Float?
-  ultrasoundTestsBodyExaminationAIsRegularizedAccordingToASME1   Boolean?
-
-  ultrasoundTestsBodyExaminationBTotal                           Float?
-  ultrasoundTestsBodyExaminationBMean                            Float?
-  ultrasoundTestsBodyExaminationBThicknessProvidedByManufacturer Float?
-  ultrasoundTestsBodyExaminationBCorrosionRate                   Float?
-  ultrasoundTestsBodyExaminationBAllowableThickness              Float?
-
-  ultrasoundTestsBodyExaminationCTotal                           Float?
-  ultrasoundTestsBodyExaminationCMean                            Float?
-  ultrasoundTestsBodyExaminationCThicknessProvidedByManufacturer Float?
-  ultrasoundTestsBodyExaminationCCorrosionRate                   Float?
-  ultrasoundTestsBodyExaminationCAllowableThickness              Float?
-
-  ultrasoundTestsBodyExaminationDTotal                           Float?
-  ultrasoundTestsBodyExaminationDMean                            Float?
-  ultrasoundTestsBodyExaminationDThicknessProvidedByManufacturer Float?
-  ultrasoundTestsBodyExaminationDCorrosionRate                   Float?
-  ultrasoundTestsBodyExaminationDAllowableThickness              Float?
-
-  pmtaCanBeMaintained   Boolean?
-  pmtaMustBeIncreasedTo String?
-  pmtaMustBeDecreasedTo String?
-  pmtaObservations      String?
-
-  conclusionsDeadlineForNextInspection  String?
-  conclusionsNrItemsThatNotBeingMet     String?
-  conclusionsImmediateMeasuresNecessary String?
-  conclusionsNecessaryRecommendations   String?
-  conclusionsCanBeOperateNormally       Boolean?
-
-  attachments BoilerReportAttachment[]
-
-  // Company-based queries with date filtering and sorting
-  @@index([companyId, date]) // company listings by period (filter + sort by date)
-  @@index([companyId, type, date]) // dashboard by type within period
-  @@index([companyId, nextInspectionDate]) // upcoming inspections schedule by company
-  // Client and engineer-based queries
-  @@index([clientId, date]) // client history within period
-  @@index([engineerId, date]) // engineer productivity/schedule
-  // Simple filters (FK lookup, fast counts)
-  @@index([companyId])
-  @@index([clientId])
-  @@index([engineerId])
-  // Activity feeds and recent sorting
-  @@index([createdAt]) // recent sorting (activity feed)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model Equipment {

@@ -1,5 +1,6 @@
 'use client'
 
+import { AntdRegistry } from '@ant-design/nextjs-registry'
 import { AppProgressProvider as ProgressProvider } from '@bprogress/next'
 import { Toaster } from '@inspetor/components/ui/sonner'
 import { MantineProvider } from '@mantine/core'
@@ -14,19 +15,21 @@ type ProviderProps = {
 export function Providers({ children }: ProviderProps) {
   return (
     // <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-    <ProgressProvider
-      height="8px"
-      color="#0969da"
-      options={{ showSpinner: false }}
-      shallowRouting
-    >
-      <SessionProvider>
-        <MantineProvider>
-          <NuqsAdapter>{children}</NuqsAdapter>
-        </MantineProvider>
-        <Toaster richColors />
-      </SessionProvider>
-    </ProgressProvider>
+    <AntdRegistry>
+      <ProgressProvider
+        height="8px"
+        color="#0969da"
+        options={{ showSpinner: false }}
+        shallowRouting
+      >
+        <SessionProvider>
+          <MantineProvider>
+            <NuqsAdapter>{children}</NuqsAdapter>
+          </MantineProvider>
+          <Toaster richColors />
+        </SessionProvider>
+      </ProgressProvider>
+    </AntdRegistry>
     // </ThemeProvider>
   )
 }
