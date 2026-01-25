@@ -40,6 +40,8 @@ export class Permission {
         '/dashboard/instruments',
         '/dashboard/documents',
         '/dashboard/reports/boiler',
+        '/dashboard/valve',
+        '/dashboard/bomb',
       ]
     }
 
@@ -54,6 +56,8 @@ export class Permission {
         '/dashboard/documents',
         '/dashboard/reports/boiler',
         '/dashboard/maintenance/equipment',
+        '/dashboard/valve',
+        '/dashboard/bomb',
       ]
     }
 

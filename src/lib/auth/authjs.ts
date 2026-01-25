@@ -1,6 +1,6 @@
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { comparePassword } from '@inspetor/utils/crypto'
-import type { UserRole } from '@prisma/client'
+import type { UserResponsibility, UserRole } from '@prisma/client'
 import NextAuth, { CredentialsSignin } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
@@ -20,11 +20,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.role = user.role as UserRole
         token.username = user.username
+        token.responsibility = user.responsibility as UserResponsibility | null
       }
 
       if (trigger === 'update' && session) {
         token.role = session?.user?.role as UserRole
         token.username = session?.user?.username
+        token.responsibility =
+          session?.user?.responsibility as UserResponsibility | null
       }
 
       return token
@@ -36,6 +39,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       session.user.role = token.role as UserRole
       session.user.username = token.username as string
+      session.user.responsibility =
+        (token.responsibility as UserResponsibility) ?? null
       return session
     },
   },
@@ -85,6 +90,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return {
             ...user,
             username: user.username as string,
+            responsibility: user.responsibility,
           }
         } catch {
           throw new InvalidLoginError()

@@ -1,12 +1,16 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
-import type { UserRole } from '@inspetor/generated/prisma/enums'
+import type {
+  UserResponsibility,
+  UserRole,
+} from '@inspetor/generated/prisma/enums'
 import { Permission } from '@inspetor/permission'
 import { formatUsername } from '@inspetor/utils/format-username'
 import {
   ChevronRight,
   ChevronsUpDown,
+  Cog,
   Command,
   Database,
   HardDrive,
@@ -112,8 +116,25 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     '/dashboard/documents',
   )
 
+  const mustBeHideValveManagement =
+    Permission.canNotAccess(
+      (session.data?.user.role || '') as UserRole,
+      '/dashboard/valve',
+    ) &&
+    (session.data?.user.responsibility as UserResponsibility) !== 'ENGINEER'
+
+  const mustBeHideBombManagement =
+    Permission.canNotAccess(
+      (session.data?.user.role || '') as UserRole,
+      '/dashboard/bomb',
+    ) &&
+    (session.data?.user.responsibility as UserResponsibility) !== 'ENGINEER'
+
   const mustBeHideInspectionManagement =
     mustBeHideInstrumentsManagement && mustBeHideBoilerManagement
+
+  const mustBeHideEquipmentsSection =
+    mustBeHideValveManagement && mustBeHideBombManagement
 
   const mustBeHideDatabaseManagement =
     mustBeHideCompanyManagement &&
@@ -360,6 +381,61 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                                 >
                                   <Link href="/dashboard/reports/boiler">
                                     <span>Inspeções de Caldeiras</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+
+            {!mustBeHideEquipmentsSection && (
+              <SidebarGroup className="py-0">
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <Collapsible asChild className="group/collapsible">
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton tooltip="Equipamentos">
+                            <Cog />
+                            <span>Equipamentos</span>
+                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
+                            {!mustBeHideValveManagement && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  isActive={
+                                    pathname === '/dashboard/valve' &&
+                                    pathname.startsWith('/dashboard/valve')
+                                  }
+                                  asChild
+                                >
+                                  <Link href="/dashboard/valve">
+                                    <span>Válvulas</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )}
+
+                            {!mustBeHideBombManagement && (
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  isActive={
+                                    pathname === '/dashboard/bomb' &&
+                                    pathname.startsWith('/dashboard/bomb')
+                                  }
+                                  asChild
+                                >
+                                  <Link href="/dashboard/bomb">
+                                    <span>Bombas</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>

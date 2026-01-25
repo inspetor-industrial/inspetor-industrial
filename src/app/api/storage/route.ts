@@ -25,6 +25,7 @@ type SignedUrl = {
   signedUrl: string
   key: string
   correlationId: string
+  documentId: string
 }
 
 export async function POST(request: NextRequest) {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       ContentType: file.type,
     })
 
-    await prisma.documents.create({
+    const document = await prisma.documents.create({
       data: {
         name: file.name,
         type: file.type,
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
       signedUrl,
       key: cloudflareR2Key,
       correlationId: file.correlationId,
+      documentId: document.id,
     })
   }
 
