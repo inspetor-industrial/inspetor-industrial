@@ -19,13 +19,13 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const session = await auth()
-  const isDisableEquipments = await disableEquipmentsFlag()
-  const isDisableBoilerReport = await disableBoilerReportFlag()
+  let isDisableEquipments = await disableEquipmentsFlag()
+  let isDisableBoilerReport = await disableBoilerReportFlag()
 
-  console.log('flags', {
-    isDisableEquipments,
-    isDisableBoilerReport,
-  })
+  if (process.env.NODE_ENV === 'development') {
+    isDisableEquipments = false
+    isDisableBoilerReport = false
+  }
 
   return (
     <Suspense
