@@ -4,6 +4,10 @@ import { InspetorLoading } from '@inspetor/components/inspetor-loading'
 import { MainContainer } from '@inspetor/components/main-container'
 import { SidebarProvider } from '@inspetor/components/ui/sidebar'
 import { auth } from '@inspetor/lib/auth/authjs'
+import {
+  disableBoilerReportFlag,
+  disableEquipmentsFlag,
+} from '@inspetor/lib/flags'
 import { Suspense } from 'react'
 
 import { AuthWrapper } from './components/auth-wrapper'
@@ -15,6 +19,13 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const session = await auth()
+  const isDisableEquipments = await disableEquipmentsFlag()
+  const isDisableBoilerReport = await disableBoilerReportFlag()
+
+  console.log('flags', {
+    isDisableEquipments,
+    isDisableBoilerReport,
+  })
 
   return (
     <Suspense
@@ -27,7 +38,13 @@ export default async function DashboardLayout({
       <AuthWrapper>
         <PermissionWrapper>
           <SidebarProvider>
-            <AppSidebar user={session?.user} />
+            <AppSidebar
+              user={session?.user}
+              flags={{
+                disableEquipments: isDisableEquipments,
+                disableBoilerReport: isDisableBoilerReport,
+              }}
+            />
             <div className="flex flex-col flex-1 @container">
               <Header />
               <MainContainer>{children}</MainContainer>

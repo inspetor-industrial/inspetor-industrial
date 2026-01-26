@@ -1,6 +1,9 @@
 import { PrismaAdapter } from '@auth/prisma-adapter'
+import type {
+  UserResponsibility,
+  UserRole,
+} from '@inspetor/generated/prisma/client'
 import { comparePassword } from '@inspetor/utils/crypto'
-import type { UserResponsibility, UserRole } from '@inspetor/generated/prisma/client'
 import NextAuth, { CredentialsSignin } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
@@ -26,8 +29,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (trigger === 'update' && session) {
         token.role = session?.user?.role as UserRole
         token.username = session?.user?.username
-        token.responsibility =
-          session?.user?.responsibility as UserResponsibility | null
+        token.responsibility = session?.user
+          ?.responsibility as UserResponsibility | null
       }
 
       return token

@@ -29,6 +29,9 @@ export const env = createEnv({
     CLOUDFLARE_R2_BUCKET_NAME: z.string(),
 
     APPLICATION_URL: z.url(),
+
+    EXPERIMENTATION_CONFIG: z.url(),
+    GROWTHBOOK_CLIENT_KEY: z.string(),
   },
   client: {},
   // If you're using Next.js < 13.4.4, you'll need to specify the runtimeEnv manually
@@ -62,6 +65,9 @@ export const env = createEnv({
     CLOUDFLARE_R2_BUCKET_NAME: process.env.CLOUDFLARE_R2_BUCKET_NAME,
 
     APPLICATION_URL: process.env.APPLICATION_URL,
+
+    EXPERIMENTATION_CONFIG: process.env.EXPERIMENTATION_CONFIG,
+    GROWTHBOOK_CLIENT_KEY: process.env.GROWTHBOOK_CLIENT_KEY,
   },
   // For Next.js >= 13.4.4, you only need to destructure client variables:
   // experimental__runtimeEnv: {

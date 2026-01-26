@@ -64,9 +64,13 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     email?: string | null
     image?: string | null
   }
+  flags: {
+    disableEquipments: boolean
+    disableBoilerReport: boolean
+  }
 }
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
+export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const session = useSession()
   const router = useRouter()
@@ -106,10 +110,12 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     '/dashboard/instruments',
   )
 
-  const mustBeHideBoilerManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/reports/boiler',
-  )
+  const mustBeHideBoilerManagement =
+    flags.disableBoilerReport ||
+    Permission.canNotAccess(
+      (session.data?.user.role || '') as UserRole,
+      '/dashboard/reports/boiler',
+    )
 
   const mustBeHideDocumentsManagement = Permission.canNotAccess(
     (session.data?.user.role || '') as UserRole,
@@ -134,7 +140,8 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     mustBeHideInstrumentsManagement && mustBeHideBoilerManagement
 
   const mustBeHideEquipmentsSection =
-    mustBeHideValveManagement && mustBeHideBombManagement
+    flags.disableEquipments ||
+    (mustBeHideValveManagement && mustBeHideBombManagement)
 
   const mustBeHideDatabaseManagement =
     mustBeHideCompanyManagement &&
