@@ -1,7 +1,7 @@
 import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { UserStatus } from '@prisma/client'
+import type { UserStatus } from '@inspetor/generated/prisma/client'
 
 import { UserFilter } from './components/filter'
 import { UserTable } from './components/table'

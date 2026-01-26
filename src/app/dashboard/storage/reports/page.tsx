@@ -17,9 +17,8 @@ type StorageReportsPageProps = {
 export default async function StorageReportsPage({
   searchParams,
 }: StorageReportsPageProps) {
+  const { folderId } = await searchParams
   try {
-    const { folderId } = await searchParams
-
     const session = await auth()
 
     if (!session?.user) {

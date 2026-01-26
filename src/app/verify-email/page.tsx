@@ -18,6 +18,7 @@ interface VerifyEmailPageProps {
 export default async function VerifyEmailPage({
   searchParams,
 }: VerifyEmailPageProps) {
+  const { token } = await searchParams
   try {
     const session = await auth()
 
@@ -70,7 +71,6 @@ export default async function VerifyEmailPage({
       )
     }
 
-    const { token } = await searchParams
     if (!token) {
       return redirect('/access-denied')
     }

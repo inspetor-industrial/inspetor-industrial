@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
-import type { Company, User } from '@prisma/client'
+import type { Company, User } from '@inspetor/generated/prisma/client'
 import { signOut, useSession } from 'next-auth/react'
 import { type RefObject, useEffect, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'

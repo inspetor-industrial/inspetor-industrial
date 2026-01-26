@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
-import type { Instruments } from '@prisma/client'
+import type { Instruments } from '@inspetor/generated/prisma/client'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'

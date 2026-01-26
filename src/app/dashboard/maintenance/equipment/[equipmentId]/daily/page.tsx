@@ -1,7 +1,7 @@
 import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { Equipment } from '@prisma/client'
+import type { Equipment } from '@inspetor/generated/prisma/client'
 import { notFound } from 'next/navigation'
 
 import { DailyMaintenanceFilter } from './components/filter'

@@ -1,6 +1,6 @@
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { comparePassword } from '@inspetor/utils/crypto'
-import type { UserResponsibility, UserRole } from '@prisma/client'
+import type { UserResponsibility, UserRole } from '@inspetor/generated/prisma/client'
 import NextAuth, { CredentialsSignin } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 

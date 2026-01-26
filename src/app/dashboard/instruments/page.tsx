@@ -1,7 +1,7 @@
 import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import { type Instruments } from '@prisma/client'
+import type { Instruments } from '@inspetor/generated/prisma/client'
 
 import { InstrumentFilter } from './components/filter'
 import { InstrumentTable } from './components/table'

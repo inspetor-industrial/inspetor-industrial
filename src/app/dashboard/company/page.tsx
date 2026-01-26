@@ -1,6 +1,6 @@
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import { Company } from '@prisma/client'
+import type { Company } from '@inspetor/generated/prisma/client'
 
 import { CompanyFilter } from './components/filter'
 import { CompanyTable } from './components/table'

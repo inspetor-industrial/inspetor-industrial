@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
-import type { Company } from '@prisma/client'
+import type { Company } from '@inspetor/generated/prisma/client'
 import { IconPlus } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'

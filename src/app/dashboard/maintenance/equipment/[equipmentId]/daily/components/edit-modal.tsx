@@ -21,7 +21,7 @@ import {
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import type { DailyMaintenance, Equipment } from '@prisma/client'
+import type { DailyMaintenance, Equipment } from '@inspetor/generated/prisma/client'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'

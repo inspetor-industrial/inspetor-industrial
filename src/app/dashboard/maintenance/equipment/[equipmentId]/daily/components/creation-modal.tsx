@@ -23,7 +23,7 @@ import {
 import { Input } from '@inspetor/components/ui/input'
 import { Label } from '@inspetor/components/ui/label'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import type { Equipment } from '@prisma/client'
+import type { Equipment } from '@inspetor/generated/prisma/client'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'

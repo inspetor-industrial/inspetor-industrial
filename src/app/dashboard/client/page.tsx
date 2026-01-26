@@ -1,6 +1,6 @@
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { Clients } from '@prisma/client'
+import type { Clients } from '@inspetor/generated/prisma/client'
 
 import { ClientFilter } from './components/filter'
 import { ClientTable } from './components/table'

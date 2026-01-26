@@ -1,7 +1,7 @@
 import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import { type Valve } from '@prisma/client'
+import type { Valve } from '@inspetor/generated/prisma/client'
 
 import { ValveFilter } from './components/filter'
 import { ValveTable } from './components/table'

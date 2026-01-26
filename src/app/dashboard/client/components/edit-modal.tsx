@@ -29,7 +29,7 @@ import {
 } from '@inspetor/components/ui/select'
 import { brazilianStates } from '@inspetor/constants/states'
 import { DocumentBRValidator, DocumentType } from '@inspetor/utils/document-br'
-import type { Clients } from '@prisma/client'
+import type { Clients } from '@inspetor/generated/prisma/client'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'

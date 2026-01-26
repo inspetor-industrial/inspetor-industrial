@@ -21,7 +21,7 @@ import {
 } from '@inspetor/components/ui/form'
 import { ImageUploadField } from '@inspetor/components/ui/image-upload-field'
 import { Input } from '@inspetor/components/ui/input'
-import type { Bomb, Documents } from '@prisma/client'
+import type { Bomb, Documents } from '@inspetor/generated/prisma/client'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'

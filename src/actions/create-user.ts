@@ -3,7 +3,7 @@
 import { prisma } from '@inspetor/lib/prisma'
 import { hashPassword } from '@inspetor/utils/crypto'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
-import type { UserRole } from '@prisma/client'
+import type { UserRole } from '@inspetor/generated/prisma/client'
 import z from 'zod'
 
 import { authProcedure } from './procedures/auth'
