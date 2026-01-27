@@ -1,0 +1,27 @@
+model BoilerReport {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  type BoilerReportType
+
+  client   Clients @relation(fields: [clientId], references: [id])
+  clientId String
+
+  motivation String?
+
+  date               DateTime?
+  nextInspectionDate DateTime?
+
+  startTimeOfInspection String?
+  endTimeOfInspection   String?
+
+  inspectionValidation String?
+
+  engineer   User   @relation(fields: [engineerId], references: [id])
+  engineerId String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
