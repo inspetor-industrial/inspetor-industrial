@@ -4,9 +4,17 @@ import { deleteDocumentsAction } from '@inspetor/actions/delete-documents'
 import { api } from '@inspetor/lib/api'
 import { cn } from '@inspetor/lib/utils'
 import { AxiosError } from 'axios'
-import { CheckCircle2, ImageIcon, Loader2, Trash2, Upload } from 'lucide-react'
+import {
+  CheckCircle2,
+  Download,
+  Eye,
+  ImageIcon,
+  Loader2,
+  Trash2,
+  Upload,
+} from 'lucide-react'
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
@@ -33,9 +41,12 @@ export function ImageUploadField({
   disabled,
   existingImageName,
 }: ImageUploadFieldProps) {
-  const [isUploading, setIsUploading] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isUploading, startUpload] = useTransition()
+  const [isDeleting, startDeleting] = useTransition()
+  const [isDownloading, startDownload] = useTransition()
+  const [isViewing, startView] = useTransition()
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [downloadProgress, setDownloadProgress] = useState(0)
   const [fileName, setFileName] = useState<string | null>(
     existingImageName ?? null,
   )
@@ -45,6 +56,15 @@ export function ImageUploadField({
   )
   const inputRef = useRef<HTMLInputElement>(null)
   const deleteAction = useServerAction(deleteDocumentsAction)
+
+  // Update fileName when existingImageName or value changes
+  useEffect(() => {
+    if (existingImageName && value) {
+      setFileName(existingImageName)
+    } else if (!value) {
+      setFileName(null)
+    }
+  }, [existingImageName, value])
 
   async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -68,7 +88,6 @@ export function ImageUploadField({
     }
     reader.readAsDataURL(file)
 
-    setIsUploading(true)
     setUploadProgress(0)
     setFileName(file.name)
 
@@ -120,7 +139,6 @@ export function ImageUploadField({
         toast.error('Erro ao enviar imagem')
       }
     } finally {
-      setIsUploading(false)
       if (inputRef.current) {
         inputRef.current.value = ''
       }
@@ -129,10 +147,9 @@ export function ImageUploadField({
 
   async function handleRemove() {
     // Only delete from database if it was uploaded in this session (not yet saved)
-    // Existing documents (from editing) should not be deleted here - they will be 
+    // Existing documents (from editing) should not be deleted here - they will be
     // handled when the form is saved or can be deleted separately
     if (uploadedDocumentId) {
-      setIsDeleting(true)
       try {
         const [result, error] = await deleteAction.execute({
           documentId: uploadedDocumentId,
@@ -140,33 +157,115 @@ export function ImageUploadField({
 
         if (error) {
           toast.error('Erro ao remover imagem')
-          setIsDeleting(false)
           return
         }
 
         if (!result?.success) {
           toast.error(result?.message || 'Erro ao remover imagem')
-          setIsDeleting(false)
           return
         }
 
         toast.success('Imagem removida com sucesso')
       } catch {
         toast.error('Erro ao remover imagem')
-        setIsDeleting(false)
         return
       }
-      setIsDeleting(false)
     }
 
+    // Clear local state
     setPreviewUrl(null)
     setFileName(null)
     setUploadProgress(0)
     setUploadedDocumentId(null)
+
+    // Notify parent that image was removed - React Hook Form will handle the state
     onChange?.(null)
   }
 
-  const hasImage = value || previewUrl
+  async function handleDownload() {
+    const documentId = value || uploadedDocumentId
+    if (!documentId) {
+      return
+    }
+
+    setDownloadProgress(0)
+
+    try {
+      // Get signed URL
+      const urlResponse = await api.get<{ url: string; fileName: string }>(
+        `/storage/download?documentId=${documentId}`,
+      )
+
+      const downloadUrl = urlResponse.data.url
+      const fileName = urlResponse.data.fileName
+
+      // Download file with progress tracking
+      const response = await api.get(downloadUrl, {
+        responseType: 'blob',
+        onDownloadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            )
+            setDownloadProgress(progress)
+          }
+        },
+      })
+
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data])
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      // Clean up blob URL
+      window.URL.revokeObjectURL(blobUrl)
+
+      toast.success('Download concluído')
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.error || 'Erro ao baixar imagem'
+        toast.error(message)
+      } else {
+        toast.error('Erro ao baixar imagem')
+      }
+    } finally {
+      setDownloadProgress(0)
+    }
+  }
+
+  async function handleView() {
+    const documentId = value || uploadedDocumentId
+    if (!documentId) return
+
+    try {
+      const response = await api.get<{ url: string; fileName: string }>(
+        `/storage/download?documentId=${documentId}`,
+      )
+
+      const viewUrl = response.data.url
+
+      // Open in new tab - this is synchronous, no need for loading state
+      window.open(viewUrl, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message =
+          error.response?.data?.error || 'Erro ao visualizar imagem'
+        toast.error(message)
+      } else {
+        toast.error('Erro ao visualizar imagem')
+      }
+    }
+  }
+
+  // Use value from React Hook Form as source of truth
+  // previewUrl is only for newly uploaded images before they're saved
+  const hasImage = Boolean(value || previewUrl)
+  const documentId = value || uploadedDocumentId
 
   return (
     <div className="space-y-2">
@@ -174,7 +273,11 @@ export function ImageUploadField({
         ref={inputRef}
         type="file"
         accept="image/*"
-        onChange={handleFileSelect}
+        onChange={(event) => {
+          startUpload(async () => {
+            await handleFileSelect(event)
+          })
+        }}
         className="hidden"
         disabled={disabled || isUploading}
       />
@@ -244,27 +347,83 @@ export function ImageUploadField({
             <p className="text-sm font-medium truncate max-w-full">
               {fileName || 'Imagem selecionada'}
             </p>
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <CheckCircle2 className="size-3 shrink-0" />
-              <span>Enviado com sucesso</span>
-            </div>
+            {isDownloading ? (
+              <div className="space-y-1.5 mt-1">
+                <div className="flex items-center gap-1 text-xs text-blue-600">
+                  <Loader2 className="size-3 shrink-0 animate-spin" />
+                  <span>Baixando... {downloadProgress}%</span>
+                </div>
+                <Progress
+                  value={downloadProgress}
+                  className="h-1.5 [&>*]:data-[slot=progress-indicator]:!bg-blue-500"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <CheckCircle2 className="size-3 shrink-0" />
+                <span>Enviado com sucesso</span>
+              </div>
+            )}
           </div>
-          {!disabled && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
-              onClick={handleRemove}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Trash2 className="size-4" />
-              )}
-            </Button>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {documentId && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                  onClick={() => {
+                    startView(handleView)
+                  }}
+                  disabled={isViewing}
+                  title="Visualizar em nova aba"
+                >
+                  {isViewing ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                  onClick={() => {
+                    startDownload(handleDownload)
+                  }}
+                  disabled={isDownloading}
+                  title="Baixar imagem"
+                >
+                  {isDownloading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Download className="size-4" />
+                  )}
+                </Button>
+              </>
+            )}
+            {!disabled && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => {
+                  startDeleting(handleRemove)
+                }}
+                disabled={isDeleting}
+                title="Remover imagem"
+              >
+                {isDeleting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>

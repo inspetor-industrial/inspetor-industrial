@@ -1,7 +1,7 @@
+import type { Bomb, Documents } from '@inspetor/generated/prisma/client'
 import { auth } from '@inspetor/lib/auth/authjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { Bomb, Documents } from '@inspetor/generated/prisma/client'
 
 import { BombFilter } from './components/filter'
 import { BombTable } from './components/table'
