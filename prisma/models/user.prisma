@@ -1,0 +1,29 @@
+model User {
+  id             String              @id @default(cuid())
+  name           String?
+  email          String              @unique
+  emailVerified  DateTime?
+  image          String?
+  accounts       Account[]
+  sessions       Session[]
+  status         UserStatus          @default(ACTIVE)
+  role           UserRole            @default(USER)
+  responsibility UserResponsibility? @default(OPERATOR)
+
+  crea String? @default("N-A") // N-A: Not Available
+
+  username String? @unique
+  password String?
+
+  registrationNumber String? @default("N-A") // N-A: Not Available
+
+  Authenticator Authenticator[]
+
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  documents     Documents[]
+  boilerReports BoilerReport[]
+}

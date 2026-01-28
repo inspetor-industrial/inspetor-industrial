@@ -4,7 +4,7 @@ import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
-import { authProcedure } from './procedures/auth'
+import { authProcedure } from '../procedures/auth'
 
 export const deleteBoilerReportAction = authProcedure
   .createServerAction()

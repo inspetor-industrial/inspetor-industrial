@@ -1,0 +1,18 @@
+model Bomb {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  mark   String
+  model  String
+  stages String
+
+  potency Decimal
+
+  photo   Documents @relation(fields: [photoId], references: [id])
+  photoId String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
