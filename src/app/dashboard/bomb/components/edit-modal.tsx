@@ -41,9 +41,13 @@ const schema = z.object({
   potency: z.string({
     message: 'Potência é obrigatória',
   }),
-  photoId: z.string({
-    message: 'Foto é obrigatória',
-  }),
+  photoId: z
+    .string({
+      message: 'Foto é obrigatória',
+    })
+    .min(1, {
+      message: 'Foto é obrigatória',
+    }),
 })
 
 type Schema = z.infer<typeof schema>
@@ -73,7 +77,7 @@ export function BombEditModal({ ref }: BombEditModalProps) {
       model: '',
       stages: '',
       potency: '',
-      photoId: '',
+      photoId: undefined,
     },
   })
 
@@ -81,7 +85,7 @@ export function BombEditModal({ ref }: BombEditModalProps) {
 
   async function handleUpdateBomb(data: Schema) {
     const [result, resultError] = await action.execute({
-      bombId: bombId,
+      bombId: bombId!,
       ...data,
     })
 
@@ -93,19 +97,18 @@ export function BombEditModal({ ref }: BombEditModalProps) {
     if (result?.success) {
       toast.success(result.message)
       router.refresh()
+      form.reset({
+        mark: '',
+        model: '',
+        stages: '',
+        potency: '',
+        photoId: undefined,
+      })
+      setIsModalOpen(false)
     } else {
-      toast.error(result?.message)
+      toast.error(result?.message || 'Erro ao editar bomba')
+      // Don't close modal on error - keep it open so user can fix the issue
     }
-
-    form.reset({
-      mark: '',
-      model: '',
-      stages: '',
-      potency: '',
-      photoId: '',
-    })
-
-    setIsModalOpen(false)
   }
 
   useImperativeHandle(ref, () => ({
@@ -119,14 +122,32 @@ export function BombEditModal({ ref }: BombEditModalProps) {
         model: bomb.model,
         stages: bomb.stages,
         potency: String(bomb.potency),
-        photoId: bomb.photoId,
+        photoId: bomb.photoId || undefined,
       })
     },
     close: () => setIsModalOpen(false),
   }))
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open && form.formState.isSubmitting) {
+      // Prevent closing while submitting
+      return
+    }
+    setIsModalOpen(open)
+    if (!open) {
+      // Reset form when closing
+      form.reset({
+        mark: '',
+        model: '',
+        stages: '',
+        potency: '',
+        photoId: undefined,
+      })
+    }
+  }
+
   return (
-    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+    <Dialog open={isModalOpen} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -142,7 +163,14 @@ export function BombEditModal({ ref }: BombEditModalProps) {
         <Form {...form}>
           <form
             id="bomb-edit-form"
-            onSubmit={form.handleSubmit(handleUpdateBomb)}
+            onSubmit={form.handleSubmit(
+              handleUpdateBomb,
+              (errors) => {
+                // Handle validation errors
+                console.log('Validation errors:', errors)
+                // Form won't submit if there are validation errors
+              },
+            )}
             className="space-y-4"
           >
             <FormField
@@ -229,10 +257,15 @@ export function BombEditModal({ ref }: BombEditModalProps) {
                   <FormLabel>Foto da Bomba</FormLabel>
                   <FormControl>
                     <ImageUploadField
-                      value={field.value}
-                      onChange={(documentId) =>
-                        field.onChange(documentId ?? '')
-                      }
+                      value={field.value || undefined}
+                      onChange={(documentId) => {
+                        const newValue = documentId || ''
+                        field.onChange(newValue)
+                        // Trigger validation immediately when image is removed
+                        if (!documentId) {
+                          form.trigger('photoId')
+                        }
+                      }}
                       disabled={isOnlyRead || form.formState.isSubmitting}
                       existingImageName={existingPhotoName ?? undefined}
                     />
