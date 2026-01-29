@@ -1,0 +1,4 @@
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+}

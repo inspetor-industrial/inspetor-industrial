@@ -1,0 +1,14 @@
+model BoilerReportAttachment {
+  id String @id @default(cuid())
+
+  document   Documents @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+
+  fieldName BoilerReportAttachmentFieldName // eg.: "hydrostaticTestPhotos", "internalTubes", "operatorCertification"
+  sortOrder Int? // if needed to order images
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([documentId])
+}

@@ -1,0 +1,23 @@
+model Valve {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  serialNumber String @unique @map("serial_number")
+  model        String
+
+  diameter Decimal
+  flow     Decimal
+
+  openingPressure Decimal @map("opening_pressure")
+  closingPressure Decimal @map("closing_pressure")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tests Json
+
+  @@index([companyId])
+  @@index([id, companyId])
+}

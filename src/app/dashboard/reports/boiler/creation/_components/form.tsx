@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createBoilerReportAction } from '@inspetor/actions/create-boiler-report'
+import { createBoilerReportAction } from '@inspetor/actions/boiler/create-boiler-report'
 import { Button } from '@inspetor/components/ui/button'
 import { DatePicker } from '@inspetor/components/ui/date-picker'
 import {
@@ -21,7 +21,11 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import type { Clients, User } from '@inspetor/generated/prisma/browser'
+import {
+  BoilerReportType,
+  type Clients,
+  type User,
+} from '@inspetor/generated/prisma/browser'
 import { cn } from '@inspetor/lib/utils'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
@@ -32,7 +36,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
-  type: z.enum(['INITIAL', 'PERIODIC', 'EXTRAORDINARY'], {
+  type: z.enum(BoilerReportType, {
     message: 'Tipo de relatório é obrigatório',
   }),
   clientId: z.string({
@@ -113,9 +117,13 @@ export function BoilerCreationForm({
                     <SelectValue placeholder="Selecione o tipo de relatório" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="INITIAL">Inicial</SelectItem>
-                    <SelectItem value="PERIODIC">Periódico</SelectItem>
-                    <SelectItem value="EXTRAORDINARY">
+                    <SelectItem value={BoilerReportType.INITIAL}>
+                      Inicial
+                    </SelectItem>
+                    <SelectItem value={BoilerReportType.PERIODIC}>
+                      Periódico
+                    </SelectItem>
+                    <SelectItem value={BoilerReportType.EXTRAORDINARY}>
                       Extraordinário
                     </SelectItem>
                   </SelectContent>

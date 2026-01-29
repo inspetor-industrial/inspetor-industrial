@@ -1,0 +1,5 @@
+enum StructureFurnaceType {
+  REFRACTORY
+  COOLED
+  WATER_TUBE
+}

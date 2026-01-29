@@ -1,9 +1,8 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
-import { deleteBoilerReportAction } from '@inspetor/actions/delete-boiler-report'
+import { deleteBoilerReportAction } from '@inspetor/actions/boiler/delete-boiler-report'
 import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
-import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -29,7 +28,6 @@ import {
 } from '@inspetor/components/ui/table'
 import type { BoilerReport } from '@inspetor/generated/prisma/browser'
 import { dayjsApi } from '@inspetor/lib/dayjs'
-import { cn } from '@inspetor/lib/utils'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -43,6 +41,8 @@ import { parseAsInteger, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
+import { BoilerReportTypeBadge } from './boiler-report-type-badge'
+
 type BoilerTableProps = {
   boilerReports: (BoilerReport & {
     client: { companyName: string }
@@ -50,18 +50,6 @@ type BoilerTableProps = {
   })[]
   totalPages: number
 }
-
-const reportTypeLabels = {
-  INITIAL: 'Inicial',
-  PERIODIC: 'Periódico',
-  EXTRAORDINARY: 'Extraordinário',
-} as const
-
-const reportTypeColors = {
-  INITIAL: 'bg-blue-50 text-blue-700 border-blue-200',
-  PERIODIC: 'bg-green-50 text-green-700 border-green-200',
-  EXTRAORDINARY: 'bg-orange-50 text-orange-700 border-orange-200',
-} as const
 
 export function BoilerTable({ boilerReports, totalPages }: BoilerTableProps) {
   const deleteAction = useServerAction(deleteBoilerReportAction)
@@ -142,9 +130,6 @@ export function BoilerTable({ boilerReports, totalPages }: BoilerTableProps) {
                 report.engineer.name ??
                 report.engineer.username ??
                 'Não informado'
-              const reportType = reportTypeLabels[report.type] ?? report.type
-              const reportTypeColor =
-                reportTypeColors[report.type] ?? 'bg-muted'
 
               return (
                 <TableRow key={report.id} className="divide-x">
@@ -152,12 +137,7 @@ export function BoilerTable({ boilerReports, totalPages }: BoilerTableProps) {
                     {report.client.companyName}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={cn('text-xs font-medium', reportTypeColor)}
-                    >
-                      {reportType}
-                    </Badge>
+                    <BoilerReportTypeBadge type={report.type} />
                   </TableCell>
                   <TableCell>
                     {report.date
