@@ -55,8 +55,16 @@ export const updateBombAction = authProcedure
       }
     }
 
-    // Check if photo changed and delete old one
-    const photoChanged = input.photoId && input.photoId !== bomb.photoId
+    // PhotoId is required - validate it exists
+    if (!input.photoId || input.photoId === '') {
+      return returnsDefaultActionMessage({
+        message: 'Foto é obrigatória',
+        success: false,
+      })
+    }
+
+    // Check if photo changed
+    const photoChanged = input.photoId !== bomb.photoId
     const oldPhoto = bomb.photo
 
     await prisma.bomb.update({
@@ -68,7 +76,7 @@ export const updateBombAction = authProcedure
         model: input.model,
         stages: input.stages,
         potency: input.potency,
-        ...(input.photoId && { photoId: input.photoId }),
+        photoId: input.photoId,
       },
     })
 

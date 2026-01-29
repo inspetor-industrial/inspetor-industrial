@@ -1,0 +1,20 @@
+model Clients {
+  id              String @id @default(cuid())
+  companyName     String
+  taxId           String @unique // CNPJ or CPF
+  taxRegistration String @unique // State registration
+
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+
+  state   String
+  city    String
+  address String
+  zipCode String
+
+  phone String
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  boilerReports BoilerReport[]
+}

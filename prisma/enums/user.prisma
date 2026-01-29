@@ -1,0 +1,16 @@
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  USER
+}
+
+enum UserResponsibility {
+  ENGINEER
+  SECRETARY
+  OPERATOR
+}
