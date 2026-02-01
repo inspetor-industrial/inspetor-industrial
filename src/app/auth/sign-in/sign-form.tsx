@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@inspetor/components/ui/button'
 import {
@@ -12,10 +11,8 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
-import { InvalidCredentialsError } from '@inspetor/errors/invalid-credentials-error'
+import { useAuth } from '@inspetor/lib/auth/context'
 import { Lock, LogIn, Mail } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -34,9 +31,7 @@ const schema = z.object({
 type Schema = z.infer<typeof schema>
 
 export function SignInForm() {
-  const router = useRouter()
-
-  const searchParams = useSearchParams()
+  const { login } = useAuth()
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
@@ -45,26 +40,13 @@ export function SignInForm() {
   async function handleSignIn() {
     try {
       const { email, password } = form.getValues()
-      const response = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
-
-      if (!response?.ok || response?.error) {
-        throw new InvalidCredentialsError()
-      }
-
+      await login({ email, password })
       toast.success('Acesso autorizado! Redirecionando...')
-      const callbackUrl = searchParams.get('callbackUrl')
-
-      router.replace(callbackUrl || '/dashboard')
     } catch {
       toast.error('Acesso negado', {
         description:
           'Credenciais incorretas. Verifique seus dados e tente novamente.',
       })
-    } finally {
     }
   }
 

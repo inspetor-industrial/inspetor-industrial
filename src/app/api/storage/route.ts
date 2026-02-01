@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { env } from '@inspetor/env'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { r2 } from '@inspetor/lib/r2'
 import { NextRequest, NextResponse } from 'next/server'
@@ -29,7 +29,7 @@ type SignedUrl = {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

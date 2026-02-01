@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import type { Company, User } from '@inspetor/generated/prisma/client'
-import { signOut, useSession } from 'next-auth/react'
+import { useAuth, useSession } from '@inspetor/lib/auth/context'
 import { type RefObject, useEffect, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -68,6 +68,7 @@ export function UserEditModal({ ref }: UserEditModalProps) {
   const action = useServerAction(updateUserAction)
 
   const session = useSession()
+  const { logout } = useAuth()
 
   const [userId, setUserId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
@@ -106,7 +107,7 @@ export function UserEditModal({ ref }: UserEditModalProps) {
         session.data?.user.email === data.email &&
         session.data?.user.role !== data.role
       ) {
-        await signOut()
+        await logout()
 
         router.push('/auth/sign-in')
       } else {

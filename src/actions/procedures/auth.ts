@@ -1,12 +1,12 @@
 import { InvalidCredentialsError } from '@inspetor/errors/invalid-credentials-error'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { createServerActionProcedure } from 'zsa'
 
 import { getUserByUsernameOrEmail } from '../utils/get-user-by-username-or-email'
 
 export const authProcedure = createServerActionProcedure().handler(async () => {
-  const session = await auth()
+  const session = await getSession()
 
   if (!session || (!session?.user?.email && !session?.user?.username)) {
     throw new InvalidCredentialsError()

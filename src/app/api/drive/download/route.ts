@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream'
 
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { getGoogleDriveClient } from '@inspetor/lib/google'
 import { prisma } from '@inspetor/lib/prisma'
 
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const fileId = searchParams.get('fileId')
   if (!fileId) return new Response('Bad Request', { status: 400 })
 
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.email)
     return new Response('Unauthorized', { status: 401 })
   const userEmail = session.user.email!

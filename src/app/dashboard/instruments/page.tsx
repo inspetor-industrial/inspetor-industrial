@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import type { Instruments } from '@inspetor/generated/prisma/client'
@@ -17,7 +17,7 @@ export default async function InstrumentsPage({
   searchParams,
 }: InstrumentsPageProps) {
   const { search, page } = await searchParams
-  const session = await auth()
+  const session = await getSession()
 
   let instruments: Instruments[] = []
   let totalInstruments = 0

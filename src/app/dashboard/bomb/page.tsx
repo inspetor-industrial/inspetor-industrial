@@ -1,5 +1,5 @@
 import type { Bomb, Documents } from '@inspetor/generated/prisma/client'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 
@@ -19,7 +19,7 @@ type BombWithPhoto = Bomb & {
 
 export default async function BombPage({ searchParams }: BombPageProps) {
   const { search, page } = await searchParams
-  const session = await auth()
+  const session = await getSession()
 
   let bombs: BombWithPhoto[] = []
   let totalBombs = 0

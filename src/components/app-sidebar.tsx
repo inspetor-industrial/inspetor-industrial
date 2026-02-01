@@ -5,6 +5,7 @@ import type {
   UserResponsibility,
   UserRole,
 } from '@inspetor/generated/prisma/enums'
+import { useSession } from '@inspetor/lib/auth/context'
 import { Permission } from '@inspetor/permission'
 import { formatUsername } from '@inspetor/utils/format-username'
 import {
@@ -24,7 +25,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { Fragment } from 'react'
 
 import { LogoutButton } from './logout-button'
@@ -198,21 +198,6 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
                       <Link href="/dashboard">
                         <Home />
                         <span>Dashboard</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem key="changelogs">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={
-                        pathname === '/changelogs' &&
-                        pathname.startsWith('/changelogs')
-                      }
-                    >
-                      <Link href="/changelogs">
-                        <GitPullRequest className="size-4" />
-                        <span>Changelogs</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

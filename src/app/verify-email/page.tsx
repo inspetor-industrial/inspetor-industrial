@@ -1,6 +1,6 @@
 import { getUserByUsernameOrEmail } from '@inspetor/actions/utils/get-user-by-username-or-email'
 import { Button } from '@inspetor/components/ui/button'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { dayjsApi } from '@inspetor/lib/dayjs'
 import { prisma } from '@inspetor/lib/prisma'
 import Link from 'next/link'
@@ -8,6 +8,8 @@ import { redirect } from 'next/navigation'
 
 import { Confetti } from './components/conffeti'
 import { VerifyEmailForm } from './components/verify-email-form'
+
+export const dynamic = 'force-dynamic'
 
 interface VerifyEmailPageProps {
   searchParams: Promise<{
@@ -20,7 +22,7 @@ export default async function VerifyEmailPage({
 }: VerifyEmailPageProps) {
   const { token } = await searchParams
   try {
-    const session = await auth()
+    const session = await getSession()
 
     if (!session?.user) {
       redirect('/auth/sign-in?callbackUrl=/verify-email')
