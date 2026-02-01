@@ -57,6 +57,62 @@ export function H4({ className, ...props }: H4Props) {
   )
 }
 
+type H5Props = ComponentProps<'h5'>
+
+export function H5({ className, ...props }: H5Props) {
+  return (
+    <h5
+      className={cn(
+        'scroll-m-20 text-lg font-semibold tracking-tight',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+type H6Props = ComponentProps<'h6'>
+
+export function H6({ className, ...props }: H6Props) {
+  return (
+    <h6
+      className={cn(
+        'scroll-m-20 text-base font-semibold tracking-tight',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+type UlProps = ComponentProps<'ul'>
+
+export function Ul({ className, ...props }: UlProps) {
+  return (
+    <ul
+      className={cn('my-6 ml-6 list-disc [&>li]:mt-2', className)}
+      {...props}
+    />
+  )
+}
+
+type OlProps = ComponentProps<'ol'>
+
+export function Ol({ className, ...props }: OlProps) {
+  return (
+    <ol
+      className={cn('my-6 ml-6 list-decimal [&>li]:mt-2', className)}
+      {...props}
+    />
+  )
+}
+
+type LiProps = ComponentProps<'li'>
+
+export function Li({ className, ...props }: LiProps) {
+  return <li className={cn('mt-2', className)} {...props} />
+}
+
 type PProps = ComponentProps<'p'>
 
 export function P({ className, ...props }: PProps) {
