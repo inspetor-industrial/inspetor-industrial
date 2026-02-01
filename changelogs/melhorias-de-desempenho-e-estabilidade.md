@@ -1,7 +1,7 @@
 ---
 title: "Melhorias de Desempenho e Estabilidade"
-date: "2026-01-25"
-version: "1.1.1"
+date: "2025-12-10"
+version: "1.2.1"
 description: "Sistema mais rápido e estável, com carregamento otimizado de listagens, gestão aprimorada de manutenções e melhor experiência de uso geral."
 ---
 

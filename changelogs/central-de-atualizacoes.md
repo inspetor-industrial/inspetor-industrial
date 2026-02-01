@@ -1,7 +1,7 @@
 ---
 title: "Central de Atualizações"
 date: "2026-01-31"
-version: "1.2.0"
+version: "1.4.0"
 description: "Nova página dedicada para você acompanhar todas as novidades, melhorias e correções do Inspetor Industrial de forma organizada e acessível."
 ---
 

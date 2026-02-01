@@ -1,6 +1,6 @@
 ---
 title: "Relatórios de Caldeiras Avançados"
-date: "2026-01-29"
+date: "2026-01-15"
 version: "1.3.0"
 description: "Sistema completamente reformulado para criação e edição de relatórios de inspeção de caldeiras, com fluxo por etapas, visualização detalhada e indicadores visuais."
 ---

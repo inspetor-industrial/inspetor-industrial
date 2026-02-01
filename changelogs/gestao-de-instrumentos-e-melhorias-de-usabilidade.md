@@ -1,7 +1,7 @@
 ---
 title: "Gestão de Instrumentos e Melhorias de Usabilidade"
-date: "2025-09-13"
-version: "1.0.1"
+date: "2025-09-15"
+version: "1.1.0"
 description: "Novo módulo completo para cadastro e controle de instrumentos de medição, além de interface otimizada para uso em campo com tablets e celulares."
 ---
 

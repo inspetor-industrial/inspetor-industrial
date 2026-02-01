@@ -1,7 +1,7 @@
 ---
 title: "Módulo de Inspeção de Caldeiras"
-date: "2025-09-09"
-version: "1.1.0"
+date: "2025-10-20"
+version: "1.2.0"
 description: "Novo módulo completo para cadastro, inspeção e acompanhamento de caldeiras conforme os requisitos da NR-13, com relatórios técnicos detalhados."
 ---
 

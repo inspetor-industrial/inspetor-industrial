@@ -37,6 +37,16 @@ export class Changelog {
       })
     }
 
-    return changelogs
+    return changelogs.sort((a, b) => {
+      const aParts = a.version.split('.').map(Number)
+      const bParts = b.version.split('.').map(Number)
+
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); ++i) {
+        const aNum = aParts[i] ?? 0
+        const bNum = bParts[i] ?? 0
+        if (aNum !== bNum) return bNum - aNum
+      }
+      return 0
+    })
   }
 }
