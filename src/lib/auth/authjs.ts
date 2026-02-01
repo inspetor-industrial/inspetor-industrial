@@ -14,6 +14,7 @@ class InvalidLoginError extends CredentialsSignin {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // @ts-expect-error - PrismaAdapter is not compatible with the latest version of NextAuth
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
