@@ -1,6 +1,6 @@
 import { auth } from '@inspetor/lib/auth/authjs'
 import { formatUsername } from '@inspetor/utils/format-username'
-import { Cog, PanelLeft, User } from 'lucide-react'
+import { Cog, GitPullRequestIcon, PanelLeft, User } from 'lucide-react'
 import Link from 'next/link'
 
 import { HeaderContainer } from './header-container'
@@ -65,6 +65,13 @@ export async function Header() {
                 </div>
               </div>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <Link href="/changelogs">
+              <DropdownMenuItem className="text-foreground">
+                <GitPullRequestIcon className="size-4 text-foreground" />
+                <Small>Changelogs</Small>
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-foreground">
               <Cog className="size-4 text-foreground" />

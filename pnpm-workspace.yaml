@@ -2,7 +2,9 @@ onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
   - '@tailwindcss/oxide'
+  - contentlayer
   - esbuild
   - prisma
+  - protobufjs
   - sharp
   - unrs-resolver

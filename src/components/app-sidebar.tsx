@@ -13,6 +13,8 @@ import {
   Cog,
   Command,
   Database,
+  GitPullRequest,
+  GitPullRequestIcon,
   HardDrive,
   Home,
   InspectionPanel,
@@ -196,6 +198,21 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
                       <Link href="/dashboard">
                         <Home />
                         <span>Dashboard</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem key="changelogs">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={
+                        pathname === '/changelogs' &&
+                        pathname.startsWith('/changelogs')
+                      }
+                    >
+                      <Link href="/changelogs">
+                        <GitPullRequest className="size-4" />
+                        <span>Changelogs</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -578,6 +595,14 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
                 <DropdownMenuItem>
                   <Settings />
                   Configurações
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    router.push('/changelogs')
+                  }}
+                >
+                  <GitPullRequestIcon className="size-4" />
+                  Changelogs
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <LogoutButton />
