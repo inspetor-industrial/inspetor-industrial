@@ -1,5 +1,5 @@
-import { getSession } from '@inspetor/lib/auth/server'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import { redirect } from 'next/navigation'

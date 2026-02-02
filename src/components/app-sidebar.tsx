@@ -14,7 +14,6 @@ import {
   Cog,
   Command,
   Database,
-  GitPullRequest,
   GitPullRequestIcon,
   HardDrive,
   Home,
@@ -117,7 +116,8 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
     Permission.canNotAccess(
       (session.data?.user.role || '') as UserRole,
       '/dashboard/reports/boiler',
-    )
+    ) ||
+    (session.data?.user.responsibility as UserResponsibility) === 'SECRETARY'
 
   const mustBeHideDocumentsManagement = Permission.canNotAccess(
     (session.data?.user.role || '') as UserRole,
