@@ -73,6 +73,8 @@ export default async function StorageReportsPage({
       fields: 'files(*)',
     })
 
+    console.debug('[DEBUG] res', res)
+
     const files = res.data.files as GoogleDriveFile[]
 
     return (
