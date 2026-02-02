@@ -1,5 +1,5 @@
 import { UserResponsibility } from '@inspetor/generated/prisma/enums'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
 import { prisma } from '@inspetor/lib/prisma'
 import { redirect } from 'next/navigation'
@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { BoilerCreationForm } from './_components/form'
 
 export default async function BoilerCreationPage() {
-  const session = await auth()
+  const session = await getSession()
   const fullUser = await getFullAuthenticatedUser(session)
   if (!fullUser) {
     redirect('/auth/sign-in')

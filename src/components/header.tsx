@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { formatUsername } from '@inspetor/utils/format-username'
 import { Cog, GitPullRequestIcon, PanelLeft, User } from 'lucide-react'
 import Link from 'next/link'
@@ -19,7 +19,7 @@ import { SidebarTrigger } from './ui/sidebar'
 import { Muted, P, Small } from './ui/typography'
 
 export async function Header() {
-  const responseAuth = await auth()
+  const session = await getSession()
 
   return (
     <HeaderContainer>
@@ -36,10 +36,10 @@ export async function Header() {
         <DropdownMenu>
           <DropdownMenuTrigger className="cursor-pointer">
             <Avatar className="size-10">
-              <AvatarImage src={responseAuth?.user?.image || ''} />
+              <AvatarImage src={session?.user?.image || ''} />
               <AvatarFallback className="flex items-center justify-center text-xs">
-                {responseAuth?.user?.name
-                  ? formatUsername(responseAuth?.user?.name)
+                {session?.user?.name
+                  ? formatUsername(session?.user?.name)
                   : 'UU'}
               </AvatarFallback>
             </Avatar>
@@ -48,19 +48,19 @@ export async function Header() {
             <DropdownMenuGroup>
               <div className="flex items-center gap-4 w-72 p-2">
                 <Avatar className="size-9">
-                  <AvatarImage src={responseAuth?.user?.image || ''} />
+                  <AvatarImage src={session?.user?.image || ''} />
                   <AvatarFallback className="flex items-center justify-center text-xs">
-                    {responseAuth?.user?.name
-                      ? formatUsername(responseAuth?.user?.name)
+                    {session?.user?.name
+                      ? formatUsername(session?.user?.name)
                       : 'UU'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex items-start justify-start gap-0.5 flex-col">
                   <P className="text-sm truncate max-w-40">
-                    {responseAuth?.user?.name}
+                    {session?.user?.name}
                   </P>
                   <Muted className="text-xs truncate max-w-52">
-                    {responseAuth?.user?.email && responseAuth?.user?.email}
+                    {session?.user?.email && session?.user?.email}
                   </Muted>
                 </div>
               </div>

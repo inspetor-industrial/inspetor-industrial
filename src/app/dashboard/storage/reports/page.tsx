@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { getGoogleDriveClient } from '@inspetor/lib/google'
 import { prisma } from '@inspetor/lib/prisma'
 import type { GoogleDriveFile } from '@inspetor/types/google'
@@ -19,7 +19,7 @@ export default async function StorageReportsPage({
 }: StorageReportsPageProps) {
   const { folderId } = await searchParams
   try {
-    const session = await auth()
+    const session = await getSession()
 
     if (!session?.user) {
       return redirect('/auth/sign-in')

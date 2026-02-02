@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import type { Equipment } from '@inspetor/generated/prisma/client'
@@ -26,7 +26,7 @@ export default async function DailyMaintenancePage({
   let dailyMaintenances: any[] = []
   let totalDailyMaintenances = 0
 
-  const session = await auth()
+  const session = await getSession()
 
   if (!equipmentId) {
     notFound()

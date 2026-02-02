@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import { redirect } from 'next/navigation'
@@ -17,7 +17,7 @@ export default async function DocumentsPage({
   searchParams,
 }: DocumentsPageProps) {
   const { search, page } = await searchParams
-  const session = await auth()
+  const session = await getSession()
 
   if (!session?.user.email) {
     redirect('/access-denied')

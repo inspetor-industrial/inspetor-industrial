@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
+import { useSession } from '@inspetor/lib/auth/context'
 import { Permission } from '@inspetor/permission'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 
 export function PermissionWrapper({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()

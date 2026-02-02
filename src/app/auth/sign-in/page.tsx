@@ -1,11 +1,13 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { SignInForm } from './sign-form'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SignInPage() {
-  const session = await auth()
+  const session = await getSession()
   if (session?.user) {
     return redirect('/dashboard')
   }

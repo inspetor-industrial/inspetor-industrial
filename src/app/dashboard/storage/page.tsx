@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 
@@ -17,7 +17,7 @@ export default async function StoragePage({ searchParams }: CompanyPageProps) {
   let storages: any[] = []
   let totalStorages = 0
 
-  const session = await auth()
+  const session = await getSession()
 
   try {
     storages = await prisma.storage.findMany({
