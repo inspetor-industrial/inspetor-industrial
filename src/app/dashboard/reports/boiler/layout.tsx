@@ -13,7 +13,5 @@ export default async function BoilerReportsLayout({
     redirect('/auth/sign-in')
   }
 
-  console.log(session)
-
   return <>{children}</>
 }
