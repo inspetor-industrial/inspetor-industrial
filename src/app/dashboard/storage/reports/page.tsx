@@ -59,21 +59,11 @@ export default async function StorageReportsPage({
       folderId || storage.relativeLink.replace('/', '')
     ).replace(/\?.*$/, '')
 
-    console.debug('[DEBUG] folderIdToLoadFiles', folderIdToLoadFiles)
-    console.debug('[DEBUG] storage.relativeLink', storage.relativeLink)
-    console.debug('[DEBUG] folderId', folderId)
-    console.debug(
-      '[DEBUG] storage.relativeLink.replace(/\\?.*$/, "")',
-      storage.relativeLink.replace(/\?.*$/, ''),
-    )
     const drive = getGoogleDriveClient()
-    console.debug('[DEBUG] drive', drive)
     const res = await drive.files.list({
       q: `'${folderIdToLoadFiles}' in parents and trashed = false`,
       fields: 'files(*)',
     })
-
-    console.debug('[DEBUG] res', res)
 
     const files = res.data.files as GoogleDriveFile[]
 
