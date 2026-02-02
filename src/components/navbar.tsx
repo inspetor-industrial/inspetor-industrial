@@ -1,12 +1,12 @@
 'use client'
 
 import NavbarLogo from '@inspetor/assets/navbar-logo.png'
+import { useSession } from '@inspetor/lib/auth/context'
 import { cn } from '@inspetor/lib/utils'
 import { ArrowRight, LogIn, Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 
 export function Navbar() {
@@ -85,6 +85,7 @@ export function Navbar() {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden rounded-md p-2 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-inspetor-dark-blue-700"
               aria-label="Menu principal"
+              type="button"
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />

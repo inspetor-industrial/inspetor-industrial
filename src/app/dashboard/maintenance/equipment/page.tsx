@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 
@@ -19,7 +19,7 @@ export default async function EquipmentPage({
   let equipments: any[] = []
   let totalEquipments = 0
 
-  const session = await auth()
+  const session = await getSession()
 
   try {
     equipments = await prisma.equipment.findMany({

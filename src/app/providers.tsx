@@ -3,8 +3,8 @@
 import { AntdRegistry } from '@ant-design/nextjs-registry'
 import { AppProgressProvider as ProgressProvider } from '@bprogress/next'
 import { Toaster } from '@inspetor/components/ui/sonner'
+import { AuthProvider } from '@inspetor/lib/auth/context'
 import { MantineProvider } from '@mantine/core'
-import { SessionProvider } from 'next-auth/react'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { ReactNode } from 'react'
 
@@ -22,12 +22,12 @@ export function Providers({ children }: ProviderProps) {
         options={{ showSpinner: false }}
         shallowRouting
       >
-        <SessionProvider>
+        <AuthProvider>
           <MantineProvider>
             <NuqsAdapter>{children}</NuqsAdapter>
           </MantineProvider>
           <Toaster richColors />
-        </SessionProvider>
+        </AuthProvider>
       </ProgressProvider>
     </AntdRegistry>
     // </ThemeProvider>

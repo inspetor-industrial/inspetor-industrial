@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
@@ -17,7 +17,7 @@ type BoilerPageProps = {
 export default async function BoilerPage({ searchParams }: BoilerPageProps) {
   const { search, page } = await searchParams
 
-  const session = await auth()
+  const session = await getSession()
   const fullUser = await getFullAuthenticatedUser(session)
   if (!fullUser) {
     redirect('/auth/sign-in')

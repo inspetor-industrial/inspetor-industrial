@@ -3,7 +3,7 @@ import { Header } from '@inspetor/components/header'
 import { InspetorLoading } from '@inspetor/components/inspetor-loading'
 import { MainContainer } from '@inspetor/components/main-container'
 import { SidebarProvider } from '@inspetor/components/ui/sidebar'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import {
   disableBoilerReportFlag,
   disableEquipmentsFlag,
@@ -13,12 +13,14 @@ import { Suspense } from 'react'
 import { AuthWrapper } from './components/auth-wrapper'
 import { PermissionWrapper } from './components/permission-wrapper'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
+  const session = await getSession()
   let isDisableEquipments = await disableEquipmentsFlag()
   let isDisableBoilerReport = await disableBoilerReportFlag()
 

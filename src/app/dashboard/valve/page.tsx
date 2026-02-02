@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import type { Valve } from '@inspetor/generated/prisma/client'
@@ -15,7 +15,7 @@ type ValvePageProps = {
 
 export default async function ValvePage({ searchParams }: ValvePageProps) {
   const { search, page } = await searchParams
-  const session = await auth()
+  const session = await getSession()
 
   let valves: Valve[] = []
   let totalValves = 0

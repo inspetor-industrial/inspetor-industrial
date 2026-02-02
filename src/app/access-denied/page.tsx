@@ -6,12 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@inspetor/components/ui/card'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { AlertTriangle, Home, Shield } from 'lucide-react'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AccessDeniedPage() {
-  const session = await auth()
+  const session = await getSession()
   const isLoggedIn = !!session?.user
 
   return (
