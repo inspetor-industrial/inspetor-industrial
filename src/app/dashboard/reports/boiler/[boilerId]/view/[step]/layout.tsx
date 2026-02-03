@@ -8,9 +8,11 @@ export default async function BoilerViewStepsLayout({
   forms,
 }: BoilerViewStepsLayoutProps) {
   return (
-    <div className="flex flex-col min-h-screen space-y-6">
-      {children}
-      {forms}
+    <div className="bg-background pt-4 sm:pt-8">
+      <div className="mx-auto max-w-5xl space-y-6">
+        {children}
+        {forms}
+      </div>
     </div>
   )
 }
