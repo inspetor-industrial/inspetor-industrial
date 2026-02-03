@@ -1,0 +1,15 @@
+model Operator {
+  id                      Int        @id @default(autoincrement())
+
+  boilerReport            BoilerReport @relation(fields: [boilerReportId], references: [id])
+  boilerReportId          String       @unique
+
+  name                    String
+  isAbleToOperateWithNR13 String
+
+  certificate             BoilerReportAttachment? @relation(fields: [certificateId], references: [id])
+  certificateId           String?      @unique
+
+  provisionsForOperator   String?
+  observations            String?
+}
