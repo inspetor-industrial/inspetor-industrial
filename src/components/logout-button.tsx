@@ -1,14 +1,16 @@
 'use client'
 
+import { useAuth } from '@inspetor/lib/auth/context'
 import { LogOut } from 'lucide-react'
-import { signOut } from 'next-auth/react'
 
 import { DropdownMenuItem } from './ui/dropdown-menu'
 import { Small } from './ui/typography'
 
 export function LogoutButton() {
+  const { logout } = useAuth()
+
   async function handleLogout() {
-    await signOut({ redirectTo: '/auth/sign-in' })
+    await logout()
   }
 
   return (

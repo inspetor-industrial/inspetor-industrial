@@ -12,6 +12,8 @@
 
 /postgres-data
 
+.contentlayer
+
 # testing
 /coverage
 t.ts

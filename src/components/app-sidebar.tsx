@@ -5,6 +5,7 @@ import type {
   UserResponsibility,
   UserRole,
 } from '@inspetor/generated/prisma/enums'
+import { useSession } from '@inspetor/lib/auth/context'
 import { Permission } from '@inspetor/permission'
 import { formatUsername } from '@inspetor/utils/format-username'
 import {
@@ -13,6 +14,8 @@ import {
   Cog,
   Command,
   Database,
+  GitPullRequest,
+  GitPullRequestIcon,
   HardDrive,
   Home,
   InspectionPanel,
@@ -22,7 +25,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { Fragment } from 'react'
 
 import { LogoutButton } from './logout-button'
@@ -578,6 +580,14 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
                 <DropdownMenuItem>
                   <Settings />
                   Configurações
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    router.push('/changelogs')
+                  }}
+                >
+                  <GitPullRequestIcon className="size-4" />
+                  Changelogs
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <LogoutButton />

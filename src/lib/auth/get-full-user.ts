@@ -1,5 +1,5 @@
 import type { User } from '@inspetor/generated/prisma/client'
-import type { Session } from 'next-auth'
+import type { Session } from '@inspetor/types/auth'
 
 import { prisma } from '../prisma'
 

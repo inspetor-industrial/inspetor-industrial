@@ -2,11 +2,11 @@ import { type Attributes, growthbookAdapter } from '@flags-sdk/growthbook'
 import type { Identify } from 'flags'
 import { dedupe, flag } from 'flags/next'
 
-import { auth } from './auth/authjs'
+import { getSession } from './auth/server'
 
 // Add any user attributes you want to use for targeting or experimentation
 const identify = dedupe((async () => {
-  const session = await auth()
+  const session = await getSession()
 
   return {
     id: session?.user?.id,

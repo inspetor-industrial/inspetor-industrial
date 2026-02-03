@@ -10,7 +10,7 @@ import {
 } from '@inspetor/components/ui/card'
 import { formSteps } from '@inspetor/constants/form-steps-boiler-report'
 import { UserResponsibility } from '@inspetor/generated/prisma/client'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
 import { dayjsApi } from '@inspetor/lib/dayjs'
 import { prisma } from '@inspetor/lib/prisma'
@@ -30,7 +30,7 @@ type BoilerViewPageProps = {
 export default async function BoilerViewPage({ params }: BoilerViewPageProps) {
   const { boilerId } = await params
 
-  const session = await auth()
+  const session = await getSession()
   const fullUser = await getFullAuthenticatedUser(session)
   if (!fullUser) {
     redirect('/auth/sign-in')

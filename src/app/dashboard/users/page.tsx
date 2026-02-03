@@ -1,4 +1,4 @@
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import type { UserStatus } from '@inspetor/generated/prisma/client'
@@ -19,7 +19,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   let users: any[] = []
   let totalUsers = 0
 
-  const session = await auth()
+  const session = await getSession()
 
   try {
     users = await prisma.user.findMany({

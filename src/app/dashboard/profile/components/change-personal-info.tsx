@@ -14,8 +14,8 @@ import {
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
 import type { User } from '@inspetor/generated/prisma/browser'
+import { useAuth } from '@inspetor/lib/auth/context'
 import { Save } from 'lucide-react'
-import { signOut } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
@@ -35,6 +35,7 @@ type Schema = z.infer<typeof schema>
 
 export function ChangePersonalInfo(props: ChangePersonalInfoProps) {
   const { execute } = useServerAction(updateProfileAction)
+  const { logout } = useAuth()
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -60,9 +61,7 @@ export function ChangePersonalInfo(props: ChangePersonalInfoProps) {
           'Você será redirecionado para a página de login, para fazer login com o novo nome de usuário',
       })
 
-      await signOut({
-        redirectTo: '/auth/sign-in',
-      })
+      await logout()
     } else {
       toast.error(result?.message)
     }

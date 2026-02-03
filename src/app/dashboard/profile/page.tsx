@@ -18,7 +18,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@inspetor/components/ui/tabs'
-import { auth } from '@inspetor/lib/auth/authjs'
+import { getSession } from '@inspetor/lib/auth/server'
 import { dayjsApi } from '@inspetor/lib/dayjs'
 import { prisma } from '@inspetor/lib/prisma'
 import { cn } from '@inspetor/lib/utils'
@@ -30,7 +30,7 @@ import { ChangePersonalInfo } from './components/change-personal-info'
 import { SendEmailVerificationButton } from './components/send-email-verification-button'
 
 export default async function ProfilePage() {
-  const session = await auth()
+  const session = await getSession()
 
   if (!session?.user) {
     return null
@@ -354,40 +354,6 @@ export default async function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Links Rápidos</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="space-y-1">
-                <a
-                  href="#"
-                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Alterar senha
-                </a>
-                <a
-                  href="#"
-                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Configurações de notificação
-                </a>
-                <a
-                  href="#"
-                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Histórico de atividades
-                </a>
-                <a
-                  href="#"
-                  className="block text-sm text-red-600 hover:text-red-700 transition-colors"
-                >
-                  Excluir conta
-                </a>
-              </div>
-            </CardContent>
-          </Card> */}
         </div>
       </div>
     </div>
