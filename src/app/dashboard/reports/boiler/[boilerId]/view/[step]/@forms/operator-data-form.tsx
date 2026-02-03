@@ -25,7 +25,7 @@ import {
 } from '@inspetor/components/ui/select'
 import { Textarea } from '@inspetor/components/ui/textarea'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -43,7 +43,10 @@ const operatorDataSchema = z
   .refine(
     (data) => {
       if (data.isAbleToOperateWithNR13 === 'yes') {
-        return !!data.certificateDocumentId
+        return (
+          !!data.certificateDocumentId &&
+          data.certificateDocumentId.trim() !== ''
+        )
       }
       return true
     },
@@ -55,7 +58,10 @@ const operatorDataSchema = z
   .refine(
     (data) => {
       if (data.isAbleToOperateWithNR13 === 'no') {
-        return !!data.provisionsForOperator
+        return (
+          !!data.provisionsForOperator &&
+          data.provisionsForOperator.trim() !== ''
+        )
       }
       return true
     },
@@ -79,6 +85,9 @@ export function OperatorDataForm({
 }: OperatorDataFormProps) {
   const router = useRouter()
   const isViewMode = action === 'view'
+  const [existingCertificateName, setExistingCertificateName] = useState<
+    string | null
+  >(null)
 
   const form = useForm<OperatorDataFormValues>({
     resolver: zodResolver(operatorDataSchema),
@@ -100,10 +109,14 @@ export function OperatorDataForm({
 
         if (result.success && result.others?.data) {
           const operator = result.others.data
+          setExistingCertificateName(
+            operator.certificate?.document?.name || null,
+          )
           form.reset({
             operatorName: operator.name,
             isAbleToOperateWithNR13: operator.isAbleToOperateWithNR13,
-            certificateDocumentId: operator.certificateId || undefined,
+            certificateDocumentId:
+              operator.certificate?.documentId || undefined,
             provisionsForOperator: operator.provisionsForOperator || '',
             observations: operator.observations || '',
           })
@@ -121,14 +134,30 @@ export function OperatorDataForm({
     name: 'isAbleToOperateWithNR13',
   })
 
+  useEffect(() => {
+    if (isAbleToOperateWithNR13 === 'yes') {
+      form.setValue('provisionsForOperator', '')
+      form.clearErrors('provisionsForOperator')
+    } else if (isAbleToOperateWithNR13 === 'no') {
+      form.setValue('certificateDocumentId', undefined)
+      form.clearErrors('certificateDocumentId')
+    }
+  }, [isAbleToOperateWithNR13, form])
+
   const onSubmit = async (data: OperatorDataFormValues) => {
     try {
       const [result] = await upsertOperatorAction({
         boilerReportId: boilerId,
         name: data.operatorName,
         isAbleToOperateWithNR13: data.isAbleToOperateWithNR13,
-        certificateId: data.certificateDocumentId || null,
-        provisionsForOperator: data.provisionsForOperator || null,
+        certificateId:
+          data.certificateDocumentId && data.certificateDocumentId.trim() !== ''
+            ? data.certificateDocumentId
+            : null,
+        provisionsForOperator:
+          data.provisionsForOperator && data.provisionsForOperator.trim() !== ''
+            ? data.provisionsForOperator
+            : null,
         observations: data.observations || null,
       })
 
@@ -234,6 +263,9 @@ export function OperatorDataForm({
                             value={field.value}
                             onChange={field.onChange}
                             disabled={form.formState.isSubmitting || isViewMode}
+                            existingImageName={
+                              existingCertificateName || undefined
+                            }
                           />
                         </FormControl>
                         <FormMessage />

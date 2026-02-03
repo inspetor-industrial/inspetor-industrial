@@ -9,7 +9,11 @@ import { authProcedure } from '../../procedures/auth'
 
 export type OperatorWithRelations = Prisma.OperatorGetPayload<{
   include: {
-    certificate: true
+    certificate: {
+      include: {
+        document: true
+      }
+    }
   }
 }>
 
@@ -37,7 +41,11 @@ export const getOperatorByBoilerReportIdAction = authProcedure
           boilerReportId: input.boilerReportId,
         },
         include: {
-          certificate: true,
+          certificate: {
+            include: {
+              document: true,
+            },
+          },
         },
       })
 

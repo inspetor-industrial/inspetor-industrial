@@ -43,6 +43,45 @@ export const upsertOperatorAction = authProcedure
         })
       }
 
+      let finalCertificateId = certificateId
+
+      if (certificateId) {
+        const existingAttachment =
+          await prisma.boilerReportAttachment.findUnique({
+            where: { id: certificateId },
+          })
+
+        if (existingAttachment) {
+          finalCertificateId = certificateId
+        } else {
+          const document = await prisma.documents.findUnique({
+            where: { id: certificateId },
+          })
+
+          if (document) {
+            const existingAttachmentForDocument =
+              await prisma.boilerReportAttachment.findFirst({
+                where: {
+                  documentId: certificateId,
+                  fieldName: 'OPERATOR_CERTIFICATION',
+                },
+              })
+
+            if (existingAttachmentForDocument) {
+              finalCertificateId = existingAttachmentForDocument.id
+            } else {
+              const newAttachment = await prisma.boilerReportAttachment.create({
+                data: {
+                  documentId: certificateId,
+                  fieldName: 'OPERATOR_CERTIFICATION',
+                },
+              })
+              finalCertificateId = newAttachment.id
+            }
+          }
+        }
+      }
+
       await prisma.operator.upsert({
         where: {
           boilerReportId,
@@ -51,14 +90,14 @@ export const upsertOperatorAction = authProcedure
           boilerReportId,
           name,
           isAbleToOperateWithNR13,
-          certificateId,
+          certificateId: finalCertificateId,
           provisionsForOperator,
           observations,
         },
         update: {
           name,
           isAbleToOperateWithNR13,
-          certificateId,
+          certificateId: finalCertificateId,
           provisionsForOperator,
           observations,
         },
