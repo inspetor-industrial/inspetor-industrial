@@ -177,8 +177,8 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2(@opentelemetry/api@1.9.0)(next@16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       googleapis:
-        specifier: ^156.0.0
-        version: 156.0.0
+        specifier: ^171.1.0
+        version: 171.1.0
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -3913,8 +3913,8 @@ packages:
     resolution: {integrity: sha512-eCzNACUXPb1PW5l0ULTzMHaL/ltPRADoPgjBlT8jWsTbxkCp6siv+qKJ/1ldaybCthGwsYFYallF7u9AkU4L+A==}
     engines: {node: '>=18.0.0'}
 
-  googleapis@156.0.0:
-    resolution: {integrity: sha512-Th401jKVdtrIaAc/b5iv8dfNVN2O7EgU/32Zvb2zxK3hiRrBU8hNbF7wMmOAEsvqnEKssq6XlXMaCBKazrvakw==}
+  googleapis@171.1.0:
+    resolution: {integrity: sha512-2f3O75VjbKRnvwN5Pwi6ZZEcnOiO10ZfPSX19oE2ehxC8689NxWZLMPKsap7qgT48adu2NEA8tlUQZK2nt0EDA==}
     engines: {node: '>=18'}
 
   gopd@1.2.0:
@@ -9847,7 +9847,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  googleapis@156.0.0:
+  googleapis@171.1.0:
     dependencies:
       google-auth-library: 10.5.0
       googleapis-common: 8.0.1

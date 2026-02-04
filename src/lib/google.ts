@@ -1,10 +1,9 @@
 import { env } from '@inspetor/env'
+import { PrivateKeyNormalizer } from '@inspetor/utils/normalize-private-key'
 import { snakify } from '@inspetor/utils/snakify'
 import { google } from 'googleapis'
 
-const googlePrivateKey = Buffer.from(env.GOOGLE_PRIVATE_KEY, 'base64')
-  .toString('utf-8')
-  .replace(/\\n/g, '\n')
+const googlePrivateKey = PrivateKeyNormalizer.normalize(env.GOOGLE_PRIVATE_KEY)
 
 export function getGoogleDriveClient() {
   const bucket = {

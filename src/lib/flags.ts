@@ -52,3 +52,23 @@ export const disableBoilerReportFlag = flag({
   adapter: growthbookAdapter.feature<boolean>(),
   defaultValue: true,
 })
+
+/**
+ * Flag to disable the boiler report forms section
+ *
+ * @default true
+ * @description If the flag is true, the boiler report forms section will be disabled
+ * @example
+ * ```ts
+ * const isDisableBoilerReportForms = await disableBoilerReportFormsFlag()
+ * if (isDisableBoilerReportForms) {
+ *   return <div>Boiler report forms section is disabled</div>
+ * }
+ * ```
+ */
+export const disableBoilerReportFormsFlag = flag({
+  key: 'disable_boiler_report_forms',
+  identify,
+  adapter: growthbookAdapter.feature<boolean>(),
+  defaultValue: true,
+})

@@ -100,7 +100,7 @@ export default async function StorageReportsPage({
       </div>
     )
   } catch (error) {
-    console.error(error)
+    console.trace(error)
     return redirect('/access-denied')
   }
 }
