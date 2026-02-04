@@ -11,4 +11,6 @@ model BoilerReportAttachment {
   updatedAt DateTime @updatedAt
 
   @@index([documentId])
+
+  operator Operator? @relation
 }

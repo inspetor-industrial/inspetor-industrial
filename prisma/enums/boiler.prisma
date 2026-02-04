@@ -51,7 +51,7 @@ enum BoilerType {
   MIXED
 }
 
-enum BoilerFuel {
+enum BoilerFuelType {
   FIRE_WOOD
   WOOD_CHIPS
   BAGASSE

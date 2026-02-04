@@ -1,0 +1,16 @@
+model BoilerInfo {
+  id                       String              @id @default(cuid())
+  manufacturer             String?           
+  mark                     String?
+  type                     BoilerType
+  model                    String?
+  yearOfManufacture        Int?
+  maximumWorkingPressure   String?
+  maximumOperatingPressure String?
+  series                   String?
+  fuelType                 BoilerFuelType
+  category                 BoilerCategory
+
+  boilerReport            BoilerReport @relation(fields: [boilerReportId], references: [id])
+  boilerReportId          String       @unique
+}
