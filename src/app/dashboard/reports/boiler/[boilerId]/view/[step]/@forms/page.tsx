@@ -1,3 +1,4 @@
+import { BoilerInfoForm } from './boiler-info-form'
 import { OperatorDataForm } from './operator-data-form'
 
 type BoilerViewformStepssPageProps = {
@@ -22,6 +23,7 @@ export default async function BoilerViewformStepssPage({
     React.ComponentType<{ boilerId: string; action?: 'view' | 'edit' }>
   > = {
     'operator-data': OperatorDataForm,
+    'boiler-info': BoilerInfoForm,
   }
 
   const FormComponent = formComponents[step]
