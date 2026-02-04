@@ -104,14 +104,15 @@ export function BoilerInfoForm({
         if (result.success && result.others?.data) {
           const boilerInfo = result.others.data
           form.reset({
-            manufacturer: boilerInfo.manufacturer ?? '',
-            mark: boilerInfo.mark ?? '',
+            manufacturer: boilerInfo.manufacturer,
+            mark: boilerInfo.mark,
             type: boilerInfo.type,
-            model: boilerInfo.model ?? '',
-            yearOfManufacture: boilerInfo.yearOfManufacture ?? undefined,
-            maximumWorkingPressure: boilerInfo.maximumWorkingPressure ?? '',
-            maximumOperatingPressure: boilerInfo.maximumOperatingPressure ?? '',
-            series: boilerInfo.series ?? '',
+            model: boilerInfo.model,
+            yearOfManufacture:
+              String(boilerInfo.yearOfManufacture) ?? undefined,
+            maximumWorkingPressure: boilerInfo.maximumWorkingPressure,
+            maximumOperatingPressure: boilerInfo.maximumOperatingPressure,
+            series: boilerInfo.series,
             fuelType: boilerInfo.fuelType,
             category: boilerInfo.category,
           })
