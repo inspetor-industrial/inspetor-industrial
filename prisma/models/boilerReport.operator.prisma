@@ -1,5 +1,5 @@
 model Operator {
-  id                      Int        @id @default(autoincrement())
+  id                      String        @id @default(cuid())
 
   boilerReport            BoilerReport @relation(fields: [boilerReportId], references: [id])
   boilerReportId          String       @unique

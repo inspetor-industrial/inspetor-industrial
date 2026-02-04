@@ -26,4 +26,5 @@ model BoilerReport {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   operator Operator?
+  boilerInfo BoilerInfo?
 }
