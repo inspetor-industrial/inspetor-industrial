@@ -289,7 +289,7 @@ export function OperatorDataForm({
                             onValueChange={field.onChange}
                             disabled={isViewMode}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full">
                               <SelectValue placeholder="Selecione uma opção" />
                             </SelectTrigger>
                             <SelectContent>

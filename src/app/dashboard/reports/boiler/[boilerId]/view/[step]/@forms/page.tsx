@@ -1,5 +1,6 @@
 import { BoilerInfoForm } from './boiler-info-form'
 import { OperatorDataForm } from './operator-data-form'
+import { StructureBodyInfoForm } from './structure-body-info-form'
 
 type BoilerViewformStepssPageProps = {
   params: Promise<{
@@ -24,6 +25,7 @@ export default async function BoilerViewformStepssPage({
   > = {
     'operator-data': OperatorDataForm,
     'boiler-info': BoilerInfoForm,
+    'structure-body': StructureBodyInfoForm,
   }
 
   const FormComponent = formComponents[step]

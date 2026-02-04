@@ -222,7 +222,7 @@ export function BoilerInfoForm({
                           onValueChange={field.onChange}
                           disabled={isViewMode}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue
                               placeholder={isViewMode ? '' : 'Selecione o tipo'}
                             />
@@ -356,7 +356,7 @@ export function BoilerInfoForm({
                           onValueChange={field.onChange}
                           disabled={isViewMode}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue
                               placeholder={
                                 isViewMode ? '' : 'Selecione o combustível'
@@ -414,7 +414,7 @@ export function BoilerInfoForm({
                           onValueChange={field.onChange}
                           disabled={isViewMode}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione a categoria" />
                           </SelectTrigger>
                           <SelectContent>
