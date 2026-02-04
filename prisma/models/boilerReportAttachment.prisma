@@ -13,4 +13,5 @@ model BoilerReportAttachment {
   @@index([documentId])
 
   operator Operator? @relation
+  structureBodyInfo StructureBodyInfo? @relation
 }

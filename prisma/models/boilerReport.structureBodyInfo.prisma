@@ -1,0 +1,15 @@
+model StructureBodyInfo {
+  id String @id @default(cuid())
+
+  boilerReport BoilerReport @relation(fields: [boilerReportId], references: [id])
+  boilerReportId String @unique
+
+  thickness String
+  diameter String
+  length String
+
+  material BoilerBodyMaterial
+
+  certificate BoilerReportAttachment? @relation(fields: [certificateId], references: [id])
+  certificateId String? @unique
+}

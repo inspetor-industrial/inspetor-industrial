@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@inspetor/components/ui/card'
-import { formSteps } from '@inspetor/constants/form-steps-boiler-report'
 import { UserResponsibility } from '@inspetor/generated/prisma/client'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
 import { getSession } from '@inspetor/lib/auth/server'
@@ -314,15 +313,6 @@ export default async function BoilerViewPage({ params }: BoilerViewPageProps) {
           ))}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {formSteps.map((section) => (
-          <BoilerSectionCard
-            boilerId={boilerId}
-            key={section.id}
-            section={section}
-          />
-        ))}
-      </div>
     </div>
   )
 }
