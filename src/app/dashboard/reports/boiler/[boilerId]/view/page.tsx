@@ -42,7 +42,6 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react'
-import { FileText } from 'lucide-react'
 import { redirect } from 'next/navigation'
 
 import { BoilerReportTypeBadge } from '../../components/boiler-report-type-badge'
@@ -54,6 +53,124 @@ type BoilerViewPageProps = {
     boilerId: string
   }>
 }
+
+const subSections = [
+  {
+    id: 'operator-data',
+    title: 'Dados do Operador',
+    icon: User,
+  },
+  {
+    id: 'boiler-info',
+    title: 'Informações da Caldeira',
+    icon: Flame,
+  },
+  {
+    id: 'structure-furnace',
+    title: 'Informações da Estrutura do Forno',
+    icon: Box,
+  },
+  {
+    id: 'structure-mirror',
+    title: 'Informações da Estrutura do Espelho',
+    icon: Sparkles,
+  },
+  {
+    id: 'structure-body',
+    title: 'Informações da Estrutura do Corpo',
+    icon: Package,
+  },
+  {
+    id: 'structure-tube',
+    title: 'Informações da Estrutura dos Tubos',
+    icon: Wind,
+  },
+  {
+    id: 'general-tests',
+    title: 'Testes de Desempenho Gerais',
+    icon: TestTube2,
+  },
+  {
+    id: 'external-tests',
+    title: 'Testes de Desempenho Externos',
+    icon: Wrench,
+  },
+  {
+    id: 'internal-tests',
+    title: 'Testes de Desempenho Internos',
+    icon: TestTube,
+  },
+  {
+    id: 'local-installation-tests',
+    title: 'Testes de Desempenho da Instalação Local',
+    icon: TrendingUp,
+  },
+  {
+    id: 'injector',
+    title: 'Injetor',
+    icon: Syringe,
+  },
+  {
+    id: 'power-supply',
+    title: 'Alimentação Elétrica',
+    icon: Zap,
+  },
+  {
+    id: 'level-indicator',
+    title: 'Indicador de Nível',
+    icon: Gauge,
+  },
+  {
+    id: 'valve-tests',
+    title: 'Testes de Válvulas',
+    icon: FlaskConical,
+  },
+  {
+    id: 'calibration-order',
+    title: 'Ordem de Calibração',
+    icon: Clipboard,
+  },
+  {
+    id: 'eletronic-panel',
+    title: 'Painel Eletrônico',
+    icon: Cpu,
+  },
+  {
+    id: 'discharge-system',
+    title: 'Sistema de Descarga',
+    icon: Droplets,
+  },
+  {
+    id: 'water-quality',
+    title: 'Qualidade da Água',
+    icon: Beaker,
+  },
+  {
+    id: 'hidrostatic-test',
+    title: 'Teste Hidrostático',
+    icon: Waves,
+  },
+  {
+    id: 'accumulation-test',
+    title: 'Teste de Acumulação',
+    icon: FlaskRound,
+  },
+  {
+    id: 'ultrasound-test',
+    title: 'Teste de Ultrassom',
+    icon: Radio,
+  },
+  {
+    id: 'pmta',
+    title: 'PMTA',
+    icon: FileCog,
+  },
+  {
+    id: 'conclusions',
+    title: 'Conclusões',
+    icon: FileCheck,
+  },
+]
 
 export default async function BoilerViewPage({ params }: BoilerViewPageProps) {
   const { boilerId } = await params
