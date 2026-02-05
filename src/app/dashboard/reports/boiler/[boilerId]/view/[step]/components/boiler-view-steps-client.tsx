@@ -1,6 +1,7 @@
 'use client'
 
 import { formSteps } from '@inspetor/constants/form-steps-boiler-report'
+import { parseAsStringLiteral, useQueryState } from 'nuqs'
 import { useRouter } from 'next/navigation'
 
 import { StepIndicator } from './step-indicator'
@@ -16,13 +17,19 @@ export function BoilerViewStepsClient({
   stepId,
 }: BoilerViewStepsClientProps) {
   const router = useRouter()
+  const [action] = useQueryState(
+    'action',
+    parseAsStringLiteral(['view', 'edit']).withDefault('view'),
+  )
   const currentStepData = formSteps.find((s) => s.id === stepId)
   const currentStep = currentStepData?.number ?? 1
 
   const handleStepChange = (step: number) => {
     const stepData = formSteps.find((s) => s.number === step)
     if (stepData) {
-      router.push(`/dashboard/reports/boiler/${boilerId}/view/${stepData.id}`)
+      router.push(
+        `/dashboard/reports/boiler/${boilerId}/view/${stepData.id}?action=${action}`,
+      )
     }
   }
 
