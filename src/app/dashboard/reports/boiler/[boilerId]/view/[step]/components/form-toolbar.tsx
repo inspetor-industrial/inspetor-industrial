@@ -1,7 +1,9 @@
 'use client'
 
 import { Button } from '@inspetor/components/ui/button'
-import { ArrowLeft, Save, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Pencil, Save, X } from 'lucide-react'
+import { parseAsStringLiteral, useQueryState } from 'nuqs'
 
 interface FormToolbarProps {
   onBack?: () => void
@@ -22,6 +24,17 @@ export function FormToolbar({
   showBackButton = true,
   isViewMode = true,
 }: FormToolbarProps) {
+  const router = useRouter()
+  const [, setAction] = useQueryState(
+    'action',
+    parseAsStringLiteral(['view', 'edit']).withDefault('view'),
+  )
+
+  const handleEdit = async () => {
+    await setAction('edit')
+    router.refresh()
+  }
+
   return (
     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
       <div className="flex gap-2 rounded-2xl border bg-background p-2 shadow-lg backdrop-blur-sm">
@@ -33,6 +46,18 @@ export function FormToolbar({
             icon={ArrowLeft}
           >
             Voltar
+          </Button>
+        )}
+
+        {isViewMode && (
+          <Button
+            type="button"
+            variant="default"
+            onClick={handleEdit}
+            disabled={isSaving}
+            icon={Pencil}
+          >
+            Editar
           </Button>
         )}
 
