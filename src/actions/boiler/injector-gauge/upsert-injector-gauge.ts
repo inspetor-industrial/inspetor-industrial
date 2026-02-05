@@ -1,5 +1,6 @@
 'use server'
 
+import { BoilerReportAttachmentFieldName } from '@inspetor/generated/prisma/enums'
 import { InjectorGaugeFuel } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -39,6 +40,7 @@ export const upsertInjectorGaugeAction = authProcedure
       mark: z.string(),
       diameter: z.string(),
       serialNumber: z.string(),
+      photoDocumentId: z.string().optional().nullable(),
     }),
   )
   .handler(async ({ input, ctx }) => {
@@ -57,7 +59,7 @@ export const upsertInjectorGaugeAction = authProcedure
         })
       }
 
-      await prisma.injectorGauge.upsert({
+      const injectorGauge = await prisma.injectorGauge.upsert({
         where: {
           boilerReportId: input.boilerReportId,
         },
@@ -79,6 +81,38 @@ export const upsertInjectorGaugeAction = authProcedure
           serialNumber: input.serialNumber,
         },
       })
+
+      const existingPhotos = await prisma.boilerReportAttachment.findMany({
+        where: {
+          injectorGaugeId: injectorGauge.id,
+          fieldName: BoilerReportAttachmentFieldName.INJECTOR_GAUGE_PHOTOS,
+        },
+      })
+
+      for (const attachment of existingPhotos) {
+        await prisma.boilerReportAttachment.delete({
+          where: { id: attachment.id },
+        })
+      }
+
+      if (
+        input.photoDocumentId &&
+        input.photoDocumentId.trim() !== ''
+      ) {
+        const document = await prisma.documents.findUnique({
+          where: { id: input.photoDocumentId },
+        })
+        if (document) {
+          await prisma.boilerReportAttachment.create({
+            data: {
+              documentId: input.photoDocumentId,
+              fieldName: BoilerReportAttachmentFieldName.INJECTOR_GAUGE_PHOTOS,
+              injectorGaugeId: injectorGauge.id,
+              sortOrder: 1,
+            },
+          })
+        }
+      }
 
       return returnsDefaultActionMessage({
         message: 'Dados do injetor salvos com sucesso',

@@ -7,7 +7,7 @@ import z from 'zod'
 
 import { authProcedure } from '../../procedures/auth'
 
-export const getInjectorGaugeByBoilerReportIdAction = authProcedure
+export const getInjectorGaugePhotosAction = authProcedure
   .createServerAction()
   .input(z.object({ boilerReportId: z.string() }))
   .handler(async ({ input, ctx }) => {
@@ -27,9 +27,7 @@ export const getInjectorGaugeByBoilerReportIdAction = authProcedure
       }
 
       const injectorGauge = await prisma.injectorGauge.findUnique({
-        where: {
-          boilerReportId: input.boilerReportId,
-        },
+        where: { boilerReportId: input.boilerReportId },
         include: {
           photos: {
             where: {
@@ -41,16 +39,16 @@ export const getInjectorGaugeByBoilerReportIdAction = authProcedure
         },
       })
 
+      const photos = injectorGauge?.photos ?? []
+
       return returnsDefaultActionMessage({
-        message: injectorGauge
-          ? 'Dados do injetor encontrados com sucesso'
-          : 'Nenhum dado do injetor salvo ainda',
+        message: 'Fotos do injetor carregadas',
         success: true,
-        data: injectorGauge,
+        data: photos,
       })
     } catch {
       return returnsDefaultActionMessage({
-        message: 'Erro ao buscar dados do injetor',
+        message: 'Erro ao buscar fotos do injetor',
         success: false,
       })
     }
