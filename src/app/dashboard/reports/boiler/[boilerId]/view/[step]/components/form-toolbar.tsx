@@ -23,7 +23,7 @@ export function FormToolbar({
   isViewMode = true,
 }: FormToolbarProps) {
   return (
-    <div className="fixed bottom-8 left-1/2 md:left-[calc(50%+1.8rem)] -translate-x-1/2 z-50">
+    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
       <div className="flex gap-2 rounded-2xl border bg-background p-2 shadow-lg backdrop-blur-sm">
         {showBackButton && onBack && (
           <Button
