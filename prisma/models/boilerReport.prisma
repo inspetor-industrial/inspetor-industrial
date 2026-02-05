@@ -28,4 +28,5 @@ model BoilerReport {
   operator Operator?
   boilerInfo BoilerInfo?
   structureBodyInfo StructureBodyInfo?
+  structureTubeInfo StructureTubeInfo?
 }
