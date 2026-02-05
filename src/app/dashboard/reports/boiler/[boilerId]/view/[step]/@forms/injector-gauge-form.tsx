@@ -19,6 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@inspetor/components/ui/form'
+import { ImageUploadField } from '@inspetor/components/ui/image-upload-field'
 import { Input } from '@inspetor/components/ui/input'
 import {
   Select,
@@ -70,6 +71,7 @@ const injectorGaugeSchema = z.object({
   mark: z.string().min(1, 'Marca é obrigatória'),
   diameter: z.string().min(1, 'Diâmetro é obrigatório'),
   serialNumber: z.string().min(1, 'Número de série é obrigatório'),
+  photoDocumentId: z.string().nullish(),
   tests: z.object({
     questions: z.array(
       z.object({
@@ -141,6 +143,7 @@ export function InjectorGaugeForm({
   const router = useRouter()
   const isViewMode = action === 'view'
   const [nrModalOpen, setNrModalOpen] = useState(false)
+  const [existingPhotoName, setExistingPhotoName] = useState<string | null>(null)
 
   const form = useForm<InjectorGaugeFormValues>({
     resolver: zodResolver(injectorGaugeSchema),
@@ -150,6 +153,7 @@ export function InjectorGaugeForm({
       mark: '',
       diameter: '',
       serialNumber: '',
+      photoDocumentId: undefined,
       tests: defaultTests,
     },
   })
@@ -166,15 +170,26 @@ export function InjectorGaugeForm({
           return
         }
 
-        const data = result.others?.data
+        const data = result.others?.data as {
+          observations?: string
+          fuelType?: InjectorGaugeFormValues['fuelType']
+          mark?: string
+          diameter?: string
+          serialNumber?: string
+          tests?: unknown
+          photos?: Array<{ documentId: string; document: { name: string } }>
+        } | undefined
         if (data) {
+          const firstPhoto = data.photos?.at(0)
+          setExistingPhotoName(firstPhoto?.document?.name ?? null)
           const tests = normalizeStoredTests(data.tests)
           form.reset({
             observations: data.observations ?? '',
             fuelType: data.fuelType,
-            mark: data.mark,
-            diameter: data.diameter,
-            serialNumber: data.serialNumber,
+            mark: data.mark ?? '',
+            diameter: data.diameter ?? '',
+            serialNumber: data.serialNumber ?? '',
+            photoDocumentId: firstPhoto?.documentId ?? undefined,
             tests: tests ?? defaultTests,
           })
         }
@@ -196,6 +211,7 @@ export function InjectorGaugeForm({
         mark: values.mark,
         diameter: values.diameter,
         serialNumber: values.serialNumber,
+        photoDocumentId: values.photoDocumentId?.trim() || null,
       })
 
       if (result?.success) {
@@ -315,6 +331,25 @@ export function InjectorGaugeForm({
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="photoDocumentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Foto do injetor</FormLabel>
+                    <FormControl>
+                      <ImageUploadField
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={form.formState.isSubmitting || isViewMode}
+                        existingImageName={existingPhotoName ?? undefined}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}

@@ -1,4 +1,5 @@
 import { BoilerInfoForm } from './boiler-info-form'
+import { GeneralPerformedTestsForm } from './general-performed-tests-form'
 import { InjectorGaugeForm } from './injector-gauge-form'
 import { OperatorDataForm } from './operator-data-form'
 import { StructureBodyInfoForm } from './structure-body-info-form'
@@ -30,6 +31,7 @@ export default async function BoilerViewformStepssPage({
     'boiler-info': BoilerInfoForm,
     'structure-body': StructureBodyInfoForm,
     'structure-tube': StructureTubeInfoForm,
+    'general-tests': GeneralPerformedTestsForm,
     injector: InjectorGaugeForm,
     'structure-furnace': StructureFurnaceInfoForm,
   }
