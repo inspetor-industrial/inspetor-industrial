@@ -65,7 +65,7 @@ const defaultTests = {
 const injectorGaugeSchema = z.object({
   observations: z.string().optional(),
   fuelType: z.nativeEnum(InjectorGaugeFuel, {
-    errorMap: () => ({ message: 'Tipo de combustível é obrigatório' }),
+    error: 'Tipo de combustível é obrigatório',
   }),
   mark: z.string().min(1, 'Marca é obrigatória'),
   diameter: z.string().min(1, 'Diâmetro é obrigatório'),
@@ -110,10 +110,11 @@ function normalizeStoredTests(
   const normalizedQuestions = questions.map((q: unknown) => {
     const item = q as Record<string, unknown>
     const answer = item.answer
+    const normalizedAnswer: '' | 'yes' | 'no' =
+      answer === 'yes' || answer === 'no' ? answer : ''
     return {
       question: String(item.question ?? ''),
-      answer:
-        answer === 'yes' || answer === 'no' ? answer : ('' as const),
+      answer: normalizedAnswer,
     }
   })
   const normalizedNrs = nrs.map((nr: unknown) => {

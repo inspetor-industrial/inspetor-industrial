@@ -36,7 +36,7 @@ const structureBodyInfoSchema = z.object({
   length: z.string().min(1, 'Comprimento é obrigatório'),
   material: z.enum(
     [BoilerBodyMaterial.ASTMA285GRC, BoilerBodyMaterial.ASTMA516, BoilerBodyMaterial.NOT_SPECIFIED],
-    { errorMap: () => ({ message: 'Material é obrigatório' }) },
+    { error: 'Material é obrigatório' },
   ),
   certificateDocumentId: z.string().optional(),
 })
