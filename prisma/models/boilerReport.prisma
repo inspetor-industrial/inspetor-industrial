@@ -29,5 +29,6 @@ model BoilerReport {
   boilerInfo BoilerInfo?
   structureBodyInfo StructureBodyInfo?
   structureTubeInfo StructureTubeInfo?
+  structureMirrorInfo StructureMirrorInfo?
   injectorGauge InjectorGauge?
 }
