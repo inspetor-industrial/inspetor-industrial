@@ -1,13 +1,12 @@
 'use server'
 
-import { BoilerReportAttachmentFieldName } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
 import { authProcedure } from '../../procedures/auth'
 
-export const getInjectorGaugeByBoilerReportIdAction = authProcedure
+export const getGeneralPerformedTestsByBoilerReportIdAction = authProcedure
   .createServerAction()
   .input(z.object({ boilerReportId: z.string() }))
   .handler(async ({ input, ctx }) => {
@@ -26,31 +25,23 @@ export const getInjectorGaugeByBoilerReportIdAction = authProcedure
         })
       }
 
-      const injectorGauge = await prisma.injectorGauge.findUnique({
-        where: {
-          boilerReportId: input.boilerReportId,
-        },
-        include: {
-          photos: {
-            where: {
-              fieldName: BoilerReportAttachmentFieldName.INJECTOR_GAUGE_PHOTOS,
-            },
-            orderBy: { sortOrder: 'asc' },
-            include: { document: true },
+      const generalPerformedTests =
+        await prisma.generalPerformedTests.findUnique({
+          where: {
+            boilerReportId: input.boilerReportId,
           },
-        },
-      })
+        })
 
       return returnsDefaultActionMessage({
-        message: injectorGauge
-          ? 'Dados do injetor encontrados com sucesso'
-          : 'Nenhum dado do injetor salvo ainda',
+        message: generalPerformedTests
+          ? 'Testes gerais encontrados com sucesso'
+          : 'Nenhum dado de testes gerais salvo ainda',
         success: true,
-        data: injectorGauge,
+        data: generalPerformedTests,
       })
     } catch {
       return returnsDefaultActionMessage({
-        message: 'Erro ao buscar dados do injetor',
+        message: 'Erro ao buscar testes gerais',
         success: false,
       })
     }
