@@ -9,7 +9,7 @@ export default async function BoilerViewStepsLayout({
 }: BoilerViewStepsLayoutProps) {
   return (
     <div className="bg-background pt-4 sm:pt-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6 pb-16">
         {children}
         {forms}
       </div>

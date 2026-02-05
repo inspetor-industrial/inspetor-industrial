@@ -2,6 +2,7 @@ import { BoilerInfoForm } from './boiler-info-form'
 import { InjectorGaugeForm } from './injector-gauge-form'
 import { OperatorDataForm } from './operator-data-form'
 import { StructureBodyInfoForm } from './structure-body-info-form'
+import { StructureFurnaceInfoForm } from './structure-furnace-info-form'
 import { StructureTubeInfoForm } from './structure-tube-info-form'
 
 type BoilerViewformStepssPageProps = {
@@ -30,6 +31,7 @@ export default async function BoilerViewformStepssPage({
     'structure-body': StructureBodyInfoForm,
     'structure-tube': StructureTubeInfoForm,
     injector: InjectorGaugeForm,
+    'structure-furnace': StructureFurnaceInfoForm,
   }
 
   const FormComponent = formComponents[step]
