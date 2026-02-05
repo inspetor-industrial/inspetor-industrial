@@ -1,0 +1,13 @@
+model GeneralPerformedTests {
+  id String @id @default(cuid())
+
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+  boilerReportId String       @unique
+
+  tests Json
+
+  observations String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
