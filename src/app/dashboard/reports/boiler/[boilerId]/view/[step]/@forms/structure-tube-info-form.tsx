@@ -38,11 +38,11 @@ const structureTubeInfoSchema = z.object({
   thickness: z.string().min(1, 'Espessura é obrigatória'),
   material: z.enum(
     [BoilerTubeMaterial.ASTMA178, BoilerTubeMaterial.NOT_SPECIFIED],
-    { errorMap: () => ({ message: 'Material é obrigatório' }) },
+    { error: 'Material é obrigatório' },
   ),
   certificateDocumentId: z.string().optional(),
   isNaturalOrForced: z.enum(NATURAL_OR_FORCED_OPTIONS, {
-    errorMap: () => ({ message: 'Selecione Natural ou Forçado' }),
+    error: 'Selecione Natural ou Forçado',
   }),
   quantityOfSafetyFuse: z.string().min(1, 'Quantidade de fusível de segurança é obrigatória'),
 })
