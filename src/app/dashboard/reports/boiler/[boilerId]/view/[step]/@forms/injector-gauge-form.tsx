@@ -3,12 +3,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getInjectorGaugeByBoilerReportIdAction } from '@inspetor/actions/boiler/injector-gauge/get-injector-gauge-by-boiler-report-id'
 import { upsertInjectorGaugeAction } from '@inspetor/actions/boiler/injector-gauge/upsert-injector-gauge'
+import { BoilerReportNrSelectorModal } from '@inspetor/components/boiler-report-nr-selector-modal'
 import type { BoilerReportQuestion } from '@inspetor/components/boiler-report-questions-table'
 import { BoilerReportQuestionsTable } from '@inspetor/components/boiler-report-questions-table'
-import { injectorQuestions } from '@inspetor/constants/tests'
-import { nrsForInjectorGauge } from '@inspetor/constants/nrs-injector'
 import { BoilerReportSelectedNrsViewer } from '@inspetor/components/boiler-report-selected-nrs-viewer'
-import { BoilerReportNrSelectorModal } from '@inspetor/components/boiler-report-nr-selector-modal'
 import { Button } from '@inspetor/components/ui/button'
 import { Card, CardContent } from '@inspetor/components/ui/card'
 import {
@@ -29,6 +27,8 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { Textarea } from '@inspetor/components/ui/textarea'
+import { nrsForInjectorGauge } from '@inspetor/constants/nrs-injector'
+import { injectorQuestions } from '@inspetor/constants/tests'
 import { InjectorGaugeFuel } from '@inspetor/generated/prisma/enums'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -44,15 +44,13 @@ const fuelTypeLabels: Record<InjectorGaugeFuel, string> = {
   [InjectorGaugeFuel.SOLID]: 'Sólido',
 }
 
-const defaultQuestions: BoilerReportQuestion[] = injectorQuestions.map(
-  (q) => ({
-    question: q.question,
-    answer: (q.answer === 'yes' || q.answer === 'no' ? q.answer : '') as
-      | 'yes'
-      | 'no'
-      | '',
-  }),
-)
+const defaultQuestions: BoilerReportQuestion[] = injectorQuestions.map((q) => ({
+  question: q.question,
+  answer: (q.answer === 'yes' || q.answer === 'no' ? q.answer : '') as
+    | 'yes'
+    | 'no'
+    | '',
+}))
 
 const defaultTests = {
   questions: defaultQuestions,
@@ -143,7 +141,9 @@ export function InjectorGaugeForm({
   const router = useRouter()
   const isViewMode = action === 'view'
   const [nrModalOpen, setNrModalOpen] = useState(false)
-  const [existingPhotoName, setExistingPhotoName] = useState<string | null>(null)
+  const [existingPhotoName, setExistingPhotoName] = useState<string | null>(
+    null,
+  )
 
   const form = useForm<InjectorGaugeFormValues>({
     resolver: zodResolver(injectorGaugeSchema),
@@ -170,15 +170,17 @@ export function InjectorGaugeForm({
           return
         }
 
-        const data = result.others?.data as {
-          observations?: string
-          fuelType?: InjectorGaugeFormValues['fuelType']
-          mark?: string
-          diameter?: string
-          serialNumber?: string
-          tests?: unknown
-          photos?: Array<{ documentId: string; document: { name: string } }>
-        } | undefined
+        const data = result.others?.data as
+          | {
+              observations?: string
+              fuelType?: InjectorGaugeFormValues['fuelType']
+              mark?: string
+              diameter?: string
+              serialNumber?: string
+              tests?: unknown
+              photos?: Array<{ documentId: string; document: { name: string } }>
+            }
+          | undefined
         if (data) {
           const firstPhoto = data.photos?.at(0)
           setExistingPhotoName(firstPhoto?.document?.name ?? null)
@@ -340,7 +342,7 @@ export function InjectorGaugeForm({
                     <FormLabel>Foto do injetor</FormLabel>
                     <FormControl>
                       <ImageUploadField
-                        value={field.value}
+                        value={field.value || ''}
                         onChange={field.onChange}
                         disabled={form.formState.isSubmitting || isViewMode}
                         existingImageName={existingPhotoName ?? undefined}
