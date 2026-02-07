@@ -1,4 +1,5 @@
 import { BoilerInfoForm } from './boiler-info-form'
+import { ExternalPerformedTestsForm } from './external-performed-tests-form'
 import { GeneralPerformedTestsForm } from './general-performed-tests-form'
 import { InjectorGaugeForm } from './injector-gauge-form'
 import { OperatorDataForm } from './operator-data-form'
@@ -38,6 +39,7 @@ export default async function BoilerViewformStepssPage({
     injector: InjectorGaugeForm,
     'general-tests': GeneralPerformedTestsForm,
     'power-supply': PowerSupplyForm,
+    'external-tests': ExternalPerformedTestsForm,
   }
 
   const FormComponent = formComponents[step]
