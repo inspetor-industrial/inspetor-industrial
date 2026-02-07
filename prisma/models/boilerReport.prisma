@@ -29,6 +29,7 @@ model BoilerReport {
   boilerInfo BoilerInfo?
   structureBodyInfo StructureBodyInfo?
   structureTubeInfo StructureTubeInfo?
+  structureFurnaceInfo StructureFurnaceInfo?
   injectorGauge           InjectorGauge?
   generalPerformedTests   GeneralPerformedTests?
 }
