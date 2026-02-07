@@ -1,8 +1,8 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { getGeneralPerformedTestsByBoilerReportIdAction } from '@inspetor/actions/boiler/general-performed-tests/get-general-performed-tests-by-boiler-report-id'
-import { upsertGeneralPerformedTestsAction } from '@inspetor/actions/boiler/general-performed-tests/upsert-general-performed-tests'
+import { getPowerSupplyByBoilerReportIdAction } from '@inspetor/actions/boiler/power-supply/get-power-supply-by-boiler-report-id'
+import { upsertPowerSupplyAction } from '@inspetor/actions/boiler/power-supply/upsert-power-supply'
 import { BoilerReportNrSelectorModal } from '@inspetor/components/boiler-report-nr-selector-modal'
 import type { BoilerReportQuestion } from '@inspetor/components/boiler-report-questions-table'
 import { BoilerReportQuestionsTable } from '@inspetor/components/boiler-report-questions-table'
@@ -18,8 +18,8 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import { examsNrs } from '@inspetor/constants/nrs-general-tests'
-import { tableExamsOptions } from '@inspetor/constants/tests'
+import { nrsForPowerSupply } from '@inspetor/constants/nrs-power-supply'
+import { powerSupplyQuestions } from '@inspetor/constants/tests'
 import { normalizeStoredTests } from '@inspetor/utils/normalize-stored-tests'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -29,24 +29,26 @@ import { z } from 'zod'
 
 import { FormToolbar } from '../components/form-toolbar'
 
-const defaultQuestions: BoilerReportQuestion[] = tableExamsOptions.map((q) => ({
-  question: q.question,
-  answer: (q.answer === 'yes' || q.answer === 'no' ? q.answer : '') as
-    | 'yes'
-    | 'no'
-    | '',
-}))
+const defaultQuestions: BoilerReportQuestion[] = powerSupplyQuestions.map(
+  (q) => ({
+    question: q.question,
+    answer: (q.answer === 'yes' || q.answer === 'no' ? q.answer : '') as
+      | 'yes'
+      | 'no'
+      | '',
+  }),
+)
 
 const defaultTests = {
   questions: defaultQuestions,
-  nrs: examsNrs.map((nr) => ({
+  nrs: nrsForPowerSupply.map((nr) => ({
     parent: nr.parent,
     parentSelected: nr.parentSelected,
     children: nr.children.map((c) => ({ selected: c.selected, text: c.text })),
   })),
 }
 
-const generalPerformedTestsSchema = z.object({
+const powerSupplySchema = z.object({
   observations: z.string().optional(),
   tests: z.object({
     questions: z.array(
@@ -70,25 +72,23 @@ const generalPerformedTestsSchema = z.object({
   }),
 })
 
-type GeneralPerformedTestsFormValues = z.infer<
-  typeof generalPerformedTestsSchema
->
+type PowerSupplyFormValues = z.infer<typeof powerSupplySchema>
 
-type GeneralPerformedTestsFormProps = {
+type PowerSupplyFormProps = {
   boilerId: string
   action?: 'view' | 'edit'
 }
 
-export function GeneralPerformedTestsForm({
+export function PowerSupplyForm({
   boilerId,
   action = 'view',
-}: GeneralPerformedTestsFormProps) {
+}: PowerSupplyFormProps) {
   const router = useRouter()
   const isViewMode = action === 'view'
   const [nrModalOpen, setNrModalOpen] = useState(false)
 
-  const form = useForm<GeneralPerformedTestsFormValues>({
-    resolver: zodResolver(generalPerformedTestsSchema),
+  const form = useForm<PowerSupplyFormValues>({
+    resolver: zodResolver(powerSupplySchema),
     defaultValues: {
       observations: '',
       tests: defaultTests,
@@ -98,16 +98,21 @@ export function GeneralPerformedTestsForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const [result] = await getGeneralPerformedTestsByBoilerReportIdAction({
+        const [result] = await getPowerSupplyByBoilerReportIdAction({
           boilerReportId: boilerId,
         })
 
         if (!result.success) {
-          toast.error('Erro ao carregar testes gerais')
+          toast.error('Erro ao carregar dados da alimentação elétrica')
           return
         }
 
-        const data = result.others?.data
+        const data = result.others?.data as
+          | {
+              observations?: string
+              tests?: unknown
+            }
+          | undefined
         if (data) {
           const tests = normalizeStoredTests(data.tests)
           form.reset({
@@ -116,16 +121,16 @@ export function GeneralPerformedTestsForm({
           })
         }
       } catch {
-        toast.error('Erro ao carregar testes gerais')
+        toast.error('Erro ao carregar dados da alimentação elétrica')
       }
     }
 
     load()
   }, [boilerId, form])
 
-  const onSubmit = async (values: GeneralPerformedTestsFormValues) => {
+  const onSubmit = async (values: PowerSupplyFormValues) => {
     try {
-      const [result] = await upsertGeneralPerformedTestsAction({
+      const [result] = await upsertPowerSupplyAction({
         boilerReportId: boilerId,
         tests: values.tests,
         observations: values.observations || null,
@@ -138,7 +143,7 @@ export function GeneralPerformedTestsForm({
         toast.error(result?.message ?? 'Erro ao salvar')
       }
     } catch {
-      toast.error('Erro ao salvar testes gerais')
+      toast.error('Erro ao salvar dados da alimentação elétrica')
     }
   }
 
@@ -156,7 +161,7 @@ export function GeneralPerformedTestsForm({
         <CardContent className="pt-6">
           <Form {...form}>
             <form
-              id="general-performed-tests-form"
+              id="power-supply-form"
               onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-6"
             >
@@ -239,7 +244,7 @@ export function GeneralPerformedTestsForm({
       </Card>
 
       <FormToolbar
-        formId="general-performed-tests-form"
+        formId="power-supply-form"
         onBack={handleBack}
         onCancel={handleCancel}
         isSaving={form.formState.isSubmitting}
