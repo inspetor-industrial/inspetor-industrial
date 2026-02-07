@@ -33,4 +33,5 @@ model BoilerReport {
   structureMirrorInfo StructureMirrorInfo?
   injectorGauge           InjectorGauge?
   generalPerformedTests   GeneralPerformedTests?
+  powerSupply PowerSupply?
 }
