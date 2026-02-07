@@ -1,21 +1,18 @@
 model Company {
-  id     String        @id @default(cuid())
-  name   String
-  cnpj   String
-  status CompanyStatus @default(ACTIVE)
-
+  id               String             @id @default(cuid())
+  name             String
+  cnpj             String             @unique
+  status           CompanyStatus      @default(ACTIVE)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  storage          Storage[]
-  users            User[]
+  boilerReports    BoilerReport[]
+  bombs            Bomb[]
+  clients          Clients[]
   DailyMaintenance DailyMaintenance[]
-  Instruments      Instruments[]
   Documents        Documents[]
   Equipment        Equipment[]
+  Instruments      Instruments[]
+  storage          Storage[]
+  users            User[]
   valves           Valve[]
-  bombs            Bomb[]
-  boilerReports    BoilerReport[]
-  clients          Clients[]
-
-  @@unique([cnpj])
 }

@@ -1,12 +1,8 @@
 model PowerSupply {
-  id String @id @default(cuid())
-
-  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+  id             String       @id @default(cuid())
   boilerReportId String       @unique
-
-  tests Json
-
-  observations String?
-
-  bombs Bomb[]
+  tests          Json
+  observations   String?
+  bombs          Bomb[]
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
 }

@@ -1,21 +1,15 @@
 model Bomb {
-  id String @id @default(cuid())
-
-  company   Company @relation(fields: [companyId], references: [id])
-  companyId String
-
-  mark   String
-  model  String
-  stages String
-
-  potency Decimal
-
-  photo   Documents @relation(fields: [photoId], references: [id])
-  photoId String
-
-  powerSupply   PowerSupply? @relation(fields: [powerSupplyId], references: [id])
+  id            String       @id @default(cuid())
+  companyId     String
+  mark          String
+  model         String
+  stages        String
+  potency       Decimal
+  photoId       String
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
   powerSupplyId String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  company       Company      @relation(fields: [companyId], references: [id])
+  photo         Documents    @relation(fields: [photoId], references: [id])
+  powerSupply   PowerSupply? @relation(fields: [powerSupplyId], references: [id])
 }

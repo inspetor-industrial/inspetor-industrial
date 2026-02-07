@@ -1,12 +1,9 @@
 model Storage {
-  id        String  @id @default(cuid())
-  company   Company @relation(fields: [companyId], references: [id])
-  companyId String
-
+  id           String        @id @default(cuid())
+  companyId    String
   relativeLink String
-
-  status StorageStatus @default(ACTIVE)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status       StorageStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  company      Company       @relation(fields: [companyId], references: [id])
 }

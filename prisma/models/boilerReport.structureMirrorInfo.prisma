@@ -1,10 +1,7 @@
 model StructureMirrorInfo {
-  id String @id @default(cuid())
-
-  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+  id             String       @id @default(cuid())
   boilerReportId String       @unique
-
-  thickness Float?
-
-  diameter Float?
+  thickness      Float?
+  diameter       Float?
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
 }

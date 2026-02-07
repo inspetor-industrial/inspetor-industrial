@@ -1,26 +1,21 @@
 model User {
-  id             String              @id @default(cuid())
-  name           String?
-  email          String              @unique
-  emailVerified  DateTime?
-  image          String?
-  sessions       Session[]
-  status         UserStatus          @default(ACTIVE)
-  role           UserRole            @default(USER)
-  responsibility UserResponsibility? @default(OPERATOR)
-
-  crea String? @default("N-A") // N-A: Not Available
-
-  username String? @unique
-  password String?
-
-  registrationNumber String? @default("N-A") // N-A: Not Available
-
-  company   Company? @relation(fields: [companyId], references: [id])
-  companyId String?
-
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  documents     Documents[]
-  boilerReports BoilerReport[]
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String              @unique
+  emailVerified      DateTime?
+  image              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  password           String?
+  companyId          String?
+  status             UserStatus          @default(ACTIVE)
+  role               UserRole            @default(USER)
+  username           String?             @unique
+  responsibility     UserResponsibility? @default(OPERATOR)
+  registrationNumber String?             @default("N-A")
+  crea               String?             @default("N-A")
+  boilerReports      BoilerReport[]
+  documents          Documents[]
+  sessions           Session[]
+  company            Company?            @relation(fields: [companyId], references: [id])
 }

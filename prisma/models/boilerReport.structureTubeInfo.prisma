@@ -1,17 +1,13 @@
 model StructureTubeInfo {
-  id String @id @default(cuid())
-
-  boilerReport BoilerReport @relation(fields: [boilerReportId], references: [id])
-  boilerReportId String @unique
-
-  certificate BoilerReportAttachment? @relation(fields: [certificateId], references: [id])
-  certificateId String? @unique
-
-  length String
-  diameter String
-  thickness String
-  material BoilerTubeMaterial
-
-  isNaturalOrForced String
+  id                   String                  @id @default(cuid())
+  boilerReportId       String                  @unique
+  certificateId        String?                 @unique
+  length               String
+  diameter             String
+  thickness            String
+  material             BoilerTubeMaterial
+  isNaturalOrForced    String
   quantityOfSafetyFuse String
+  boilerReport         BoilerReport            @relation(fields: [boilerReportId], references: [id])
+  certificate          BoilerReportAttachment? @relation(fields: [certificateId], references: [id])
 }

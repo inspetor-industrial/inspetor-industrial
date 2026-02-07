@@ -1,21 +1,17 @@
 model BoilerReportAttachment {
-  id String @id @default(cuid())
-
-  document   Documents @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  documentId String
-
-  fieldName BoilerReportAttachmentFieldName // eg.: "hydrostaticTestPhotos", "internalTubes", "operatorCertification"
-  sortOrder Int? // if needed to order images
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String                          @id @default(cuid())
+  documentId        String
+  fieldName         BoilerReportAttachmentFieldName
+  sortOrder         Int?
+  createdAt         DateTime                        @default(now())
+  updatedAt         DateTime                        @updatedAt
+  injectorGaugeId   String?
+  document          Documents                       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  injectorGauge     InjectorGauge?                  @relation(fields: [injectorGaugeId], references: [id])
+  operator          Operator?
+  structureBodyInfo StructureBodyInfo?
+  structureTubeInfo StructureTubeInfo?
 
   @@index([documentId])
   @@index([injectorGaugeId, fieldName])
-
-  operator Operator? @relation
-  structureBodyInfo StructureBodyInfo? @relation
-  structureTubeInfo StructureTubeInfo? @relation
-  injectorGauge   InjectorGauge? @relation(fields: [injectorGaugeId], references: [id], onDelete: SetNull)
-  injectorGaugeId String?
 }

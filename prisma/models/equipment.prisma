@@ -1,24 +1,18 @@
 model Equipment {
-  id String @id @default(cuid())
-
-  company   Company @relation(fields: [companyId], references: [id])
-  companyId String
-
-  name String
-  mark String
-
-  identificationNumber String @unique
-
-  type String
-
-  manufactorYear String @db.VarChar(10)
-  model          String
-  category       String
-  pmta           String
-
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  DailyMaintenance DailyMaintenance[]
+  id                   String             @id @default(cuid())
+  companyId            String
+  name                 String
+  model                String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  category             String
+  identificationNumber String             @unique
+  manufactorYear       String             @db.VarChar(10)
+  mark                 String
+  pmta                 String
+  type                 String
+  DailyMaintenance     DailyMaintenance[]
+  company              Company            @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([id, companyId])
