@@ -34,4 +34,5 @@ model BoilerReport {
   injectorGauge           InjectorGauge?
   generalPerformedTests   GeneralPerformedTests?
   powerSupply PowerSupply?
+  externalPerformedTests ExternalPerformedTests?
 }
