@@ -2,6 +2,7 @@ import { BoilerInfoForm } from './boiler-info-form'
 import { GeneralPerformedTestsForm } from './general-performed-tests-form'
 import { InjectorGaugeForm } from './injector-gauge-form'
 import { OperatorDataForm } from './operator-data-form'
+import { PowerSupplyForm } from './power-supply-form'
 import { StructureMirrorInfoForm } from './sctructure-mirror-info-form'
 import { StructureBodyInfoForm } from './structure-body-info-form'
 import { StructureFurnaceInfoForm } from './structure-furnace-info-form'
@@ -36,6 +37,7 @@ export default async function BoilerViewformStepssPage({
     'structure-mirror': StructureMirrorInfoForm,
     injector: InjectorGaugeForm,
     'general-tests': GeneralPerformedTestsForm,
+    'power-supply': PowerSupplyForm,
   }
 
   const FormComponent = formComponents[step]
