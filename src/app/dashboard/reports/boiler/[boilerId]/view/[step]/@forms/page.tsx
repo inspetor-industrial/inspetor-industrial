@@ -1,19 +1,61 @@
-type BoilerViewStepsFormsPageProps = {
+import { BoilerInfoForm } from './boiler-info-form'
+import { ExternalPerformedTestsForm } from './external-performed-tests-form'
+import { GeneralPerformedTestsForm } from './general-performed-tests-form'
+import { InjectorGaugeForm } from './injector-gauge-form'
+import { OperatorDataForm } from './operator-data-form'
+import { PowerSupplyForm } from './power-supply-form'
+import { StructureMirrorInfoForm } from './sctructure-mirror-info-form'
+import { StructureBodyInfoForm } from './structure-body-info-form'
+import { StructureFurnaceInfoForm } from './structure-furnace-info-form'
+import { StructureTubeInfoForm } from './structure-tube-info-form'
+
+type BoilerViewformStepssPageProps = {
   params: Promise<{
     boilerId: string
     step: string
   }>
+  searchParams: Promise<{
+    action?: 'view' | 'edit'
+  }>
 }
 
-export default async function BoilerViewStepsFormsPage({
+export default async function BoilerViewformStepssPage({
   params,
-}: BoilerViewStepsFormsPageProps) {
+  searchParams,
+}: BoilerViewformStepssPageProps) {
   const { boilerId, step } = await params
+  const { action = 'view' } = await searchParams
 
-  return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Formulário {step}</h1>
-      <p className="text-sm text-muted-foreground">Boiler ID: {boilerId}</p>
-    </div>
-  )
+  const formComponents: Record<
+    string,
+    React.ComponentType<{ boilerId: string; action?: 'view' | 'edit' }>
+  > = {
+    'operator-data': OperatorDataForm,
+    'boiler-info': BoilerInfoForm,
+    'structure-body': StructureBodyInfoForm,
+    'structure-tube': StructureTubeInfoForm,
+    'structure-furnace': StructureFurnaceInfoForm,
+    'structure-mirror': StructureMirrorInfoForm,
+    injector: InjectorGaugeForm,
+    'general-tests': GeneralPerformedTestsForm,
+    'power-supply': PowerSupplyForm,
+    'external-tests': ExternalPerformedTestsForm,
+  }
+
+  const FormComponent = formComponents[step]
+
+  if (!FormComponent) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <p className="text-lg text-muted-foreground">
+          Formulário em desenvolvimento
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Este formulário ainda não foi implementado. Etapa: {step}
+        </p>
+      </div>
+    )
+  }
+
+  return <FormComponent boilerId={boilerId} action={action} />
 }

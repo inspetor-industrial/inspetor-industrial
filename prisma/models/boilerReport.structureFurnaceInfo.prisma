@@ -1,0 +1,24 @@
+model StructureFurnaceInfo {
+  id String @id @default(cuid())
+
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+  boilerReportId String       @unique
+
+  heatingSurface Float?
+
+  surfaceType StructureFurnaceType
+
+  width Float?
+
+  height Float?
+
+  length Float?
+
+  diameter Float?
+
+  tubeDiameter Float?
+
+  tubeThickness Float?
+
+  freeLengthWithoutStays Float?
+}

@@ -11,4 +11,11 @@ model BoilerReportAttachment {
   updatedAt DateTime @updatedAt
 
   @@index([documentId])
+  @@index([injectorGaugeId, fieldName])
+
+  operator Operator? @relation
+  structureBodyInfo StructureBodyInfo? @relation
+  structureTubeInfo StructureTubeInfo? @relation
+  injectorGauge   InjectorGauge? @relation(fields: [injectorGaugeId], references: [id], onDelete: SetNull)
+  injectorGaugeId String?
 }
