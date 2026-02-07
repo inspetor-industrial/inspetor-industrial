@@ -3,10 +3,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getGeneralPerformedTestsByBoilerReportIdAction } from '@inspetor/actions/boiler/general-performed-tests/get-general-performed-tests-by-boiler-report-id'
 import { upsertGeneralPerformedTestsAction } from '@inspetor/actions/boiler/general-performed-tests/upsert-general-performed-tests'
+import { BoilerReportNrSelectorModal } from '@inspetor/components/boiler-report-nr-selector-modal'
 import type { BoilerReportQuestion } from '@inspetor/components/boiler-report-questions-table'
 import { BoilerReportQuestionsTable } from '@inspetor/components/boiler-report-questions-table'
 import { BoilerReportSelectedNrsViewer } from '@inspetor/components/boiler-report-selected-nrs-viewer'
-import { BoilerReportNrSelectorModal } from '@inspetor/components/boiler-report-nr-selector-modal'
 import { Button } from '@inspetor/components/ui/button'
 import { Card, CardContent } from '@inspetor/components/ui/card'
 import {
@@ -18,8 +18,9 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import { tableExamsOptions } from '@inspetor/constants/tests'
 import { examsNrs } from '@inspetor/constants/nrs-general-tests'
+import { tableExamsOptions } from '@inspetor/constants/tests'
+import { normalizeStoredTests } from '@inspetor/utils/normalize-stored-tests'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -28,15 +29,13 @@ import { z } from 'zod'
 
 import { FormToolbar } from '../components/form-toolbar'
 
-const defaultQuestions: BoilerReportQuestion[] = tableExamsOptions.map(
-  (q) => ({
-    question: q.question,
-    answer: (q.answer === 'yes' || q.answer === 'no' ? q.answer : '') as
-      | 'yes'
-      | 'no'
-      | '',
-  }),
-)
+const defaultQuestions: BoilerReportQuestion[] = tableExamsOptions.map((q) => ({
+  question: q.question,
+  answer: (q.answer === 'yes' || q.answer === 'no' ? q.answer : '') as
+    | 'yes'
+    | 'no'
+    | '',
+}))
 
 const defaultTests = {
   questions: defaultQuestions,
@@ -80,41 +79,6 @@ type GeneralPerformedTestsFormProps = {
   action?: 'view' | 'edit'
 }
 
-function normalizeStoredTests(
-  raw: unknown,
-): GeneralPerformedTestsFormValues['tests'] | null {
-  if (!raw || typeof raw !== 'object') return null
-  const o = raw as Record<string, unknown>
-  const questions = o.questions
-  const nrs = o.nrs
-  if (!Array.isArray(questions) || !Array.isArray(nrs)) return null
-  const normalizedQuestions = questions.map((q: unknown) => {
-    const item = q as Record<string, unknown>
-    const answer = item.answer
-    const normalizedAnswer: '' | 'yes' | 'no' =
-      answer === 'yes' || answer === 'no' ? answer : ''
-    return {
-      question: String(item.question ?? ''),
-      answer: normalizedAnswer,
-    }
-  })
-  const normalizedNrs = nrs.map((nr: unknown) => {
-    const item = nr as Record<string, unknown>
-    const children = Array.isArray(item.children)
-      ? (item.children as Array<Record<string, unknown>>).map((c) => ({
-          selected: Boolean(c.selected),
-          text: String(c.text ?? ''),
-        }))
-      : []
-    return {
-      parent: String(item.parent ?? ''),
-      parentSelected: Boolean(item.parentSelected),
-      children,
-    }
-  })
-  return { questions: normalizedQuestions, nrs: normalizedNrs }
-}
-
 export function GeneralPerformedTestsForm({
   boilerId,
   action = 'view',
@@ -134,10 +98,9 @@ export function GeneralPerformedTestsForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const [result] =
-          await getGeneralPerformedTestsByBoilerReportIdAction({
-            boilerReportId: boilerId,
-          })
+        const [result] = await getGeneralPerformedTestsByBoilerReportIdAction({
+          boilerReportId: boilerId,
+        })
 
         if (!result.success) {
           toast.error('Erro ao carregar testes gerais')

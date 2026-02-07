@@ -20,6 +20,7 @@ import {
 import { Textarea } from '@inspetor/components/ui/textarea'
 import { nrsForPowerSupply } from '@inspetor/constants/nrs-power-supply'
 import { powerSupplyQuestions } from '@inspetor/constants/tests'
+import { normalizeStoredTests } from '@inspetor/utils/normalize-stored-tests'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -76,41 +77,6 @@ type PowerSupplyFormValues = z.infer<typeof powerSupplySchema>
 type PowerSupplyFormProps = {
   boilerId: string
   action?: 'view' | 'edit'
-}
-
-function normalizeStoredTests(
-  raw: unknown,
-): PowerSupplyFormValues['tests'] | null {
-  if (!raw || typeof raw !== 'object') return null
-  const o = raw as Record<string, unknown>
-  const questions = o.questions
-  const nrs = o.nrs
-  if (!Array.isArray(questions) || !Array.isArray(nrs)) return null
-  const normalizedQuestions = questions.map((q: unknown) => {
-    const item = q as Record<string, unknown>
-    const answer = item.answer
-    const normalizedAnswer: '' | 'yes' | 'no' =
-      answer === 'yes' || answer === 'no' ? answer : ''
-    return {
-      question: String(item.question ?? ''),
-      answer: normalizedAnswer,
-    }
-  })
-  const normalizedNrs = nrs.map((nr: unknown) => {
-    const item = nr as Record<string, unknown>
-    const children = Array.isArray(item.children)
-      ? (item.children as Array<Record<string, unknown>>).map((c) => ({
-          selected: Boolean(c.selected),
-          text: String(c.text ?? ''),
-        }))
-      : []
-    return {
-      parent: String(item.parent ?? ''),
-      parentSelected: Boolean(item.parentSelected),
-      children,
-    }
-  })
-  return { questions: normalizedQuestions, nrs: normalizedNrs }
 }
 
 export function PowerSupplyForm({
