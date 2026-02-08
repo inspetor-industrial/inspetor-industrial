@@ -39,8 +39,8 @@ export default async function DashboardLayout({
       }
     >
       <AuthWrapper>
-        <PermissionWrapper>
-          <AbilityProvider>
+        <AbilityProvider>
+          <PermissionWrapper>
             <SidebarProvider>
               <AppSidebar
                 user={session?.user}
@@ -54,8 +54,8 @@ export default async function DashboardLayout({
                 <MainContainer>{children}</MainContainer>
               </div>
             </SidebarProvider>
-          </AbilityProvider>
-        </PermissionWrapper>
+          </PermissionWrapper>
+        </AbilityProvider>
       </AuthWrapper>
     </Suspense>
   )
