@@ -50,7 +50,7 @@ const COMPANY_SCOPED_SUBJECTS: Subjects[] = [
   'MaintenanceEquipment',
 ]
 
-/** OPERATOR and USER (by responsibility): no Base de dados, Instrumentos, Storage, or Documents. */
+/** Operator is read-only for these subjects (view only; no create, update, or delete). */
 const OPERATOR_READ_SUBJECTS: Subjects[] = [
   'MaintenanceDaily',
   'MaintenanceEquipment',

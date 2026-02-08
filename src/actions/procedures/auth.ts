@@ -1,4 +1,5 @@
 import { InvalidCredentialsError } from '@inspetor/errors/invalid-credentials-error'
+import { UserRole } from '@inspetor/generated/prisma/enums'
 import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { createServerActionProcedure } from 'zsa'
@@ -17,7 +18,7 @@ export const authProcedure = createServerActionProcedure().handler(async () => {
     username: session?.user?.username as string,
   })
 
-  if (!user || !user?.companyId) {
+  if (!user) {
     throw new InvalidCredentialsError()
   }
 
@@ -25,20 +26,28 @@ export const authProcedure = createServerActionProcedure().handler(async () => {
     throw new InvalidCredentialsError()
   }
 
-  const organization = await prisma.company.findUnique({
-    where: {
-      id: user.companyId,
-    },
-  })
+  const isAdminWithoutCompany =
+    user.role === UserRole.ADMIN && !user.companyId
 
-  if (!organization) {
+  if (!isAdminWithoutCompany && !user.companyId) {
+    throw new InvalidCredentialsError()
+  }
+
+  const organization =
+    user.companyId === null
+      ? null
+      : await prisma.company.findUnique({
+          where: { id: user.companyId },
+        })
+
+  if (!isAdminWithoutCompany && !organization) {
     throw new InvalidCredentialsError()
   }
 
   return {
     user: {
       ...user,
-      organization,
+      organization: organization ?? null,
     },
   }
 })

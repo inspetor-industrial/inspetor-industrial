@@ -1,9 +1,8 @@
 import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { listCompanyAction } from '@inspetor/actions/list-company'
 import { updateStorageAction } from '@inspetor/actions/update-storage'
 import { Button } from '@inspetor/components/ui/button'
-import { Combobox } from '@inspetor/components/ui/combobox'
+import { CompanySelect } from '@inspetor/components/company-select'
 import {
   Dialog,
   DialogClose,
@@ -22,8 +21,8 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
-import type { Company, Storage } from '@inspetor/generated/prisma/client'
-import { type RefObject, useEffect, useImperativeHandle, useState } from 'react'
+import type { Storage } from '@inspetor/generated/prisma/client'
+import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
@@ -50,9 +49,6 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
 
   const [storageId, setStorageId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
-
-  const [companies, setCompanies] = useState<Company[]>([])
-  const listCompanies = useServerAction(listCompanyAction)
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
@@ -109,24 +105,6 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
     close: () => setIsModalOpen(false),
   }))
 
-  useEffect(() => {
-    async function fetchCompanies() {
-      const [result, resultError] = await listCompanies.execute()
-
-      if (resultError) {
-        toast.error('Erro ao listar empresas')
-      }
-
-      if (result?.success) {
-        setCompanies(result.others.companies)
-      }
-    }
-
-    fetchCompanies()
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
@@ -150,18 +128,11 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
                 <FormItem>
                   <FormLabel>Empresa</FormLabel>
                   <FormControl>
-                    <Combobox
-                      options={companies.map((company) => ({
-                        id: company.id,
-                        value: company.name.toLowerCase(),
-                        label: company.name,
-                      }))}
-                      placeholder="Selecione uma empresa"
-                      label="Empresa"
-                      isLoading={listCompanies.isPending}
-                      onValueChange={field.onChange}
+                    <CompanySelect
                       value={field.value}
+                      onValueChange={field.onChange}
                       disabled
+                      placeholder="Selecione uma empresa"
                     />
                   </FormControl>
                   <FormMessage />

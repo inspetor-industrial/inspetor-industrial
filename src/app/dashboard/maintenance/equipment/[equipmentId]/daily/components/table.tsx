@@ -1,8 +1,7 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
 import { deleteMaintenanceAction } from '@inspetor/actions/delete-maintenance'
-import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
+import { Can } from '@inspetor/casl/context'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -18,6 +17,11 @@ import {
   PaginationItem,
 } from '@inspetor/components/ui/pagination'
 import {
+  getDailyMaintenanceQueryKey,
+  useDailyMaintenanceQuery,
+} from '@inspetor/hooks/use-daily-maintenance-query'
+import { useQueryClient } from '@tanstack/react-query'
+import {
   Table,
   TableBody,
   TableCell,
@@ -26,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
-import type { Company, DailyMaintenance, Equipment } from '@inspetor/generated/prisma/browser'
+import type { Equipment } from '@inspetor/generated/prisma/browser'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -36,43 +40,36 @@ import {
   Trash,
   View,
 } from 'lucide-react'
-import { parseAsInteger, useQueryState } from 'nuqs'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
 import { DailyMaintenanceEditModal } from './edit-modal'
-
-type DailyMaintenanceWithCompany = DailyMaintenance & {
-  company: Company
-}
+import { DailyMaintenanceTableSkeleton } from './table-skeleton'
 
 type DailyMaintenanceTableProps = {
-  dailyMaintenances: DailyMaintenanceWithCompany[]
-  totalPages: number
   equipment: Equipment
 }
 
 export function DailyMaintenanceTable({
-  dailyMaintenances,
-  totalPages,
   equipment,
 }: DailyMaintenanceTableProps) {
   const deleteAction = useServerAction(deleteMaintenanceAction)
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
+  const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
 
+  const { data, isPending, isError } = useDailyMaintenanceQuery(
+    equipment.id,
+    search,
+    page,
+  )
   const editModalRef = useRef<any>(null)
 
-  async function handlePageChange(page: number) {
-    setPage(page)
-
-    try {
-      await invalidatePageCache('/dashboard/maintenance/daily')
-    } finally {
-      router.refresh()
-    }
+  function handlePageChange(newPage: number) {
+    setPage(newPage)
   }
 
   async function handleDeleteDailyMaintenance(dailyMaintenanceId: string) {
@@ -87,19 +84,36 @@ export function DailyMaintenanceTable({
       toast.error('Erro ao deletar manutenção diária', {
         id: 'delete-daily-maintenance',
       })
+      return
     }
 
     if (result?.success) {
       toast.success(result.message, {
         id: 'delete-daily-maintenance',
       })
-      router.refresh()
+      await queryClient.invalidateQueries({
+        queryKey: getDailyMaintenanceQueryKey(),
+      })
     } else {
       toast.error(result?.message, {
         id: 'delete-daily-maintenance',
       })
     }
   }
+
+  if (isError) {
+    return (
+      <div className="bg-background @container/table rounded-md border p-6 text-center text-destructive">
+        Erro ao carregar manutenções diárias.
+      </div>
+    )
+  }
+
+  if (isPending || !data) {
+    return <DailyMaintenanceTableSkeleton />
+  }
+
+  const { dailyMaintenances, totalPages } = data
 
   return (
     <div className="bg-background @container/table rounded-md border">
@@ -162,14 +176,16 @@ export function DailyMaintenanceTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            editModalRef.current.open(dailyMaintenance)
-                          }
-                        >
-                          <Edit className="size-4" />
-                          Editar
-                        </DropdownMenuItem>
+                        <Can I="update" a="MaintenanceDaily">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              editModalRef.current.open(dailyMaintenance)
+                            }
+                          >
+                            <Edit className="size-4" />
+                            Editar
+                          </DropdownMenuItem>
+                        </Can>
                         <DropdownMenuItem
                           onClick={() =>
                             editModalRef.current.open(dailyMaintenance, true)
@@ -179,16 +195,19 @@ export function DailyMaintenanceTable({
                           Visualizar
                         </DropdownMenuItem>
 
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleDeleteDailyMaintenance(dailyMaintenance.id)
-                          }
-                        >
-                          <Trash className="size-4" />
-                          Excluir
-                        </DropdownMenuItem>
+                        <Can I="delete" a="MaintenanceDaily">
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleDeleteDailyMaintenance(
+                                dailyMaintenance.id,
+                              )
+                            }
+                          >
+                            <Trash className="size-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </Can>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
