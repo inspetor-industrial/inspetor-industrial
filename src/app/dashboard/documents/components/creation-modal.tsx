@@ -1,4 +1,3 @@
-import { useRouter } from '@bprogress/next'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,9 +25,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@inspetor/components/ui/tooltip'
+import { getDocumentsQueryKey } from '@inspetor/hooks/use-documents-query'
 import { api } from '@inspetor/lib/api'
 import { cn } from '@inspetor/lib/utils'
 import { FileSizeFormatter } from '@inspetor/utils/file'
+import { useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import {
   AlertCircle,
@@ -71,7 +72,7 @@ export function DocumentsCreationModal() {
   const [filesInUpload, setFilesInUpload] = useState<FileInUpload[]>([])
 
   const fileUploadRef = useRef<any>(null)
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
   async function handleUploadToCloudflareR2(
     signedUrls: SignedUrl[],
@@ -140,7 +141,7 @@ export function DocumentsCreationModal() {
       toast.success('Arquivos enviados com sucesso')
       fileUploadRef.current?.clearFiles()
 
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getDocumentsQueryKey() })
       setIsModalOpen(false)
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -348,7 +349,9 @@ export function DocumentsCreationModal() {
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
-          <Button icon={Upload}>Upload</Button>
+          <Button type="button" className="w-full md:w-auto" icon={Upload}>
+            Upload
+          </Button>
         </DialogTrigger>
 
         <DialogContent

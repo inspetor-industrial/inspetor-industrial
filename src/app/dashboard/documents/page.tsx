@@ -1,91 +1,22 @@
 import { getSession } from '@inspetor/lib/auth/server'
-import { prisma } from '@inspetor/lib/prisma'
-import { calculatePagination } from '@inspetor/utils/calculate-pagination'
 import { redirect } from 'next/navigation'
 
 import { DocumentsFilter } from './components/filter'
 import { DocumentsTable } from './components/table'
 
-type DocumentsPageProps = {
-  searchParams: Promise<{
-    search: string
-    page: string
-  }>
-}
-
-export default async function DocumentsPage({
-  searchParams,
-}: DocumentsPageProps) {
-  const { search, page } = await searchParams
+export default async function DocumentsPage() {
   const session = await getSession()
 
-  if (!session?.user.email) {
-    redirect('/access-denied')
+  if (!session?.user?.email) {
+    redirect('/auth/sign-in')
   }
-
-  let documents: any[] = []
-  let totalDocuments = 0
-
-  try {
-    documents = await prisma.documents.findMany({
-      where: {
-        name: {
-          contains: search,
-        },
-        owner: {
-          username: session?.user.username ?? 'unknown',
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-      include: {
-        owner: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      ...calculatePagination(page),
-    })
-
-    totalDocuments = await prisma.documents.count({
-      where: {
-        name: {
-          contains: search,
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-    })
-  } catch {
-    documents = []
-    totalDocuments = 0
-  }
-
-  const totalPages = Math.ceil(totalDocuments / 10)
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Documentos</h1>
 
       <DocumentsFilter />
-      <DocumentsTable documents={documents} totalPages={totalPages} />
+      <DocumentsTable />
     </div>
   )
 }

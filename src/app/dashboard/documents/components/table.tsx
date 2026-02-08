@@ -1,8 +1,6 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
 import { deleteDocumentsAction } from '@inspetor/actions/delete-documents'
-import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -26,8 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
+import {
+  type DocumentListItem,
+  getDocumentsQueryKey,
+  useDocumentsQuery,
+} from '@inspetor/hooks/use-documents-query'
 import { FileSizeFormatter } from '@inspetor/utils/file'
-import type { Documents } from '@inspetor/generated/prisma/browser'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -36,35 +39,23 @@ import {
   Trash,
   View,
 } from 'lucide-react'
-import { parseAsInteger, useQueryState } from 'nuqs'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
-type DocumentWithOwner = Documents & {
-  owner: {
-    name: string
-  }
-}
+import { DocumentsTableSkeleton } from './table-skeleton'
 
-type DocumentsTableProps = {
-  documents: DocumentWithOwner[]
-  totalPages: number
-}
-
-export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
+export function DocumentsTable() {
   const deleteAction = useServerAction(deleteDocumentsAction)
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
+  const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
 
-  async function handlePageChange(page: number) {
-    setPage(page)
+  const { data, isPending, isError } = useDocumentsQuery(search, page)
 
-    try {
-      await invalidatePageCache('/dashboard/documents')
-    } finally {
-      router.refresh()
-    }
+  function handlePageChange(newPage: number) {
+    setPage(newPage)
   }
 
   async function handleDeleteDocument(documentId: string) {
@@ -76,7 +67,6 @@ export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
     })
 
     if (resultError) {
-      console.log(resultError)
       toast.error('Erro ao deletar documento', {
         id: 'delete-document',
       })
@@ -87,18 +77,33 @@ export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
       toast.success(result.message, {
         id: 'delete-document',
       })
-      router.refresh()
-    } else {
-      toast.error(result?.message, {
-        id: 'delete-document',
-      })
+      await queryClient.invalidateQueries({ queryKey: getDocumentsQueryKey() })
+      return
     }
+
+    toast.error(result?.message, {
+      id: 'delete-document',
+    })
   }
+
+  if (isError) {
+    return (
+      <div className="bg-background @container/table rounded-md border p-6 text-center text-destructive">
+        Erro ao carregar documentos.
+      </div>
+    )
+  }
+
+  if (isPending || !data) {
+    return <DocumentsTableSkeleton />
+  }
+
+  const { documents, totalPages } = data
 
   return (
     <div className="bg-background @container/table rounded-md border">
       <div className="relative w-full overflow-auto">
-        <Table>
+        <Table className="min-w-[600px]">
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
               <TableHead>Nome</TableHead>
@@ -142,8 +147,13 @@ export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
                   <div className="flex justify-center items-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" icon={Ellipsis} size="icon">
-                          <span className="sr-only">Open menu</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          icon={Ellipsis}
+                          size="icon"
+                        >
+                          <span className="sr-only">Abrir menu</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -183,6 +193,7 @@ export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
                     <PaginationContent>
                       <PaginationItem>
                         <Button
+                          type="button"
                           variant="outline"
                           size="icon"
                           onClick={() => handlePageChange(page - 1)}
@@ -194,6 +205,7 @@ export function DocumentsTable({ documents, totalPages }: DocumentsTableProps) {
 
                       <PaginationItem>
                         <Button
+                          type="button"
                           variant="outline"
                           size="icon"
                           onClick={() => handlePageChange(page + 1)}
