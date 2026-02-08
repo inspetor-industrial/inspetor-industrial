@@ -41,12 +41,12 @@ export function ValveFilter() {
   }
 
   return (
-    <div className="@container/filter flex @items-center gap-2 @justify-between flex-col md:flex-row">
-      <div className="flex gap-2 @items-center flex-col @md:flex-row w-full">
-        <div className="flex gap-2">
+    <div className="@container/filter flex md:items-center gap-2 md:justify-between flex-col md:flex-row">
+      <div className="flex gap-2 items-center flex-col md:flex-row w-full md:w-1/2">
+        <div className="flex gap-2 flex-col sm:flex-row w-full">
           <Input
             placeholder="Pesquisar pelo número de série"
-            className="w-96"
+            className="w-full"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             aria-label="Pesquisar válvula pelo número de série"
@@ -60,16 +60,21 @@ export function ValveFilter() {
             />
           )}
         </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-2 items-center w-full md:w-auto">
         <Button
           type="button"
-          className="md:ml-auto"
+          className="w-full md:w-auto"
           icon={BrushCleaning}
           onClick={handleClearFilters}
         >
           Limpar filtros
         </Button>
         <Can I="create" a="ReportValve">
-          <ValveCreationModal />
+          <div className="w-full md:w-auto">
+            <ValveCreationModal />
+          </div>
         </Can>
       </div>
     </div>

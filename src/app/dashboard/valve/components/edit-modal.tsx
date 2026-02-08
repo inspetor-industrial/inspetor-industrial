@@ -12,6 +12,15 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -20,9 +29,10 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import {
-  type ValveListItem,
   getValvesQueryKey,
+  type ValveListItem,
 } from '@inspetor/hooks/use-valves-query'
 import { useSession } from '@inspetor/lib/auth/context'
 import { useQueryClient } from '@tanstack/react-query'
@@ -63,6 +73,8 @@ type ValveEditModalProps = {
 export function ValveEditModal({ ref }: ValveEditModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(updateValveAction)
+
+  const isMobile = useIsMobile()
 
   const [valveId, setValveId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
@@ -127,6 +139,157 @@ export function ValveEditModal({ ref }: ValveEditModalProps) {
     toast.error(result?.message)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="valve-edit-form"
+        onSubmit={form.handleSubmit(handleUpdateValve)}
+        className="space-y-4"
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="serialNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número de série</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. VSN-123456"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modelo</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. VLV-2000"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="diameter"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Diâmetro (mm)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 50.00"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="flow"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Vazão (m3/h)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 100.00"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="openingPressure"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pressão de abertura (bar)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 10.00"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="closingPressure"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pressão de fechamento (bar)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 8.00"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </form>
+    </Form>
+  )
+
   useImperativeHandle(ref, () => ({
     open: (valve: ValveListItem, isOnlyRead = false) => {
       setIsOnlyRead(isOnlyRead)
@@ -153,6 +316,45 @@ export function ValveEditModal({ ref }: ValveEditModalProps) {
     close: () => setIsModalOpen(false),
   }))
 
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Editar válvula</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para editar a válvula.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button type="button" variant="outline">
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+
+            {!isOnlyRead && (
+              <Button
+                type="submit"
+                form="valve-edit-form"
+                isLoading={form.formState.isSubmitting}
+              >
+                Editar
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
@@ -163,154 +365,7 @@ export function ValveEditModal({ ref }: ValveEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="valve-edit-form"
-            onSubmit={form.handleSubmit(handleUpdateValve)}
-            className="space-y-4"
-          >
-            {isAdmin && (
-              <FormField
-                control={form.control}
-                name="companyId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Empresa</FormLabel>
-                    <FormControl>
-                      <CompanySelect
-                        value={field.value ?? ''}
-                        onValueChange={field.onChange}
-                        placeholder="Selecione a empresa"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="serialNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número de série</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. VSN-123456"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="model"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Modelo</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. VLV-2000"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="diameter"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Diâmetro (mm)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 50.00"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="flow"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vazão (m3/h)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 100.00"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="openingPressure"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pressão de abertura (bar)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 10.00"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="closingPressure"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pressão de fechamento (bar)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 8.00"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>

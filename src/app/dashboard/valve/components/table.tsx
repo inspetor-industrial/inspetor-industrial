@@ -136,7 +136,7 @@ export function ValveTable() {
   return (
     <div className="bg-background @container/table rounded-md border">
       <div className="relative w-full overflow-auto">
-        <Table>
+        <Table className="min-w-[800px]">
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
               <TableHead>Número de Série</TableHead>
