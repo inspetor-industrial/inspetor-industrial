@@ -17,18 +17,9 @@ export const deleteEquipmentAction = authProcedure
     }),
   )
   .handler(async ({ input, ctx }) => {
-    if (!ctx.user.organization.id) {
-      return returnsDefaultActionMessage({
-        message: 'Usuário não possui empresa ou não está autenticado',
-        success: false,
-      })
-    }
-
     const equipment = await prisma.equipment.findUnique({
-      where: {
-        id: input.equipmentId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.equipmentId },
+      select: { id: true, companyId: true },
     })
 
     if (!equipment) {
@@ -51,11 +42,14 @@ export const deleteEquipmentAction = authProcedure
       })
     }
 
-    await prisma.equipment.delete({
-      where: {
-        id: input.equipmentId,
-      },
-    })
+    await prisma.$transaction([
+      prisma.dailyMaintenance.deleteMany({
+        where: { equipmentId: input.equipmentId },
+      }),
+      prisma.equipment.delete({
+        where: { id: input.equipmentId },
+      }),
+    ])
 
     return returnsDefaultActionMessage({
       message: 'Equipamento deletado com sucesso',

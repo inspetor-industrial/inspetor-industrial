@@ -3,6 +3,16 @@
 import { useRouter } from '@bprogress/next'
 import { deleteEquipmentAction } from '@inspetor/actions/delete-equipment'
 import { Can } from '@inspetor/casl/context'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@inspetor/components/ui/alert-dialog'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -39,10 +49,11 @@ import {
   Inbox,
   Notebook,
   Trash,
+  Trash2Icon,
   View,
 } from 'lucide-react'
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
@@ -59,12 +70,16 @@ export function EquipmentTable() {
 
   const { data, isPending, isError } = useEquipmentQuery(search, page)
   const editModalRef = useRef<any>(null)
+  const [equipmentToDeleteId, setEquipmentToDeleteId] = useState<string | null>(
+    null,
+  )
 
   function handlePageChange(newPage: number) {
     setPage(newPage)
   }
 
   async function handleDeleteEquipment(equipmentId: string) {
+    setEquipmentToDeleteId(null)
     toast.loading('Deletando equipamento...', {
       id: 'delete-equipment',
     })
@@ -201,7 +216,7 @@ export function EquipmentTable() {
                         <Can I="delete" a="MaintenanceEquipment">
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => handleDeleteEquipment(equipment.id)}
+                            onClick={() => setEquipmentToDeleteId(equipment.id)}
                           >
                             <Trash className="size-4" />
                             Excluir
@@ -257,6 +272,39 @@ export function EquipmentTable() {
         </Table>
       </div>
       <EquipmentEditModal ref={editModalRef} />
+
+      <AlertDialog
+        open={equipmentToDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEquipmentToDeleteId(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir equipamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as manutenções diárias vinculadas a este equipamento também
+              serão excluídas. Esta ação não pode ser desfeita. Deseja
+              continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                className="bg-destructive hover:bg-destructive/90"
+                variant="destructive"
+                onClick={() =>
+                  equipmentToDeleteId !== null &&
+                  handleDeleteEquipment(equipmentToDeleteId)
+                }
+              >
+                <Trash2Icon /> Sim, excluir tudo
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
