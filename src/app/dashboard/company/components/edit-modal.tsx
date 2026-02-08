@@ -11,6 +11,15 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -23,6 +32,7 @@ import {
   type CompanyListItem,
   getCompaniesQueryKey,
 } from '@inspetor/hooks/use-companies-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -61,6 +71,7 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
   })
 
   const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
 
   async function handleUpdateCompany(data: Schema) {
     if (!companyId) return
@@ -86,6 +97,52 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
     toast.error(result?.message)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="company-creation-form"
+        onSubmit={form.handleSubmit(handleUpdateCompany)}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g pedroaba tech"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="cnpj"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CNPJ</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g 12345678901234"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
   useImperativeHandle(ref, () => ({
     open: (company: CompanyListItem, isOnlyRead = false) => {
       setIsOnlyRead(isOnlyRead)
@@ -102,6 +159,38 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
     close: () => setIsModalOpen(false),
   }))
 
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Editar empresa</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para editar a empresa.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button type="button" variant="outline">
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+            <Button type="submit" form="company-creation-form">
+              Editar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
@@ -112,49 +201,7 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleUpdateCompany)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g pedroaba tech"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="cnpj"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CNPJ</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g 12345678901234"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
