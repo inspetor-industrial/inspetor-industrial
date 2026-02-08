@@ -1,6 +1,6 @@
+import type { Equipment } from '@inspetor/generated/prisma/client'
 import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
-import type { Equipment } from '@inspetor/generated/prisma/client'
 import { notFound } from 'next/navigation'
 
 import { DailyMaintenanceFilter } from './components/filter'
@@ -29,7 +29,9 @@ export default async function DailyMaintenancePage({
     notFound()
   }
 
-  const where = isAdmin ? { id: equipmentId } : { id: equipmentId, companyId: userCompanyId as string }
+  const where = isAdmin
+    ? { id: equipmentId }
+    : { id: equipmentId, companyId: userCompanyId as string }
   let equipment: Equipment | null = null
   try {
     equipment = await prisma.equipment.findFirst({

@@ -1,10 +1,10 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { Prisma } from '@inspetor/generated/prisma/client'
-import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 

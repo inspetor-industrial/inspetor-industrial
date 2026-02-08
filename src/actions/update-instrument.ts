@@ -1,9 +1,9 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
-import type { AuthUser } from '@inspetor/types/auth'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
@@ -47,7 +47,8 @@ export const updateInstrumentAction = authProcedure
     }
 
     const isAdmin = ctx.user.role === 'ADMIN'
-    const newCompanyId = isAdmin && input.companyId ? input.companyId : undefined
+    const newCompanyId =
+      isAdmin && input.companyId ? input.companyId : undefined
 
     if (newCompanyId) {
       const subjectNewCompany = subject('Instruments', {

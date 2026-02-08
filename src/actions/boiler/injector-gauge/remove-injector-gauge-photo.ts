@@ -39,7 +39,8 @@ export const removeInjectorGaugePhotoAction = authProcedure
       }
 
       if (
-        attachment.fieldName !== BoilerReportAttachmentFieldName.INJECTOR_GAUGE_PHOTOS ||
+        attachment.fieldName !==
+          BoilerReportAttachmentFieldName.INJECTOR_GAUGE_PHOTOS ||
         !attachment.injectorGauge
       ) {
         return returnsDefaultActionMessage({
@@ -48,9 +49,7 @@ export const removeInjectorGaugePhotoAction = authProcedure
         })
       }
 
-      if (
-        attachment.injectorGauge.boilerReport.companyId !== organizationId
-      ) {
+      if (attachment.injectorGauge.boilerReport.companyId !== organizationId) {
         return returnsDefaultActionMessage({
           message: 'Sem permissão para remover esta foto',
           success: false,

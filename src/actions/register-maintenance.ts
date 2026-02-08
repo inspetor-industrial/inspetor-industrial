@@ -1,11 +1,11 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
-import type { AuthUser } from '@inspetor/types/auth'
 
 import { authProcedure } from './procedures/auth'
 
@@ -37,7 +37,8 @@ export const registerMaintenanceAction = authProcedure
     }) as unknown as Subjects
     if (!ability.can('create', subjectMaintenance)) {
       return returnsDefaultActionMessage({
-        message: 'Sem permissão para registrar manutenção diária neste equipamento',
+        message:
+          'Sem permissão para registrar manutenção diária neste equipamento',
         success: false,
       })
     }

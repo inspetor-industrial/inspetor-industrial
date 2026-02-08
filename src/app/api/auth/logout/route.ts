@@ -1,5 +1,5 @@
-import { prisma } from '@inspetor/lib/prisma'
 import { COOKIE_CONFIG } from '@inspetor/lib/auth/token'
+import { prisma } from '@inspetor/lib/prisma'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 

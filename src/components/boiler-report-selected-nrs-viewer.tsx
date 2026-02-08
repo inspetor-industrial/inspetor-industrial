@@ -8,9 +8,7 @@ export type BoilerReportSelectedNrsViewerProps = {
 }
 
 function hasSelection(nr: InjectorGaugeNrItem): boolean {
-  return (
-    nr.parentSelected || nr.children.some((c) => c.selected)
-  )
+  return nr.parentSelected || nr.children.some((c) => c.selected)
 }
 
 export function BoilerReportSelectedNrsViewer({

@@ -14,11 +14,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@inspetor/components/ui/popover'
-import { cn } from '@inspetor/lib/utils'
 import {
-  useCompaniesForSelectQuery,
   type CompanyOption,
+  useCompaniesForSelectQuery,
 } from '@inspetor/hooks/use-companies-query'
+import { cn } from '@inspetor/lib/utils'
 import { CheckIcon, ChevronDownIcon, Loader2 } from 'lucide-react'
 import { useId, useState } from 'react'
 

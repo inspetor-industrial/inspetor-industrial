@@ -15,8 +15,8 @@ import {
   PopoverTrigger,
 } from '@inspetor/components/ui/popover'
 import {
-  useClientsForSelectQuery,
   type ClientOption,
+  useClientsForSelectQuery,
 } from '@inspetor/hooks/use-client-query'
 import { cn } from '@inspetor/lib/utils'
 import { CheckIcon, ChevronDownIcon, Loader2 } from 'lucide-react'

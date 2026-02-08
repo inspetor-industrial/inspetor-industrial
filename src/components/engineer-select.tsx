@@ -15,8 +15,8 @@ import {
   PopoverTrigger,
 } from '@inspetor/components/ui/popover'
 import {
-  useEngineersForSelectQuery,
   type EngineerOption,
+  useEngineersForSelectQuery,
 } from '@inspetor/hooks/use-engineers-query'
 import { cn } from '@inspetor/lib/utils'
 import { CheckIcon, ChevronDownIcon, Loader2 } from 'lucide-react'
@@ -120,7 +120,9 @@ export function EngineerSelect({
                       key={engineer.id}
                       value={getEngineerLabel(engineer)}
                       onSelect={() => {
-                        onValueChange?.(value === engineer.id ? '' : engineer.id)
+                        onValueChange?.(
+                          value === engineer.id ? '' : engineer.id,
+                        )
                         setOpen(false)
                       }}
                     >

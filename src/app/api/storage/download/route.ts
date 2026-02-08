@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
   const documentId = searchParams.get('documentId')
 
   if (!documentId) {
-    return NextResponse.json({ error: 'documentId is required' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'documentId is required' },
+      { status: 400 },
+    )
   }
 
   const session = await getSession()

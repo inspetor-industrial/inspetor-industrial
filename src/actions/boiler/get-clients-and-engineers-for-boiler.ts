@@ -14,7 +14,7 @@ export const getClientsAndEngineersForBoilerAction = authProcedure
     const resolvedCompanyId =
       isAdmin && input.companyId
         ? input.companyId
-        : ctx.user.organization?.id ?? undefined
+        : (ctx.user.organization?.id ?? undefined)
 
     if (!resolvedCompanyId) {
       return { clients: [], engineers: [] }

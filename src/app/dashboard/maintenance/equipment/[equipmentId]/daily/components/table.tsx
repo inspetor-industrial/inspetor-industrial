@@ -17,11 +17,6 @@ import {
   PaginationItem,
 } from '@inspetor/components/ui/pagination'
 import {
-  getDailyMaintenanceQueryKey,
-  useDailyMaintenanceQuery,
-} from '@inspetor/hooks/use-daily-maintenance-query'
-import { useQueryClient } from '@tanstack/react-query'
-import {
   Table,
   TableBody,
   TableCell,
@@ -31,6 +26,11 @@ import {
   TableRow,
 } from '@inspetor/components/ui/table'
 import type { Equipment } from '@inspetor/generated/prisma/browser'
+import {
+  getDailyMaintenanceQueryKey,
+  useDailyMaintenanceQuery,
+} from '@inspetor/hooks/use-daily-maintenance-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -199,9 +199,7 @@ export function DailyMaintenanceTable({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() =>
-                              handleDeleteDailyMaintenance(
-                                dailyMaintenance.id,
-                              )
+                              handleDeleteDailyMaintenance(dailyMaintenance.id)
                             }
                           >
                             <Trash className="size-4" />

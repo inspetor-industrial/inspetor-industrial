@@ -63,11 +63,7 @@ async function fetchBombsList(
   }
 }
 
-export function useBombsQuery(
-  search: string,
-  page: number,
-  companyId: string,
-) {
+export function useBombsQuery(search: string, page: number, companyId: string) {
   return useQuery({
     queryKey: [BOMBS_QUERY_KEY, search, page, companyId],
     queryFn: () => fetchBombsList(search, page, companyId),

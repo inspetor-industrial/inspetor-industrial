@@ -35,7 +35,11 @@ const structureBodyInfoSchema = z.object({
   diameter: z.string().min(1, 'Diâmetro é obrigatório'),
   length: z.string().min(1, 'Comprimento é obrigatório'),
   material: z.enum(
-    [BoilerBodyMaterial.ASTMA285GRC, BoilerBodyMaterial.ASTMA516, BoilerBodyMaterial.NOT_SPECIFIED],
+    [
+      BoilerBodyMaterial.ASTMA285GRC,
+      BoilerBodyMaterial.ASTMA516,
+      BoilerBodyMaterial.NOT_SPECIFIED,
+    ],
     { error: 'Material é obrigatório' },
   ),
   certificateDocumentId: z.string().optional(),
@@ -78,9 +82,7 @@ export function StructureBodyInfoForm({
 
         if (result.success && result.others?.data) {
           const data = result.others.data
-          setExistingCertificateName(
-            data.certificate?.document?.name ?? null,
-          )
+          setExistingCertificateName(data.certificate?.document?.name ?? null)
           form.reset({
             thickness: data.thickness,
             diameter: data.diameter,
@@ -90,7 +92,10 @@ export function StructureBodyInfoForm({
           })
         }
       } catch (error) {
-        console.error('Erro ao carregar informações da estrutura do corpo:', error)
+        console.error(
+          'Erro ao carregar informações da estrutura do corpo:',
+          error,
+        )
       }
     }
 
@@ -151,9 +156,7 @@ export function StructureBodyInfoForm({
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={
-                            isViewMode ? '' : 'Ex: 10 mm'
-                          }
+                          placeholder={isViewMode ? '' : 'Ex: 10 mm'}
                           disabled={isViewMode}
                         />
                       </FormControl>
@@ -171,9 +174,7 @@ export function StructureBodyInfoForm({
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={
-                            isViewMode ? '' : 'Ex: 500 mm'
-                          }
+                          placeholder={isViewMode ? '' : 'Ex: 500 mm'}
                           disabled={isViewMode}
                         />
                       </FormControl>
@@ -191,9 +192,7 @@ export function StructureBodyInfoForm({
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={
-                            isViewMode ? '' : 'Ex: 2000 mm'
-                          }
+                          placeholder={isViewMode ? '' : 'Ex: 2000 mm'}
                           disabled={isViewMode}
                         />
                       </FormControl>
@@ -228,7 +227,9 @@ export function StructureBodyInfoForm({
                             <SelectItem value={BoilerBodyMaterial.ASTMA516}>
                               ASTM A516
                             </SelectItem>
-                            <SelectItem value={BoilerBodyMaterial.NOT_SPECIFIED}>
+                            <SelectItem
+                              value={BoilerBodyMaterial.NOT_SPECIFIED}
+                            >
                               Não especificado
                             </SelectItem>
                           </SelectContent>

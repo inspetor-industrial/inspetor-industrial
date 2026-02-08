@@ -1,7 +1,4 @@
-import type {
-  UserRole,
-  UserStatus,
-} from '@inspetor/generated/prisma/client'
+import type { UserRole, UserStatus } from '@inspetor/generated/prisma/client'
 import { useQuery } from '@tanstack/react-query'
 
 export type UserListItem = {

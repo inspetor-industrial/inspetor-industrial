@@ -44,6 +44,7 @@ import {
   useCompaniesQuery,
 } from '@inspetor/hooks/use-companies-query'
 import { cn } from '@inspetor/lib/utils'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -57,7 +58,6 @@ import {
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { useQueryClient } from '@tanstack/react-query'
 import { useServerAction } from 'zsa-react'
 
 import { CompanyEditModal } from './edit-modal'
@@ -163,7 +163,10 @@ export function CompanyTable() {
             )}
 
             {companies.map((company) => {
-              const subjectCompany = subject('Company', company) as unknown as Subjects
+              const subjectCompany = subject(
+                'Company',
+                company,
+              ) as unknown as Subjects
               const canUpdate = ability.can('update', subjectCompany)
               const canDelete = ability.can('delete', subjectCompany)
 
@@ -217,15 +220,11 @@ export function CompanyTable() {
                             </DropdownMenuItem>
                           )}
 
-                          {canUpdate && canDelete && (
-                            <DropdownMenuSeparator />
-                          )}
+                          {canUpdate && canDelete && <DropdownMenuSeparator />}
 
                           {canDelete && (
                             <DropdownMenuItem
-                              onClick={() =>
-                                setCompanyToDeleteId(company.id)
-                              }
+                              onClick={() => setCompanyToDeleteId(company.id)}
                             >
                               <Trash className="size-4" />
                               Excluir

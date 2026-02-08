@@ -44,7 +44,9 @@ const structureTubeInfoSchema = z.object({
   isNaturalOrForced: z.enum(NATURAL_OR_FORCED_OPTIONS, {
     error: 'Selecione Natural ou Forçado',
   }),
-  quantityOfSafetyFuse: z.string().min(1, 'Quantidade de fusível de segurança é obrigatória'),
+  quantityOfSafetyFuse: z
+    .string()
+    .min(1, 'Quantidade de fusível de segurança é obrigatória'),
 })
 
 type StructureTubeInfoFormValues = z.infer<typeof structureTubeInfoSchema>
@@ -86,9 +88,7 @@ export function StructureTubeInfoForm({
 
         if (result.success && result.others?.data) {
           const data = result.others.data
-          setExistingCertificateName(
-            data.certificate?.document?.name ?? null,
-          )
+          setExistingCertificateName(data.certificate?.document?.name ?? null)
           form.reset({
             length: data.length,
             diameter: data.diameter,
@@ -166,9 +166,7 @@ export function StructureTubeInfoForm({
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={
-                            isViewMode ? '' : 'Ex: 2000 mm'
-                          }
+                          placeholder={isViewMode ? '' : 'Ex: 2000 mm'}
                           disabled={isViewMode}
                         />
                       </FormControl>
@@ -186,9 +184,7 @@ export function StructureTubeInfoForm({
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={
-                            isViewMode ? '' : 'Ex: 500 mm'
-                          }
+                          placeholder={isViewMode ? '' : 'Ex: 500 mm'}
                           disabled={isViewMode}
                         />
                       </FormControl>
@@ -206,9 +202,7 @@ export function StructureTubeInfoForm({
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={
-                            isViewMode ? '' : 'Ex: 10 mm'
-                          }
+                          placeholder={isViewMode ? '' : 'Ex: 10 mm'}
                           disabled={isViewMode}
                         />
                       </FormControl>
@@ -240,7 +234,9 @@ export function StructureTubeInfoForm({
                             <SelectItem value={BoilerTubeMaterial.ASTMA178}>
                               ASTM A178
                             </SelectItem>
-                            <SelectItem value={BoilerTubeMaterial.NOT_SPECIFIED}>
+                            <SelectItem
+                              value={BoilerTubeMaterial.NOT_SPECIFIED}
+                            >
                               Não especificado
                             </SelectItem>
                           </SelectContent>
@@ -265,18 +261,12 @@ export function StructureTubeInfoForm({
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue
-                              placeholder={
-                                isViewMode ? '' : 'Selecione'
-                              }
+                              placeholder={isViewMode ? '' : 'Selecione'}
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="NATURAL">
-                              Natural
-                            </SelectItem>
-                            <SelectItem value="FORCED">
-                              Forçado
-                            </SelectItem>
+                            <SelectItem value="NATURAL">Natural</SelectItem>
+                            <SelectItem value="FORCED">Forçado</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -290,13 +280,13 @@ export function StructureTubeInfoForm({
                   name="quantityOfSafetyFuse"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantidade de fusível de segurança *</FormLabel>
+                      <FormLabel>
+                        Quantidade de fusível de segurança *
+                      </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder={
-                            isViewMode ? '' : 'Ex: 2'
-                          }
+                          placeholder={isViewMode ? '' : 'Ex: 2'}
                           disabled={isViewMode}
                         />
                       </FormControl>

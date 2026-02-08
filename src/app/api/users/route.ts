@@ -1,4 +1,4 @@
-import { type UserStatus, UserRole } from '@inspetor/generated/prisma/client'
+import { UserRole, type UserStatus } from '@inspetor/generated/prisma/client'
 import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'

@@ -42,6 +42,7 @@ import {
   getBombsQueryKey,
   useBombsQuery,
 } from '@inspetor/hooks/use-bombs-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -55,7 +56,6 @@ import {
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { useQueryClient } from '@tanstack/react-query'
 import { useServerAction } from 'zsa-react'
 
 import { BombEditModal } from './edit-modal'
@@ -195,9 +195,7 @@ export function BombTable() {
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           {canUpdate && (
                             <DropdownMenuItem
-                              onClick={() =>
-                                editModalRef.current?.open(bomb)
-                              }
+                              onClick={() => editModalRef.current?.open(bomb)}
                             >
                               <Edit className="size-4" />
                               Editar
@@ -302,8 +300,7 @@ export function BombTable() {
                 className="bg-destructive hover:bg-destructive/90"
                 variant="destructive"
                 onClick={() =>
-                  bombToDeleteId !== null &&
-                  handleDeleteBomb(bombToDeleteId)
+                  bombToDeleteId !== null && handleDeleteBomb(bombToDeleteId)
                 }
               >
                 <Trash2Icon /> Sim, excluir

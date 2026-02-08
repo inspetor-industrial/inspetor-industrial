@@ -16,10 +16,7 @@ export async function GET(request: NextRequest) {
   const isAdmin = session.user.role === UserRole.ADMIN
 
   if (!isAdmin && !fullUser?.companyId) {
-    return NextResponse.json(
-      { error: 'Forbidden' },
-      { status: 403 },
-    )
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { searchParams } = new URL(request.url)
@@ -29,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   const effectiveCompanyId = isAdmin
     ? companyIdParam || undefined
-    : fullUser?.companyId ?? undefined
+    : (fullUser?.companyId ?? undefined)
 
   const where = {
     ...(effectiveCompanyId ? { companyId: effectiveCompanyId } : {}),

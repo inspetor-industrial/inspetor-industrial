@@ -1,13 +1,13 @@
 'use server'
 
-import { subject } from '@casl/ability'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { env } from '@inspetor/env'
+import { subject } from '@casl/ability'
 import type { AppAbility } from '@inspetor/casl/ability'
 import { defineAbilityFor } from '@inspetor/casl/ability'
-import type { AuthUser } from '@inspetor/types/auth'
+import { env } from '@inspetor/env'
 import { prisma } from '@inspetor/lib/prisma'
 import { r2 } from '@inspetor/lib/r2'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
@@ -53,10 +53,13 @@ export const updateBombAction = authProcedure
     }
 
     const isAdmin = ctx.user.role === 'ADMIN'
-    const newCompanyId = isAdmin && input.companyId ? input.companyId : undefined
+    const newCompanyId =
+      isAdmin && input.companyId ? input.companyId : undefined
 
     if (newCompanyId) {
-      const subjectNewCompany = subject('ReportBomb', { companyId: newCompanyId }) as unknown as Parameters<AppAbility['can']>[1]
+      const subjectNewCompany = subject('ReportBomb', {
+        companyId: newCompanyId,
+      }) as unknown as Parameters<AppAbility['can']>[1]
       const canAssignToNewCompany = ability.can('update', subjectNewCompany)
       if (!canAssignToNewCompany) {
         return returnsDefaultActionMessage({

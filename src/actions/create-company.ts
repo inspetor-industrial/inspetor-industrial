@@ -1,11 +1,12 @@
 'use server'
 
+import { randomUUID } from 'node:crypto'
+
 import { defineAbilityFor } from '@inspetor/casl/ability'
-import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
-import { randomUUID } from 'node:crypto'
 
 import { authProcedure } from './procedures/auth'
 
@@ -27,8 +28,7 @@ export const createCompanyAction = authProcedure
     }
 
     const trimmedCnpj = input.cnpj?.trim() ?? ''
-    const cnpj =
-      trimmedCnpj !== '' ? trimmedCnpj : `__pending_${randomUUID()}`
+    const cnpj = trimmedCnpj !== '' ? trimmedCnpj : `__pending_${randomUUID()}`
     await prisma.company.create({
       data: {
         name: input.name,

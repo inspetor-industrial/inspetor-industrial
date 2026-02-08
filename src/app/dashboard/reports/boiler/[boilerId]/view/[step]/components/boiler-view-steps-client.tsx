@@ -1,8 +1,8 @@
 'use client'
 
 import { formSteps } from '@inspetor/constants/form-steps-boiler-report'
-import { parseAsStringLiteral, useQueryState } from 'nuqs'
 import { useRouter } from 'next/navigation'
+import { parseAsStringLiteral, useQueryState } from 'nuqs'
 
 import { StepIndicator } from './step-indicator'
 import { StepTitleSelector } from './step-title-selector'

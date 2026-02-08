@@ -11,8 +11,7 @@ export type InjectorGaugeNrItem = {
 
 export const nrsForInjectorGauge: InjectorGaugeNrItem[] = [
   {
-    parent:
-      '13.4.1.2 As caldeiras devem ser dotadas dos seguintes itens:',
+    parent: '13.4.1.2 As caldeiras devem ser dotadas dos seguintes itens:',
     parentSelected: false,
     children: [
       {

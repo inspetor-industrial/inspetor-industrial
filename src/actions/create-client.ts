@@ -1,10 +1,10 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
-import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import type { AuthUser } from '@inspetor/types/auth'
+import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import { z } from 'zod'
 
 import { authProcedure } from './procedures/auth'
@@ -43,7 +43,7 @@ export const createClientAction = authProcedure
     const companyId =
       isAdmin && input.companyId
         ? input.companyId
-        : ctx.user.companyId ?? undefined
+        : (ctx.user.companyId ?? undefined)
 
     const client = await prisma.clients.findFirst({
       where: {

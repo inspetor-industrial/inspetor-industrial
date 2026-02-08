@@ -40,11 +40,12 @@ import {
 } from '@inspetor/components/ui/table'
 import { INSTRUMENT_TYPE } from '@inspetor/constants/instrument-type'
 import {
-  type InstrumentListItem,
   getInstrumentsQueryKey,
+  type InstrumentListItem,
   useInstrumentsQuery,
 } from '@inspetor/hooks/use-instruments-query'
 import { cn } from '@inspetor/lib/utils'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -58,7 +59,6 @@ import {
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { useQueryClient } from '@tanstack/react-query'
 import { useServerAction } from 'zsa-react'
 
 import { InstrumentEditModal } from './edit-modal'
@@ -220,11 +220,7 @@ export function InstrumentTable() {
                         isToday && 'bg-yellow-500',
                       )}
                     >
-                      {isFuture
-                        ? 'Válido'
-                        : isToday
-                          ? 'Vencendo'
-                          : 'Inválido'}
+                      {isFuture ? 'Válido' : isToday ? 'Vencendo' : 'Inválido'}
                     </Badge>
                   </TableCell>
                   <TableCell>

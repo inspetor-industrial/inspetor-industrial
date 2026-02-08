@@ -103,10 +103,7 @@ export const upsertInjectorGaugeAction = authProcedure
         })
       }
 
-      if (
-        input.photoDocumentId &&
-        input.photoDocumentId.trim() !== ''
-      ) {
+      if (input.photoDocumentId && input.photoDocumentId.trim() !== '') {
         const document = await prisma.documents.findUnique({
           where: { id: input.photoDocumentId },
         })

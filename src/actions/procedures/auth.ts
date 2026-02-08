@@ -26,8 +26,7 @@ export const authProcedure = createServerActionProcedure().handler(async () => {
     throw new InvalidCredentialsError()
   }
 
-  const isAdminWithoutCompany =
-    user.role === UserRole.ADMIN && !user.companyId
+  const isAdminWithoutCompany = user.role === UserRole.ADMIN && !user.companyId
 
   if (!isAdminWithoutCompany && !user.companyId) {
     throw new InvalidCredentialsError()

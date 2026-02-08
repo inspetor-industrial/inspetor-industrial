@@ -45,19 +45,18 @@ export const getStructureBodyInfoByBoilerReportIdAction = authProcedure
         })
       }
 
-      const structureBodyInfo =
-        await prisma.structureBodyInfo.findUnique({
-          where: {
-            boilerReportId: input.boilerReportId,
-          },
-          include: {
-            certificate: {
-              include: {
-                document: true,
-              },
+      const structureBodyInfo = await prisma.structureBodyInfo.findUnique({
+        where: {
+          boilerReportId: input.boilerReportId,
+        },
+        include: {
+          certificate: {
+            include: {
+              document: true,
             },
           },
-        })
+        },
+      })
 
       if (!structureBodyInfo) {
         return returnsDefaultActionMessage({

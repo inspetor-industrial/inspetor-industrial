@@ -1,9 +1,9 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
-import type { AuthUser } from '@inspetor/types/auth'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
@@ -31,8 +31,7 @@ export const deleteBoilerReportAction = authProcedure
     }) as unknown as Subjects
     if (!ability.can('delete', subjectReport)) {
       return returnsDefaultActionMessage({
-        message:
-          'Sem permissão para excluir relatório de inspeção de caldeira',
+        message: 'Sem permissão para excluir relatório de inspeção de caldeira',
         success: false,
       })
     }
