@@ -1,8 +1,7 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateStorageAction } from '@inspetor/actions/update-storage'
-import { Button } from '@inspetor/components/ui/button'
 import { CompanySelect } from '@inspetor/components/company-select'
+import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -13,6 +12,15 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -22,6 +30,9 @@ import {
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
 import type { Storage } from '@inspetor/generated/prisma/client'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { getStoragesQueryKey } from '@inspetor/hooks/use-storages-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -50,6 +61,9 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
   const [storageId, setStorageId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
 
+  const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
+
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -57,8 +71,6 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
       relativeLink: '',
     },
   })
-
-  const router = useRouter()
 
   async function handleUpdateCompany(data: Schema) {
     const [result, resultError] = await action.execute({
@@ -73,7 +85,7 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getStoragesQueryKey() })
     } else {
       toast.error(result?.message)
     }
@@ -88,6 +100,64 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
 
     setIsModalOpen(false)
   }
+
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="company-creation-form"
+        onSubmit={form.handleSubmit(handleUpdateCompany)}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="companyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Empresa</FormLabel>
+              <FormControl>
+                <CompanySelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled
+                  placeholder="Selecione uma empresa"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="relativeLink"
+          render={({ field }) => {
+            let value = field.value
+            if (
+              !value.includes('https://drive.google.com/drive/folders') &&
+              value
+            ) {
+              value = `https://drive.google.com/drive/folders${field.value}`
+            }
+
+            return (
+              <FormItem>
+                <FormLabel>Link para a pasta</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={value}
+                    placeholder="e.g https://drive.google.com/drive/folders/pedroaba-tech"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )
+          }}
+        />
+      </form>
+    </Form>
+  )
 
   useImperativeHandle(ref, () => ({
     open: (storage: Storage, isOnlyRead: boolean = false) => {
@@ -105,6 +175,45 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
     close: () => setIsModalOpen(false),
   }))
 
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Editar pasta</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para editar a pasta.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+
+            {!isOnlyRead && (
+              <Button
+                type="submit"
+                form="company-creation-form"
+                isLoading={form.formState.isSubmitting}
+              >
+                Salvar
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
@@ -115,61 +224,7 @@ export function StorageEditModal({ ref }: StorageEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleUpdateCompany)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="companyId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Empresa</FormLabel>
-                  <FormControl>
-                    <CompanySelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled
-                      placeholder="Selecione uma empresa"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="relativeLink"
-              render={({ field }) => {
-                let value = field.value
-                if (
-                  !value.includes('https://drive.google.com/drive/folders') &&
-                  value
-                ) {
-                  value = `https://drive.google.com/drive/folders${field.value}`
-                }
-
-                return (
-                  <FormItem>
-                    <FormLabel>Link para a pasta</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={value}
-                        placeholder="e.g https://drive.google.com/drive/folders/pedroaba-tech"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )
-              }}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>

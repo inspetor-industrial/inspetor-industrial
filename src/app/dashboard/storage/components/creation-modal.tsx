@@ -1,8 +1,7 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerStorageAction } from '@inspetor/actions/register-storage'
-import { Button } from '@inspetor/components/ui/button'
 import { CompanySelect } from '@inspetor/components/company-select'
+import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -14,6 +13,16 @@ import {
   DialogTrigger,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -22,7 +31,10 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { getStoragesQueryKey } from '@inspetor/hooks/use-storages-query'
 import { IconPlus } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -49,7 +61,8 @@ export function StorageCreationModal() {
     resolver: zodResolver(schema),
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
 
   async function handleRegisterStorage(data: Schema) {
     const [result, resultError] = await action.execute(data)
@@ -61,7 +74,7 @@ export function StorageCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getStoragesQueryKey() })
     } else {
       toast.error(result?.message)
     }
@@ -77,10 +90,95 @@ export function StorageCreationModal() {
     setIsModalOpen(false)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="company-creation-form"
+        onSubmit={form.handleSubmit(handleRegisterStorage)}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="companyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Empresa</FormLabel>
+              <FormControl>
+                <CompanySelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione uma empresa"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="relativeLink"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Link para a pasta</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g /pedroaba-tech" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerTrigger asChild>
+          <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
+            Registrar pasta
+          </Button>
+        </DrawerTrigger>
+
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Registrar pasta</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para registrar uma nova pasta.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+
+            <Button
+              type="submit"
+              form="company-creation-form"
+              isLoading={form.formState.isSubmitting}
+            >
+              Registrar pasta
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button icon={IconPlus}>Registrar pasta</Button>
+        <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
+          Registrar pasta
+        </Button>
       </DialogTrigger>
 
       <DialogContent>
@@ -91,45 +189,7 @@ export function StorageCreationModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleRegisterStorage)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="companyId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Empresa</FormLabel>
-                  <FormControl>
-                    <CompanySelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      placeholder="Selecione uma empresa"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="relativeLink"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Link para a pasta</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g /pedroaba-tech" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>

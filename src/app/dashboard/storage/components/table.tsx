@@ -1,8 +1,6 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
 import { deleteStorageAction } from '@inspetor/actions/delete-storage'
-import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
 import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
 import {
@@ -27,8 +25,13 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
+import {
+  getStoragesQueryKey,
+  type StorageListItem,
+  useStoragesQuery,
+} from '@inspetor/hooks/use-storages-query'
 import { cn } from '@inspetor/lib/utils'
-import type { Company, Storage } from '@inspetor/generated/prisma/browser'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -38,38 +41,28 @@ import {
   Trash,
   View,
 } from 'lucide-react'
-import { parseAsInteger, useQueryState } from 'nuqs'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
 import { StorageEditModal } from './edit-modal'
+import { StorageTableSkeleton } from './table-skeleton'
 
-type StorageWithCompany = Storage & {
-  company: Company
-}
-
-type StorageTableProps = {
-  storages: StorageWithCompany[]
-  totalPages: number
-}
-
-export function StorageTable({ storages, totalPages }: StorageTableProps) {
+export function StorageTable() {
   const deleteAction = useServerAction(deleteStorageAction)
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
+  const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
 
-  const editModalRef = useRef<any>(null)
+  const { data, isPending, isError } = useStoragesQuery(search, page)
+  const editModalRef = useRef<{
+    open: (storage: StorageListItem, isOnlyRead?: boolean) => void
+  } | null>(null)
 
-  async function handlePageChange(page: number) {
-    setPage(page)
-
-    try {
-      await invalidatePageCache('/dashboard/company')
-    } finally {
-      router.refresh()
-    }
+  function handlePageChange(newPage: number) {
+    setPage(newPage)
   }
 
   async function handleDeleteStorage(storageId: string) {
@@ -84,25 +77,41 @@ export function StorageTable({ storages, totalPages }: StorageTableProps) {
       toast.error('Erro ao deletar pasta', {
         id: 'delete-storage',
       })
+      return
     }
 
     if (result?.success) {
       toast.success(result.message, {
         id: 'delete-storage',
       })
-      router.refresh()
-    } else {
-      toast.error(result?.message, {
-        id: 'delete-storage',
-      })
+      await queryClient.invalidateQueries({ queryKey: getStoragesQueryKey() })
+      return
     }
+
+    toast.error(result?.message, {
+      id: 'delete-storage',
+    })
   }
+
+  if (isError) {
+    return (
+      <div className="bg-background @container/table rounded-md border p-6 text-center text-destructive">
+        Erro ao carregar pastas.
+      </div>
+    )
+  }
+
+  if (isPending || !data) {
+    return <StorageTableSkeleton />
+  }
+
+  const { storages, totalPages } = data
 
   return (
     <>
       <div className="bg-background @container/table rounded-md border">
         <div className="relative w-full overflow-auto">
-          <Table>
+          <Table className="min-w-[500px]">
             <TableHeader className="bg-muted">
               <TableRow className="divide-x">
                 <TableHead>Empresa</TableHead>
@@ -154,21 +163,26 @@ export function StorageTable({ storages, totalPages }: StorageTableProps) {
                     <div className="flex justify-center items-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" icon={Ellipsis} size="icon">
-                            <span className="sr-only">Open menu</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            icon={Ellipsis}
+                            size="icon"
+                          >
+                            <span className="sr-only">Abrir menu</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuItem
-                            onClick={() => editModalRef.current.open(storage)}
+                            onClick={() => editModalRef.current?.open(storage)}
                           >
                             <Edit className="size-4" />
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() =>
-                              editModalRef.current.open(storage, true)
+                              editModalRef.current?.open(storage, true)
                             }
                           >
                             <View className="size-4" />
@@ -205,6 +219,7 @@ export function StorageTable({ storages, totalPages }: StorageTableProps) {
                       <PaginationContent>
                         <PaginationItem>
                           <Button
+                            type="button"
                             variant="outline"
                             size="icon"
                             onClick={() => handlePageChange(page - 1)}
@@ -216,6 +231,7 @@ export function StorageTable({ storages, totalPages }: StorageTableProps) {
 
                         <PaginationItem>
                           <Button
+                            type="button"
                             variant="outline"
                             size="icon"
                             onClick={() => handlePageChange(page + 1)}
