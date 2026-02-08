@@ -1,8 +1,8 @@
 import { getSession } from '@inspetor/lib/auth/server'
 import { redirect } from 'next/navigation'
 
-import { BoilerFilter } from './components/filter'
 import { BoilerList } from './boiler-list'
+import { BoilerFilter } from './components/filter'
 
 export default async function BoilerPage() {
   const session = await getSession()

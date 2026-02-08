@@ -1,7 +1,5 @@
-import { UserResponsibility } from '@inspetor/generated/prisma/enums'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
 import { getSession } from '@inspetor/lib/auth/server'
-import { prisma } from '@inspetor/lib/prisma'
 import { redirect } from 'next/navigation'
 
 import { BoilerCreationForm } from './_components/form'
@@ -12,19 +10,6 @@ export default async function BoilerCreationPage() {
   if (!fullUser) {
     redirect('/auth/sign-in')
   }
-
-  const clients = await prisma.clients.findMany({
-    where: {
-      companyId: fullUser.companyId,
-    },
-  })
-
-  const engineers = await prisma.user.findMany({
-    where: {
-      companyId: fullUser.companyId,
-      responsibility: UserResponsibility.ENGINEER,
-    },
-  })
 
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +22,7 @@ export default async function BoilerCreationPage() {
         </p>
       </div>
 
-      <BoilerCreationForm clients={clients} engineers={engineers} />
+      <BoilerCreationForm />
     </div>
   )
 }

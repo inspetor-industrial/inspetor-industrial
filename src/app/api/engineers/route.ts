@@ -1,4 +1,5 @@
 import { defineAbilityFor } from '@inspetor/casl/ability'
+import { UserResponsibility } from '@inspetor/generated/prisma/enums'
 import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,12 +13,11 @@ export async function GET(request: NextRequest) {
   }
 
   const ability = defineAbilityFor(session.user)
-  if (!ability.can('read', 'Client')) {
+  if (!ability.can('read', 'User')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search') ?? ''
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
   const perPageParam = searchParams.get('perPage')
   const take = perPageParam
@@ -26,33 +26,32 @@ export async function GET(request: NextRequest) {
 
   const isAdmin = session.user.role === 'ADMIN'
   const userCompanyId = session.user.companyId ?? undefined
+  const companyIdParam = searchParams.get('companyId')
+  const resolvedCompanyId =
+    isAdmin && companyIdParam ? companyIdParam : userCompanyId
 
   const where = {
-    companyName: {
-      contains: search,
-      mode: 'insensitive' as const,
-    },
-    ...(isAdmin ? {} : { companyId: userCompanyId }),
+    responsibility: UserResponsibility.ENGINEER,
+    ...(resolvedCompanyId ? { companyId: resolvedCompanyId } : {}),
   }
 
-  const [clients, totalClients] = await Promise.all([
-    prisma.clients.findMany({
-      where,
-      skip: (page - 1) * take,
-      take,
-      include: {
-        company: {
-          select: { name: true },
-        },
-      },
-    }),
-    prisma.clients.count({ where }),
-  ])
+  const engineers = await prisma.user.findMany({
+    where,
+    skip: (page - 1) * take,
+    take,
+    select: {
+      id: true,
+      name: true,
+      username: true,
+    },
+    orderBy: { name: 'asc' },
+  })
 
-  const totalPages = Math.ceil(totalClients / take)
+  const totalCount = await prisma.user.count({ where })
+  const totalPages = Math.ceil(totalCount / take)
 
   return NextResponse.json({
-    clients,
+    engineers,
     totalPages,
   })
 }

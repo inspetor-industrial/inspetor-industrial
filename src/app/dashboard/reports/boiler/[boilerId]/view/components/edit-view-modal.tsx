@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { BoilerReportWithRelations } from '@inspetor/actions/boiler/get-boiler-report-by-id'
 import { updateBoilerReportAction } from '@inspetor/actions/boiler/update-boiler-report'
+import { ClientSelect } from '@inspetor/components/client-select'
 import { CompanySelect } from '@inspetor/components/company-select'
 import { EngineerSelect } from '@inspetor/components/engineer-select'
 import { Button } from '@inspetor/components/ui/button'
@@ -16,6 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
 import {
   Form,
   FormControl,
@@ -33,12 +43,9 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import {
-  BoilerReportType,
-  type Clients,
-  type User,
-} from '@inspetor/generated/prisma/browser'
+import { BoilerReportType } from '@inspetor/generated/prisma/browser'
 import { getBoilerReportsQueryKey } from '@inspetor/hooks/use-boiler-reports-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { useSession } from '@inspetor/lib/auth/context'
 import { useQueryClient } from '@tanstack/react-query'
 import { Save } from 'lucide-react'
@@ -79,15 +86,9 @@ type Schema = z.infer<typeof schema>
 
 type BoilerReportEditModalProps = {
   ref?: RefObject<any>
-  clients: Clients[]
-  engineers: User[]
 }
 
-export function BoilerReportEditModal({
-  ref,
-  clients,
-  engineers,
-}: BoilerReportEditModalProps) {
+export function BoilerReportEditModal({ ref }: BoilerReportEditModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [boilerReportId, setBoilerReportId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
@@ -171,22 +172,10 @@ export function BoilerReportEditModal({
     close: () => setIsModalOpen(false),
   }))
 
-  return (
-    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isOnlyRead ? 'Visualizar' : 'Editar'} Relatório de Inspeção de
-            Caldeira
-          </DialogTitle>
-          <DialogDescription>
-            {isOnlyRead
-              ? 'Visualize os dados do relatório de inspeção de caldeira.'
-              : 'Preencha os campos abaixo para editar o relatório de inspeção de caldeira.'}
-          </DialogDescription>
-        </DialogHeader>
+  const isMobile = useIsMobile()
 
-        <Form {...form}>
+  const FormContent = (
+    <Form {...form}>
           <form
             id="boiler-report-edit-form"
             className="grid md:grid-cols-2 gap-4"
@@ -252,20 +241,13 @@ export function BoilerReportEditModal({
                 <FormItem>
                   <FormLabel>Cliente</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      >
-                        <SelectValue placeholder="Selecione o cliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.companyName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <ClientSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Selecione o cliente"
+                      label="Cliente"
+                      disabled={isOnlyRead || form.formState.isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -392,7 +374,6 @@ export function BoilerReportEditModal({
                   <FormLabel>Engenheiro</FormLabel>
                   <FormControl>
                     <EngineerSelect
-                      engineers={engineers}
                       value={field.value}
                       onValueChange={field.onChange}
                       placeholder="Selecione o engenheiro"
@@ -405,7 +386,74 @@ export function BoilerReportEditModal({
               )}
             />
           </form>
-        </Form>
+    </Form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>
+              {isOnlyRead ? 'Visualizar' : 'Editar'} Relatório de Inspeção de
+              Caldeira
+            </DrawerTitle>
+            <DrawerDescription>
+              {isOnlyRead
+                ? 'Visualize os dados do relatório de inspeção de caldeira.'
+                : 'Preencha os campos abaixo para editar o relatório de inspeção de caldeira.'}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormContent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={form.formState.isSubmitting}
+              >
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+
+            {!isOnlyRead && (
+              <Button
+                type="submit"
+                form="boiler-report-edit-form"
+                icon={Save}
+                isLoading={form.formState.isSubmitting}
+              >
+                Salvar
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
+  return (
+    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {isOnlyRead ? 'Visualizar' : 'Editar'} Relatório de Inspeção de
+            Caldeira
+          </DialogTitle>
+          <DialogDescription>
+            {isOnlyRead
+              ? 'Visualize os dados do relatório de inspeção de caldeira.'
+              : 'Preencha os campos abaixo para editar o relatório de inspeção de caldeira.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        {FormContent}
 
         <DialogFooter>
           <DialogClose asChild>

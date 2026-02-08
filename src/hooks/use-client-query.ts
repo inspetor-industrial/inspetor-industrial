@@ -16,6 +16,11 @@ export type ClientListItem = {
   company: { name: string } | null
 }
 
+export type ClientOption = {
+  id: string
+  companyName: string
+}
+
 type ClientListResponse = {
   clients: ClientListItem[]
   totalPages: number
@@ -23,15 +28,19 @@ type ClientListResponse = {
 
 const CLIENT_QUERY_KEY = 'client'
 
+const PER_PAGE_SELECT = 1000
+
 async function fetchClientList(
   search: string,
   page: number,
+  perPage = 10,
 ): Promise<ClientListResponse> {
   const params = new URLSearchParams()
   if (search) {
     params.set('search', search)
   }
   params.set('page', String(page))
+  params.set('perPage', String(perPage))
   const res = await fetch(`/api/clients?${params.toString()}`, {
     credentials: 'include',
   })
@@ -59,7 +68,15 @@ async function fetchClientList(
 export function useClientQuery(search: string, page: number) {
   return useQuery({
     queryKey: [CLIENT_QUERY_KEY, search, page],
-    queryFn: () => fetchClientList(search, page),
+    queryFn: () => fetchClientList(search, page, 10),
+  })
+}
+
+/** Fetches clients with a high limit for use in dropdowns/selects. */
+export function useClientsForSelectQuery() {
+  return useQuery({
+    queryKey: [CLIENT_QUERY_KEY, 'select'],
+    queryFn: () => fetchClientList('', 1, PER_PAGE_SELECT),
   })
 }
 

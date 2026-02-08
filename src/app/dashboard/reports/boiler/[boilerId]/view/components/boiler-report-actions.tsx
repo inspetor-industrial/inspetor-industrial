@@ -2,7 +2,6 @@
 
 import type { BoilerReportWithRelations } from '@inspetor/actions/boiler/get-boiler-report-by-id'
 import { Button } from '@inspetor/components/ui/button'
-import type { Clients, User } from '@inspetor/generated/prisma/browser'
 import { ArrowLeft, Edit, Eye } from 'lucide-react'
 import Link from 'next/link'
 import { useRef } from 'react'
@@ -11,14 +10,10 @@ import { BoilerReportEditModal } from './edit-view-modal'
 
 type BoilerReportActionsProps = {
   boilerReport: BoilerReportWithRelations
-  clients: Clients[]
-  engineers: User[]
 }
 
 export function BoilerReportActions({
   boilerReport,
-  clients,
-  engineers,
 }: BoilerReportActionsProps) {
   const modalRef = useRef<any>(null)
 
@@ -54,11 +49,7 @@ export function BoilerReportActions({
         </Button>
       </div>
 
-      <BoilerReportEditModal
-        ref={modalRef}
-        clients={clients}
-        engineers={engineers}
-      />
+      <BoilerReportEditModal ref={modalRef} />
     </>
   )
 }
