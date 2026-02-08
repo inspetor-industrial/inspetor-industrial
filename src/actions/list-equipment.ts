@@ -8,7 +8,8 @@ import { authProcedure } from './procedures/auth'
 export const listEquipmentAction = authProcedure
   .createServerAction()
   .handler(async ({ ctx }) => {
-    if (!ctx.user.organization.id) {
+    const organizationId = ctx.user.organization?.id
+    if (!organizationId) {
       return returnsDefaultActionMessage({
         message: 'Usuário não possui empresa ou não está autenticado',
         success: false,
@@ -18,7 +19,7 @@ export const listEquipmentAction = authProcedure
 
     const equipments = await prisma.equipment.findMany({
       where: {
-        companyId: ctx.user.organization.id,
+        companyId: organizationId,
       },
     })
 

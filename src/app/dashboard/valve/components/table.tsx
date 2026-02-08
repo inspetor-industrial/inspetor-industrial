@@ -2,6 +2,7 @@
 
 import { subject } from '@casl/ability'
 import { deleteValveAction } from '@inspetor/actions/delete-valve'
+import type { Subjects } from '@inspetor/casl/ability'
 import { Can, useAbility } from '@inspetor/casl/context'
 import {
   AlertDialog,
@@ -166,7 +167,7 @@ export function ValveTable() {
             {valves.map((valve) => {
               const subjectValve = subject('ReportValve', {
                 companyId: valve.companyId,
-              })
+              }) as unknown as Subjects
               const canUpdate = ability.can('update', subjectValve)
               const canDelete = ability.can('delete', subjectValve)
               const canRead = ability.can('read', subjectValve)

@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -38,7 +38,9 @@ export const createBombAction = authProcedure
     }
 
     const ability = defineAbilityFor(ctx.user as AuthUser)
-    const scope = subject('ReportBomb', { companyId: resolvedCompanyId })
+    const scope = subject('ReportBomb', {
+      companyId: resolvedCompanyId,
+    }) as unknown as Subjects
     if (!ability.can('create', scope)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para criar bomba',
@@ -61,8 +63,9 @@ export const createBombAction = authProcedure
     // When ADMIN selects another company, allow photo from either the selected
     // company or the admin's organization so uploads still work.
     const allowedCompanyIds = [resolvedCompanyId]
-    if (isAdmin && ctx.user.organization?.id && ctx.user.organization.id !== resolvedCompanyId) {
-      allowedCompanyIds.push(ctx.user.organization.id)
+    const orgId = ctx.user.organization?.id
+    if (isAdmin && orgId && orgId !== resolvedCompanyId) {
+      allowedCompanyIds.push(orgId)
     }
 
     const photo = await prisma.documents.findFirst({

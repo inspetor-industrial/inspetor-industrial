@@ -56,9 +56,9 @@ async function fetchInstrumentsList(
       const parsed =
         typeof raw === 'string'
           ? new Date(raw)
-          : raw instanceof Date
-            ? raw
-            : new Date(raw)
+          : (raw as unknown) instanceof Date
+            ? (raw as Date)
+            : new Date(String(raw))
       const validationDate =
         parsed instanceof Date && !Number.isNaN(parsed.getTime())
           ? parsed

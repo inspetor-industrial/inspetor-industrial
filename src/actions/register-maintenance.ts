@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -32,12 +32,10 @@ export const registerMaintenanceAction = authProcedure
     }
 
     const ability = defineAbilityFor(ctx.user as AuthUser)
-    if (
-      !ability.can(
-        'create',
-        subject('MaintenanceDaily', { companyId: equipment.companyId }),
-      )
-    ) {
+    const subjectMaintenance = subject('MaintenanceDaily', {
+      companyId: equipment.companyId,
+    }) as unknown as Subjects
+    if (!ability.can('create', subjectMaintenance)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para registrar manutenção diária neste equipamento',
         success: false,

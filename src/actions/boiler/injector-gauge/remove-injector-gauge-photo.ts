@@ -12,6 +12,14 @@ export const removeInjectorGaugePhotoAction = authProcedure
   .input(z.object({ attachmentId: z.string() }))
   .handler(async ({ input, ctx }) => {
     try {
+      const organizationId = ctx.user.organization?.id
+      if (!organizationId) {
+        return returnsDefaultActionMessage({
+          message: 'Organização não encontrada',
+          success: false,
+        })
+      }
+
       const attachment = await prisma.boilerReportAttachment.findUnique({
         where: { id: input.attachmentId },
         include: {
@@ -41,8 +49,7 @@ export const removeInjectorGaugePhotoAction = authProcedure
       }
 
       if (
-        attachment.injectorGauge.boilerReport.companyId !==
-        ctx.user.organization.id
+        attachment.injectorGauge.boilerReport.companyId !== organizationId
       ) {
         return returnsDefaultActionMessage({
           message: 'Sem permissão para remover esta foto',

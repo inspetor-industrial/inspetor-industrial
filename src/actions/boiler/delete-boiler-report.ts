@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -28,7 +28,7 @@ export const deleteBoilerReportAction = authProcedure
     const ability = defineAbilityFor(ctx.user as AuthUser)
     const subjectReport = subject('ReportBoiler', {
       companyId: boilerReport.companyId,
-    })
+    }) as unknown as Subjects
     if (!ability.can('delete', subjectReport)) {
       return returnsDefaultActionMessage({
         message:

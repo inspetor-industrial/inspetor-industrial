@@ -21,6 +21,14 @@ export const upsertStructureBodyInfoAction = authProcedure
   )
   .handler(async ({ input, ctx }) => {
     try {
+      const organizationId = ctx.user.organization?.id
+      if (!organizationId) {
+        return returnsDefaultActionMessage({
+          message: 'Organização não encontrada',
+          success: false,
+        })
+      }
+
       const {
         boilerReportId,
         thickness,
@@ -33,7 +41,7 @@ export const upsertStructureBodyInfoAction = authProcedure
       const boilerReport = await prisma.boilerReport.findUnique({
         where: {
           id: boilerReportId,
-          companyId: ctx.user.organization.id,
+          companyId: organizationId,
         },
       })
 

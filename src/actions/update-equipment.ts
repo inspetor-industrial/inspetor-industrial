@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import { UserRole } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -55,12 +55,10 @@ export const updateEquipmentAction = authProcedure
     }
 
     const ability = defineAbilityFor(ctx.user as AuthUser)
-    if (
-      !ability.can(
-        'update',
-        subject('MaintenanceEquipment', { companyId: equipment.companyId }),
-      )
-    ) {
+    const subjectEquipment = subject('MaintenanceEquipment', {
+      companyId: equipment.companyId,
+    }) as unknown as Subjects
+    if (!ability.can('update', subjectEquipment)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para atualizar equipamento',
         success: false,

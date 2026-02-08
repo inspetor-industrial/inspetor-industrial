@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -38,7 +38,7 @@ export const updateInstrumentAction = authProcedure
     const ability = defineAbilityFor(ctx.user as AuthUser)
     const subjectInstrument = subject('Instruments', {
       companyId: instrument.companyId,
-    })
+    }) as unknown as Subjects
     if (!ability.can('update', subjectInstrument)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para editar instrumento',
@@ -50,7 +50,10 @@ export const updateInstrumentAction = authProcedure
     const newCompanyId = isAdmin && input.companyId ? input.companyId : undefined
 
     if (newCompanyId) {
-      const canAssignToNewCompany = ability.can('update', subject('Instruments', { companyId: newCompanyId }))
+      const subjectNewCompany = subject('Instruments', {
+        companyId: newCompanyId,
+      }) as unknown as Subjects
+      const canAssignToNewCompany = ability.can('update', subjectNewCompany)
       if (!canAssignToNewCompany) {
         return returnsDefaultActionMessage({
           message: 'Sem permissão para atribuir a esta empresa',

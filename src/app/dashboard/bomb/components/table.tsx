@@ -2,6 +2,7 @@
 
 import { subject } from '@casl/ability'
 import { deleteBombAction } from '@inspetor/actions/delete-bomb'
+import type { Subjects } from '@inspetor/casl/ability'
 import { useAbility } from '@inspetor/casl/context'
 import {
   AlertDialog,
@@ -72,6 +73,7 @@ export function BombTable() {
   const { data, isPending, isError } = useBombsQuery(search, page, companyId)
   const editModalRef = useRef<{
     open: (bomb: BombListItem, isOnlyRead?: boolean) => void
+    close: () => void
   } | null>(null)
   const [bombToDeleteId, setBombToDeleteId] = useState<string | null>(null)
   const [conflictAlert, setConflictAlert] = useState<{
@@ -164,7 +166,7 @@ export function BombTable() {
             {bombs.map((bomb) => {
               const subjectBomb = subject('ReportBomb', {
                 companyId: bomb.companyId,
-              })
+              }) as unknown as Subjects
               const canUpdate = ability.can('update', subjectBomb)
               const canDelete = ability.can('delete', subjectBomb)
               const canRead = ability.can('read', subjectBomb)

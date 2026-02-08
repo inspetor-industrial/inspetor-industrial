@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { BoilerReportType } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
@@ -44,7 +44,7 @@ export const updateBoilerReportAction = authProcedure
       const ability = defineAbilityFor(ctx.user as AuthUser)
       const subjectReport = subject('ReportBoiler', {
         companyId: boilerReport.companyId,
-      })
+      }) as unknown as Subjects
       if (!ability.can('update', subjectReport)) {
         return returnsDefaultActionMessage({
           message: 'Sem permissão para editar relatório de inspeção de caldeira',
@@ -56,10 +56,10 @@ export const updateBoilerReportAction = authProcedure
       const newCompanyId = isAdmin && input.companyId ? input.companyId : undefined
 
       if (newCompanyId) {
-        const canAssignToNewCompany = ability.can(
-          'update',
-          subject('ReportBoiler', { companyId: newCompanyId }),
-        )
+        const subjectNewCompany = subject('ReportBoiler', {
+          companyId: newCompanyId,
+        }) as unknown as Subjects
+        const canAssignToNewCompany = ability.can('update', subjectNewCompany)
         if (!canAssignToNewCompany) {
           return returnsDefaultActionMessage({
             message: 'Sem permissão para atribuir a esta empresa',

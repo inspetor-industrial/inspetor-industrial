@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import { Prisma } from '@inspetor/generated/prisma/client'
 import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
@@ -27,7 +27,7 @@ export const deleteCompanyAction = authProcedure
     }
 
     const ability = defineAbilityFor(ctx.user as AuthUser)
-    const subjectCompany = subject('Company', company)
+    const subjectCompany = subject('Company', company) as unknown as Subjects
     if (!ability.can('delete', subjectCompany)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para excluir empresa',

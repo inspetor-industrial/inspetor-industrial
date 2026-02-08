@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -48,7 +48,9 @@ export const createInstrumentAction = authProcedure
     }
 
     const ability = defineAbilityFor(ctx.user as AuthUser)
-    const scope = subject('Instruments', { companyId: resolvedCompanyId })
+    const scope = subject('Instruments', {
+      companyId: resolvedCompanyId,
+    }) as unknown as Subjects
     if (!ability.can('create', scope)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para criar instrumento',

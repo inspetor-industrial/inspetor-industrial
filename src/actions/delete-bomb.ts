@@ -3,7 +3,7 @@
 import { subject } from '@casl/ability'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { env } from '@inspetor/env'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { r2 } from '@inspetor/lib/r2'
@@ -33,7 +33,7 @@ export const deleteBombAction = authProcedure
     const ability = defineAbilityFor(ctx.user as AuthUser)
     const subjectBomb = subject('ReportBomb', {
       companyId: bomb.companyId,
-    })
+    }) as unknown as Subjects
     if (!ability.can('delete', subjectBomb)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para excluir bomba',

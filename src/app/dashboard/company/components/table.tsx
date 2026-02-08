@@ -2,6 +2,7 @@
 
 import { subject } from '@casl/ability'
 import { deleteCompanyAction } from '@inspetor/actions/delete-company'
+import type { Subjects } from '@inspetor/casl/ability'
 import { Can, useAbility } from '@inspetor/casl/context'
 import {
   AlertDialog,
@@ -162,7 +163,7 @@ export function CompanyTable() {
             )}
 
             {companies.map((company) => {
-              const subjectCompany = subject('Company', company)
+              const subjectCompany = subject('Company', company) as unknown as Subjects
               const canUpdate = ability.can('update', subjectCompany)
               const canDelete = ability.can('delete', subjectCompany)
 

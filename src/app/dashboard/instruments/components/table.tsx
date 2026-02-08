@@ -2,6 +2,7 @@
 
 import { subject } from '@casl/ability'
 import { deleteInstrumentAction } from '@inspetor/actions/delete-instrument'
+import type { Subjects } from '@inspetor/casl/ability'
 import { Can, useAbility } from '@inspetor/casl/context'
 import {
   AlertDialog,
@@ -178,7 +179,7 @@ export function InstrumentTable() {
             {instruments.map((instrument) => {
               const subjectInstrument = subject('Instruments', {
                 companyId: instrument.companyId,
-              })
+              }) as unknown as Subjects
               const canUpdate = ability.can('update', subjectInstrument)
               const canDelete = ability.can('delete', subjectInstrument)
               const canRead = ability.can('read', subjectInstrument)

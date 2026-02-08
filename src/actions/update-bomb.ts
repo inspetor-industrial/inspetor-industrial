@@ -83,8 +83,9 @@ export const updateBombAction = authProcedure
     // from target company or from admin's organization.
     if (input.photoId) {
       const allowedCompanyIds = [targetCompanyId]
-      if (isAdmin && ctx.user.organization?.id && ctx.user.organization.id !== targetCompanyId) {
-        allowedCompanyIds.push(ctx.user.organization.id)
+      const orgId = ctx.user.organization?.id
+      if (isAdmin && orgId && orgId !== targetCompanyId) {
+        allowedCompanyIds.push(orgId)
       }
 
       const photo = await prisma.documents.findFirst({

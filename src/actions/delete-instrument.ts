@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -28,7 +28,7 @@ export const deleteInstrumentAction = authProcedure
     const ability = defineAbilityFor(ctx.user as AuthUser)
     const subjectInstrument = subject('Instruments', {
       companyId: instrument.companyId,
-    })
+    }) as unknown as Subjects
     if (!ability.can('delete', subjectInstrument)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para excluir instrumento',

@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -30,12 +30,10 @@ export const deleteEquipmentAction = authProcedure
     }
 
     const ability = defineAbilityFor(ctx.user as AuthUser)
-    if (
-      !ability.can(
-        'delete',
-        subject('MaintenanceEquipment', { companyId: equipment.companyId }),
-      )
-    ) {
+    const subjectEquipment = subject('MaintenanceEquipment', {
+      companyId: equipment.companyId,
+    }) as unknown as Subjects
+    if (!ability.can('delete', subjectEquipment)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para excluir equipamento',
         success: false,

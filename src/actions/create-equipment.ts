@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import { UserRole } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -42,12 +42,10 @@ export const createEquipmentAction = authProcedure
       ctx.user.role === UserRole.ADMIN && input.companyId
         ? input.companyId
         : organizationId
-    if (
-      !ability.can(
-        'create',
-        subject('MaintenanceEquipment', { companyId: resolvedCompanyId }),
-      )
-    ) {
+    const subjectEquipment = subject('MaintenanceEquipment', {
+      companyId: resolvedCompanyId,
+    }) as unknown as Subjects
+    if (!ability.can('create', subjectEquipment)) {
       return returnsDefaultActionMessage({
         message: 'Sem permissão para criar equipamento',
         success: false,

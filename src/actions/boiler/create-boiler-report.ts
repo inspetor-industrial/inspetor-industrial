@@ -1,7 +1,7 @@
 'use server'
 
 import { subject } from '@casl/ability'
-import { defineAbilityFor } from '@inspetor/casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import type { AuthUser } from '@inspetor/types/auth'
 import { BoilerReportType } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
@@ -44,7 +44,9 @@ export const createBoilerReportAction = authProcedure
       }
 
       const ability = defineAbilityFor(ctx.user as AuthUser)
-      const scope = subject('ReportBoiler', { companyId: resolvedCompanyId })
+      const scope = subject('ReportBoiler', {
+        companyId: resolvedCompanyId,
+      }) as unknown as Subjects
       if (!ability.can('create', scope)) {
         return returnsDefaultActionMessage({
           message: 'Sem permissão para criar relatório de inspeção de caldeira',
