@@ -1,7 +1,6 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
-import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
+import { Can } from '@inspetor/casl/context'
 import { Button } from '@inspetor/components/ui/button'
 import { Input } from '@inspetor/components/ui/input'
 import {
@@ -11,52 +10,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
-import { useDebouncedCallback } from '@mantine/hooks'
 import { BrushCleaning } from 'lucide-react'
-import { parseAsString, useQueryState } from 'nuqs'
-import { useState } from 'react'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 
 import { UserCreationModal } from './creation-modal'
 
 export function UserFilter() {
-  const [searchCache, setSearchCache] = useState('')
-  const [, setSearch] = useQueryState('search', parseAsString.withDefault(''))
-  const [status, setStatus] = useQueryState(
-    'status',
+  const [search, setSearch] = useQueryState(
+    'search',
     parseAsString.withDefault(''),
   )
 
-  const router = useRouter()
+  const [status, setStatus] = useQueryState(
+    'status',
+    parseAsString.withDefault('__all__'),
+  )
 
-  const handleSearch = useDebouncedCallback(async (value: string) => {
+  const [, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+
+  function handleSearchChange(value: string) {
     setSearch(value)
-
-    try {
-      await invalidatePageCache('/dashboard/users')
-    } finally {
-      router.refresh()
-    }
-  }, 300)
-
-  async function handleStatusChange(value: string) {
-    setStatus(value)
-
-    try {
-      await invalidatePageCache('/dashboard/users')
-    } finally {
-      router.refresh()
-    }
+    setPage(1)
   }
 
-  async function handleClearFilters() {
-    setSearch('')
-    setStatus('')
+  function handleStatusChange(value: string) {
+    setStatus(value)
+    setPage(1)
+  }
 
-    try {
-      await invalidatePageCache('/dashboard/users')
-    } finally {
-      router.refresh()
-    }
+  function handleClearFilters() {
+    setSearch('')
+    setStatus('__all__')
+    setPage(1)
   }
 
   return (
@@ -65,17 +50,15 @@ export function UserFilter() {
         <Input
           placeholder="Pesquisar pelo nome"
           className="w-full"
-          value={searchCache}
-          onChange={(e) => {
-            setSearchCache(e.target.value)
-            handleSearch(e.target.value)
-          }}
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
         />
-        <Select onValueChange={handleStatusChange} value={status}>
+        <Select onValueChange={handleStatusChange} value={status || '__all__'}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecionar status" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__all__">Todos</SelectItem>
             <SelectItem value="ACTIVE">Ativo</SelectItem>
             <SelectItem value="INACTIVE">Inativo</SelectItem>
           </SelectContent>
@@ -86,7 +69,9 @@ export function UserFilter() {
         </Button>
       </div>
 
-      <UserCreationModal />
+      <Can I="create" a="User">
+        <UserCreationModal />
+      </Can>
     </div>
   )
 }

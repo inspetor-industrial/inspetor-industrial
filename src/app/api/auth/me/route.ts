@@ -1,5 +1,5 @@
-import { prisma } from '@inspetor/lib/prisma'
 import { COOKIE_CONFIG, isExpired } from '@inspetor/lib/auth/token'
+import { prisma } from '@inspetor/lib/prisma'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -9,10 +9,7 @@ export async function GET() {
     const accessToken = cookieStore.get(COOKIE_CONFIG.ACCESS_TOKEN_NAME)?.value
 
     if (!accessToken) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 },
-      )
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     // Find session by access token
@@ -30,10 +27,7 @@ export async function GET() {
     })
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 },
-      )
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
     }
 
     // Check if session is revoked

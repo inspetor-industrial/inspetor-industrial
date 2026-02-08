@@ -20,7 +20,7 @@ export default function ChangelogsLayout({
               Inspetor Industrial
             </span>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              Changelog
+              Registro de atualizações
             </span>
           </div>
           <nav className="flex items-center gap-4">

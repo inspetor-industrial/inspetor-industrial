@@ -1,16 +1,12 @@
 model Instruments {
-  id String @id @default(cuid())
-
-  company   Company @relation(fields: [companyId], references: [id])
-  companyId String
-
+  id                String   @id @default(cuid())
+  companyId         String
   type              String
   manufacturer      String
   serialNumber      String
   certificateNumber String
-
-  validationDate DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  validationDate    DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  company           Company  @relation(fields: [companyId], references: [id])
 }

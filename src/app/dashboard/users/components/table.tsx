@@ -1,8 +1,9 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
+import { subject } from '@casl/ability'
 import { toggleUserStatusAction } from '@inspetor/actions/toggle-user-status'
-import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
+import { type Subjects } from '@inspetor/casl/ability'
+import { Can, useAbility } from '@inspetor/casl/context'
 import { Badge } from '@inspetor/components/ui/badge'
 import { Button } from '@inspetor/components/ui/button'
 import {
@@ -27,8 +28,14 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
+import type { UserStatus } from '@inspetor/generated/prisma/client'
+import {
+  getUsersQueryKey,
+  type UserListItem,
+  useUsersQuery,
+} from '@inspetor/hooks/use-users-query'
 import { cn } from '@inspetor/lib/utils'
-import type { User, UserStatus } from '@inspetor/generated/prisma/browser'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -39,49 +46,42 @@ import {
   ToggleRight,
   View,
 } from 'lucide-react'
-import { parseAsInteger, useQueryState } from 'nuqs'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
 import { UserEditModal } from './edit-modal'
+import { UserTableSkeleton } from './table-skeleton'
 
-type UserWithCompany = User & {
-  company: {
-    name: string
-  }
-}
-
-type UserTableProps = {
-  users: UserWithCompany[]
-  totalPages: number
-}
-
-export function UserTable({ users, totalPages }: UserTableProps) {
+export function UserTable() {
   const toggleStatusAction = useServerAction(toggleUserStatusAction)
-  const router = useRouter()
+  const queryClient = useQueryClient()
+  const ability = useAbility()
 
+  const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+  const [status] = useQueryState('status', parseAsString.withDefault(''))
 
-  const editModalRef = useRef<any>(null)
+  const { data, isPending, isError } = useUsersQuery(search, page, status)
+  const editModalRef = useRef<{
+    open: (user: UserListItem, isOnlyRead?: boolean) => void
+  } | null>(null)
 
-  async function handlePageChange(page: number) {
-    setPage(page)
-
-    try {
-      await invalidatePageCache('/dashboard/users')
-    } finally {
-      router.refresh()
-    }
+  function handlePageChange(newPage: number) {
+    setPage(newPage)
   }
 
-  async function handleToggleUserStatus(userId: string, status: UserStatus) {
+  async function handleToggleUserStatus(
+    userId: string,
+    statusValue: UserStatus,
+  ) {
     toast.loading('Atualizando status do usuário...', {
       id: 'toggle-user-status',
     })
     const [result, resultError] = await toggleStatusAction.execute({
       userId,
-      status: status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+      status: statusValue === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
     })
 
     if (resultError) {
@@ -95,13 +95,27 @@ export function UserTable({ users, totalPages }: UserTableProps) {
       toast.success(result.message, {
         id: 'toggle-user-status',
       })
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getUsersQueryKey() })
     } else {
       toast.error(result?.message, {
         id: 'toggle-user-status',
       })
     }
   }
+
+  if (isError) {
+    return (
+      <div className="bg-background @container/table rounded-md border p-6 text-center text-destructive">
+        Erro ao carregar usuários.
+      </div>
+    )
+  }
+
+  if (isPending || !data) {
+    return <UserTableSkeleton />
+  }
+
+  const { users, totalPages } = data
 
   return (
     <div className="bg-background @container/table rounded-md border">
@@ -131,66 +145,89 @@ export function UserTable({ users, totalPages }: UserTableProps) {
               </TableRow>
             )}
 
-            {users.map((user) => (
-              <TableRow key={user.id} className="divide-x">
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.company?.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.createdAt.toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Badge
-                    className={cn(
-                      'capitalize',
-                      user.status === 'ACTIVE' && 'bg-green-500',
-                      user.status === 'INACTIVE' && 'bg-red-500',
-                    )}
-                  >
-                    {user.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-center items-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" icon={Ellipsis} size="icon">
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(user)}
-                        >
-                          <Edit className="size-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(user, true)}
-                        >
-                          <View className="size-4" />
-                          Visualizar
-                        </DropdownMenuItem>
+            {users.map((user) => {
+              const subjectUser = subject('User', {
+                companyId: user.companyId ?? undefined,
+              }) as unknown as Subjects
+              const showActions =
+                ability.can('update', subjectUser) ||
+                ability.can('read', subjectUser)
 
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleToggleUserStatus(user.id, user.status)
-                          }
-                        >
-                          {user.status === 'INACTIVE' ? (
-                            <ToggleRight className="size-4" />
-                          ) : (
-                            <ToggleLeft className="size-4" />
-                          )}
-                          {user.status === 'INACTIVE' ? 'Ativar' : 'Desativar'}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+              return (
+                <TableRow key={user.id} className="divide-x">
+                  <TableCell>{user.name}</TableCell>
+                  <TableCell>{user.company?.name ?? '-'}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.createdAt.toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Badge
+                      className={cn(
+                        'capitalize',
+                        user.status === 'ACTIVE' && 'bg-green-500',
+                        user.status === 'INACTIVE' && 'bg-red-500',
+                      )}
+                    >
+                      {user.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {showActions ? (
+                      <div className="flex justify-center items-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              icon={Ellipsis}
+                              size="icon"
+                            >
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <Can I="update" a={subjectUser}>
+                              <DropdownMenuItem
+                                onClick={() => editModalRef.current?.open(user)}
+                              >
+                                <Edit className="size-4" />
+                                Editar
+                              </DropdownMenuItem>
+                            </Can>
+                            <Can I="read" a={subjectUser}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  editModalRef.current?.open(user, true)
+                                }
+                              >
+                                <View className="size-4" />
+                                Visualizar
+                              </DropdownMenuItem>
+                            </Can>
+                            <Can I="update" a={subjectUser}>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleToggleUserStatus(user.id, user.status)
+                                }
+                              >
+                                {user.status === 'INACTIVE' ? (
+                                  <ToggleRight className="size-4" />
+                                ) : (
+                                  <ToggleLeft className="size-4" />
+                                )}
+                                {user.status === 'INACTIVE'
+                                  ? 'Ativar'
+                                  : 'Desativar'}
+                              </DropdownMenuItem>
+                            </Can>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
           <TableFooter>
             <TableRow>

@@ -23,10 +23,18 @@ export const getStructureTubeInfoByBoilerReportIdAction = authProcedure
   .input(z.object({ boilerReportId: z.string() }))
   .handler(async ({ input, ctx }) => {
     try {
+      const organizationId = ctx.user.organization?.id
+      if (!organizationId) {
+        return returnsDefaultActionMessage({
+          message: 'Organização não encontrada',
+          success: false,
+        })
+      }
+
       const boilerReport = await prisma.boilerReport.findUnique({
         where: {
           id: input.boilerReportId,
-          companyId: ctx.user.organization.id,
+          companyId: organizationId,
         },
       })
 
@@ -37,19 +45,18 @@ export const getStructureTubeInfoByBoilerReportIdAction = authProcedure
         })
       }
 
-      const structureTubeInfo =
-        await prisma.structureTubeInfo.findUnique({
-          where: {
-            boilerReportId: input.boilerReportId,
-          },
-          include: {
-            certificate: {
-              include: {
-                document: true,
-              },
+      const structureTubeInfo = await prisma.structureTubeInfo.findUnique({
+        where: {
+          boilerReportId: input.boilerReportId,
+        },
+        include: {
+          certificate: {
+            include: {
+              document: true,
             },
           },
-        })
+        },
+      })
 
       if (!structureTubeInfo) {
         return returnsDefaultActionMessage({

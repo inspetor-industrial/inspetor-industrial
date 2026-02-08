@@ -1,6 +1,6 @@
 model BoilerInfo {
-  id                       String              @id @default(cuid())
-  manufacturer             String?           
+  id                       String         @id @default(cuid())
+  manufacturer             String?
   mark                     String?
   type                     BoilerType
   model                    String?
@@ -10,7 +10,6 @@ model BoilerInfo {
   series                   String?
   fuelType                 BoilerFuelType
   category                 BoilerCategory
-
-  boilerReport            BoilerReport @relation(fields: [boilerReportId], references: [id])
-  boilerReportId          String       @unique
+  boilerReportId           String         @unique
+  boilerReport             BoilerReport   @relation(fields: [boilerReportId], references: [id])
 }

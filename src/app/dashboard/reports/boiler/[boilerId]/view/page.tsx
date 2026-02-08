@@ -8,12 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@inspetor/components/ui/card'
-import { UserResponsibility } from '@inspetor/generated/prisma/client'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
 import { getSession } from '@inspetor/lib/auth/server'
 import { dayjsApi } from '@inspetor/lib/dayjs'
 import { disableBoilerReportFormsFlag } from '@inspetor/lib/flags'
-import { prisma } from '@inspetor/lib/prisma'
 import {
   Beaker,
   Box,
@@ -202,19 +200,6 @@ export default async function BoilerViewPage({ params }: BoilerViewPageProps) {
     )
   }
 
-  const clients = await prisma.clients.findMany({
-    where: {
-      companyId: fullUser.companyId,
-    },
-  })
-
-  const engineers = await prisma.user.findMany({
-    where: {
-      companyId: fullUser.companyId,
-      responsibility: UserResponsibility.ENGINEER,
-    },
-  })
-
   let isDisableBoilerReportForms = await disableBoilerReportFormsFlag()
   if (process.env.NODE_ENV === 'development') {
     isDisableBoilerReportForms = false
@@ -231,11 +216,7 @@ export default async function BoilerViewPage({ params }: BoilerViewPageProps) {
                 Relatório de Inspeção de Caldeira
               </span>
             </CardTitle>
-            <BoilerReportActions
-              boilerReport={boilerReport}
-              clients={clients}
-              engineers={engineers}
-            />
+            <BoilerReportActions boilerReport={boilerReport} />
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">

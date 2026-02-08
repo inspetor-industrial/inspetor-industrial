@@ -1,4 +1,3 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateCompanyAction } from '@inspetor/actions/update-company'
 import { Button } from '@inspetor/components/ui/button'
@@ -12,6 +11,15 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -20,7 +28,12 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
-import type { Company } from '@inspetor/generated/prisma/client'
+import {
+  type CompanyListItem,
+  getCompaniesQueryKey,
+} from '@inspetor/hooks/use-companies-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -57,39 +70,81 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
     },
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
 
   async function handleUpdateCompany(data: Schema) {
+    if (!companyId) return
+
     const [result, resultError] = await action.execute({
-      companyId: companyId,
+      companyId,
       ...data,
     })
 
     if (resultError) {
-      toast.error('Erro ao criar empresa')
+      toast.error('Erro ao atualizar empresa')
       return
     }
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
-    } else {
-      toast.error(result?.message)
+      await queryClient.invalidateQueries({ queryKey: getCompaniesQueryKey() })
+      form.reset({ name: '', cnpj: '' })
+      setIsModalOpen(false)
+      return
     }
 
-    form.reset({
-      name: '',
-      cnpj: '',
-    })
-
-    form.setValue('name', '')
-    form.setValue('cnpj', '')
-
-    setIsModalOpen(false)
+    toast.error(result?.message)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="company-creation-form"
+        onSubmit={form.handleSubmit(handleUpdateCompany)}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g pedroaba tech"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="cnpj"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CNPJ</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g 12345678901234"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
   useImperativeHandle(ref, () => ({
-    open: (company: Company, isOnlyRead: boolean = false) => {
+    open: (company: CompanyListItem, isOnlyRead = false) => {
       setIsOnlyRead(isOnlyRead)
       setCompanyId(company.id)
       setIsModalOpen(true)
@@ -104,6 +159,38 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
     close: () => setIsModalOpen(false),
   }))
 
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Editar empresa</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para editar a empresa.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button type="button" variant="outline">
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+            <Button type="submit" form="company-creation-form">
+              Editar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
@@ -114,53 +201,11 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleUpdateCompany)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g pedroaba tech"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="cnpj"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CNPJ</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g 12345678901234"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">
+            <Button type="button" variant="outline">
               {isOnlyRead ? 'Fechar' : 'Cancelar'}
             </Button>
           </DialogClose>

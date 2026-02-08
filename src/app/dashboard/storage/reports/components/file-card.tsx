@@ -23,6 +23,7 @@ import {
   User,
   Video,
 } from 'lucide-react'
+import type { ElementType } from 'react'
 
 type FileCardProps = {
   file: GoogleDriveFile
@@ -40,7 +41,7 @@ export function FileCard({
   const modifiedAtFormatted = dayjsApi(file.modifiedTime).fromNow()
   const fileSize = formatFileSize(parseInt(file.size || '0'))
 
-  function getFileIcon(mimeType: string) {
+  function getFileIcon(mimeType: string): ElementType {
     if (mimeType.startsWith('image/')) return Image
     if (mimeType.startsWith('video/')) return Video
     if (mimeType.startsWith('audio/')) return Music

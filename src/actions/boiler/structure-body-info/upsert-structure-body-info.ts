@@ -21,6 +21,14 @@ export const upsertStructureBodyInfoAction = authProcedure
   )
   .handler(async ({ input, ctx }) => {
     try {
+      const organizationId = ctx.user.organization?.id
+      if (!organizationId) {
+        return returnsDefaultActionMessage({
+          message: 'Organização não encontrada',
+          success: false,
+        })
+      }
+
       const {
         boilerReportId,
         thickness,
@@ -33,7 +41,7 @@ export const upsertStructureBodyInfoAction = authProcedure
       const boilerReport = await prisma.boilerReport.findUnique({
         where: {
           id: boilerReportId,
-          companyId: ctx.user.organization.id,
+          companyId: organizationId,
         },
       })
 
@@ -64,7 +72,8 @@ export const upsertStructureBodyInfoAction = authProcedure
               await prisma.boilerReportAttachment.findFirst({
                 where: {
                   documentId: certificateId,
-                  fieldName: BoilerReportAttachmentFieldName.STRUCTURE_BODY_CERTIFICATE,
+                  fieldName:
+                    BoilerReportAttachmentFieldName.STRUCTURE_BODY_CERTIFICATE,
                 },
               })
 
@@ -74,7 +83,8 @@ export const upsertStructureBodyInfoAction = authProcedure
               const newAttachment = await prisma.boilerReportAttachment.create({
                 data: {
                   documentId: certificateId,
-                  fieldName: BoilerReportAttachmentFieldName.STRUCTURE_BODY_CERTIFICATE,
+                  fieldName:
+                    BoilerReportAttachmentFieldName.STRUCTURE_BODY_CERTIFICATE,
                 },
               })
               finalCertificateId = newAttachment.id

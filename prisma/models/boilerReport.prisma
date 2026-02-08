@@ -1,38 +1,28 @@
 model BoilerReport {
-  id String @id @default(cuid())
-
-  company   Company @relation(fields: [companyId], references: [id])
-  companyId String
-
-  type BoilerReportType
-
-  client   Clients @relation(fields: [clientId], references: [id])
-  clientId String
-
-  motivation String?
-
-  date               DateTime?
-  nextInspectionDate DateTime?
-
-  startTimeOfInspection String?
-  endTimeOfInspection   String?
-
-  inspectionValidation String?
-
-  engineer   User   @relation(fields: [engineerId], references: [id])
-  engineerId String
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  operator Operator?
-  boilerInfo BoilerInfo?
-  structureBodyInfo StructureBodyInfo?
-  structureTubeInfo StructureTubeInfo?
-  structureFurnaceInfo StructureFurnaceInfo?
-  structureMirrorInfo StructureMirrorInfo?
-  injectorGauge           InjectorGauge?
-  generalPerformedTests   GeneralPerformedTests?
-  powerSupply PowerSupply?
+  id                     String                  @id @default(cuid())
+  type                   BoilerReportType
+  clientId               String
+  companyId              String
+  motivation             String?
+  date                   DateTime?
+  startTimeOfInspection  String?
+  endTimeOfInspection    String?
+  inspectionValidation   String?
+  nextInspectionDate     DateTime?
+  engineerId             String
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  boilerInfo             BoilerInfo?
+  client                 Clients                 @relation(fields: [clientId], references: [id])
+  company                Company                 @relation(fields: [companyId], references: [id])
+  engineer               User                    @relation(fields: [engineerId], references: [id])
   externalPerformedTests ExternalPerformedTests?
+  generalPerformedTests  GeneralPerformedTests?
+  injectorGauge          InjectorGauge?
+  operator               Operator?
+  powerSupply            PowerSupply?
+  structureBodyInfo      StructureBodyInfo?
+  structureFurnaceInfo   StructureFurnaceInfo?
+  structureMirrorInfo    StructureMirrorInfo?
+  structureTubeInfo      StructureTubeInfo?
 }

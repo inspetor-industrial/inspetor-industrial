@@ -1,10 +1,10 @@
-import { prisma } from '@inspetor/lib/prisma'
 import {
   COOKIE_CONFIG,
   generateToken,
   getAccessTokenExpiry,
   getRefreshTokenExpiry,
 } from '@inspetor/lib/auth/token'
+import { prisma } from '@inspetor/lib/prisma'
 import { comparePassword } from '@inspetor/utils/crypto'
 import { cookies, headers } from 'next/headers'
 import { NextResponse } from 'next/server'

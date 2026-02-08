@@ -2,7 +2,17 @@
 
 import { useRouter } from '@bprogress/next'
 import { deleteEquipmentAction } from '@inspetor/actions/delete-equipment'
-import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
+import { Can } from '@inspetor/casl/context'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@inspetor/components/ui/alert-dialog'
 import { Button } from '@inspetor/components/ui/button'
 import {
   DropdownMenu,
@@ -26,7 +36,11 @@ import {
   TableHeader,
   TableRow,
 } from '@inspetor/components/ui/table'
-import type { Company, Equipment } from '@inspetor/generated/prisma/browser'
+import {
+  getEquipmentQueryKey,
+  useEquipmentQuery,
+} from '@inspetor/hooks/use-equipment-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -35,46 +49,37 @@ import {
   Inbox,
   Notebook,
   Trash,
+  Trash2Icon,
   View,
 } from 'lucide-react'
-import { parseAsInteger, useQueryState } from 'nuqs'
-import { useRef } from 'react'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useServerAction } from 'zsa-react'
 
 import { EquipmentEditModal } from './edit-modal'
+import { EquipmentTableSkeleton } from './table-skeleton'
 
-type EquipmentWithCompany = Equipment & {
-  company: Company
-}
-
-type EquipmentTableProps = {
-  equipments: EquipmentWithCompany[]
-  totalPages: number
-}
-
-export function EquipmentTable({
-  equipments,
-  totalPages,
-}: EquipmentTableProps) {
+export function EquipmentTable() {
   const deleteAction = useServerAction(deleteEquipmentAction)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
+  const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
 
+  const { data, isPending, isError } = useEquipmentQuery(search, page)
   const editModalRef = useRef<any>(null)
+  const [equipmentToDeleteId, setEquipmentToDeleteId] = useState<string | null>(
+    null,
+  )
 
-  async function handlePageChange(page: number) {
-    setPage(page)
-
-    try {
-      await invalidatePageCache('/dashboard/maintenance/equipment')
-    } finally {
-      router.refresh()
-    }
+  function handlePageChange(newPage: number) {
+    setPage(newPage)
   }
 
   async function handleDeleteEquipment(equipmentId: string) {
+    setEquipmentToDeleteId(null)
     toast.loading('Deletando equipamento...', {
       id: 'delete-equipment',
     })
@@ -93,7 +98,7 @@ export function EquipmentTable({
       toast.success(result.message, {
         id: 'delete-equipment',
       })
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getEquipmentQueryKey() })
     } else {
       toast.error(result?.message, {
         id: 'delete-equipment',
@@ -104,6 +109,20 @@ export function EquipmentTable({
   function handleRedirectToDailyMaintenance(equipmentId: string) {
     router.push(`/dashboard/maintenance/equipment/${equipmentId}/daily`)
   }
+
+  if (isError) {
+    return (
+      <div className="bg-background @container/table rounded-md border p-6 text-center text-destructive">
+        Erro ao carregar equipamentos.
+      </div>
+    )
+  }
+
+  if (isPending || !data) {
+    return <EquipmentTableSkeleton />
+  }
+
+  const { equipments, totalPages } = data
 
   return (
     <div className="bg-background @container/table rounded-md border">
@@ -168,12 +187,14 @@ export function EquipmentTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => editModalRef.current.open(equipment)}
-                        >
-                          <Edit className="size-4" />
-                          Editar
-                        </DropdownMenuItem>
+                        <Can I="update" a="MaintenanceEquipment">
+                          <DropdownMenuItem
+                            onClick={() => editModalRef.current.open(equipment)}
+                          >
+                            <Edit className="size-4" />
+                            Editar
+                          </DropdownMenuItem>
+                        </Can>
                         <DropdownMenuItem
                           onClick={() =>
                             editModalRef.current.open(equipment, true)
@@ -192,14 +213,15 @@ export function EquipmentTable({
                           Manutenções diárias
                         </DropdownMenuItem>
 
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteEquipment(equipment.id)}
-                        >
-                          <Trash className="size-4" />
-                          Excluir
-                        </DropdownMenuItem>
+                        <Can I="delete" a="MaintenanceEquipment">
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setEquipmentToDeleteId(equipment.id)}
+                          >
+                            <Trash className="size-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </Can>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -250,6 +272,39 @@ export function EquipmentTable({
         </Table>
       </div>
       <EquipmentEditModal ref={editModalRef} />
+
+      <AlertDialog
+        open={equipmentToDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEquipmentToDeleteId(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir equipamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as manutenções diárias vinculadas a este equipamento também
+              serão excluídas. Esta ação não pode ser desfeita. Deseja
+              continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                className="bg-destructive hover:bg-destructive/90"
+                variant="destructive"
+                onClick={() =>
+                  equipmentToDeleteId !== null &&
+                  handleDeleteEquipment(equipmentToDeleteId)
+                }
+              >
+                <Trash2Icon /> Sim, excluir tudo
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

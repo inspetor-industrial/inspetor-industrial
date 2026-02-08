@@ -7,8 +7,9 @@ import { usePaymentInputs } from 'react-payment-inputs'
 type MonthInputProps = {
   onChange: (value: ChangeEvent<HTMLInputElement>) => void
   value?: string
+  disabled?: boolean
 }
-export function MonthInput({ value, onChange }: MonthInputProps) {
+export function MonthInput({ value, onChange, disabled }: MonthInputProps) {
   const id = useId()
   const { getExpiryDateProps } = usePaymentInputs()
 
@@ -20,6 +21,7 @@ export function MonthInput({ value, onChange }: MonthInputProps) {
       id={`expiry-${id}`}
       className="[direction:inherit]"
       value={value}
+      disabled={disabled}
     />
   )
 }

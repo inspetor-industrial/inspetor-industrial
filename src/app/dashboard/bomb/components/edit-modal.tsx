@@ -1,6 +1,8 @@
-import { useRouter } from '@bprogress/next'
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateBombAction } from '@inspetor/actions/update-bomb'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -12,6 +14,15 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -21,7 +32,13 @@ import {
 } from '@inspetor/components/ui/form'
 import { ImageUploadField } from '@inspetor/components/ui/image-upload-field'
 import { Input } from '@inspetor/components/ui/input'
-import type { Bomb, Documents } from '@inspetor/generated/prisma/client'
+import {
+  type BombListItem,
+  getBombsQueryKey,
+} from '@inspetor/hooks/use-bombs-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -29,6 +46,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   mark: z.string({
     message: 'Marca é obrigatória',
   }),
@@ -52,12 +70,11 @@ const schema = z.object({
 
 type Schema = z.infer<typeof schema>
 
-type BombWithPhoto = Bomb & {
-  photo: Documents
-}
-
 type BombEditModalProps = {
-  ref?: RefObject<any>
+  ref?: RefObject<{
+    open: (bomb: BombListItem, isOnlyRead?: boolean) => void
+    close: () => void
+  } | null>
 }
 
 export function BombEditModal({ ref }: BombEditModalProps) {
@@ -70,24 +87,41 @@ export function BombEditModal({ ref }: BombEditModalProps) {
     null,
   )
 
+  const isMobile = useIsMobile()
+
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
+
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
+      companyId: '',
       mark: '',
       model: '',
       stages: '',
       potency: '',
-      photoId: undefined,
+      photoId: '',
     },
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
   async function handleUpdateBomb(data: Schema) {
-    const [result, resultError] = await action.execute({
-      bombId: bombId!,
-      ...data,
-    })
+    if (!bombId) return
+
+    const payload =
+      isAdmin && data.companyId
+        ? { bombId, ...data }
+        : {
+            bombId,
+            mark: data.mark,
+            model: data.model,
+            stages: data.stages,
+            potency: data.potency,
+            photoId: data.photoId,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
       toast.error('Erro ao editar bomba')
@@ -96,54 +130,233 @@ export function BombEditModal({ ref }: BombEditModalProps) {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getBombsQueryKey() })
       form.reset({
+        companyId: '',
         mark: '',
         model: '',
         stages: '',
         potency: '',
-        photoId: undefined,
+        photoId: '',
       })
       setIsModalOpen(false)
-    } else {
-      toast.error(result?.message || 'Erro ao editar bomba')
-      // Don't close modal on error - keep it open so user can fix the issue
+      return
+    }
+
+    toast.error(result?.message ?? 'Erro ao editar bomba')
+  }
+
+  function handleOpenChange(open: boolean) {
+    if (!open && form.formState.isSubmitting) {
+      return
+    }
+
+    setIsModalOpen(open)
+    if (!open) {
+      form.reset({
+        companyId: '',
+        mark: '',
+        model: '',
+        stages: '',
+        potency: '',
+        photoId: '',
+      })
     }
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="bomb-edit-form"
+        onSubmit={form.handleSubmit(handleUpdateBomb)}
+        className="space-y-4"
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="mark"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Marca</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. KSB"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modelo</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. Meganorm"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="stages"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estágios</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="e.g. 2"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="potency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Potência (CV)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 10.00"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="photoId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Foto da Bomba</FormLabel>
+              <FormControl>
+                <ImageUploadField
+                  value={field.value || undefined}
+                  onChange={(documentId) => {
+                    const newValue = documentId ?? ''
+                    field.onChange(newValue)
+                    if (!documentId) {
+                      form.trigger('photoId')
+                    }
+                  }}
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                  existingImageName={existingPhotoName ?? undefined}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
   useImperativeHandle(ref, () => ({
-    open: (bomb: BombWithPhoto, isOnlyRead: boolean = false) => {
-      setIsOnlyRead(isOnlyRead)
+    open: (bomb: BombListItem, isOnlyReadModal = false) => {
+      setIsOnlyRead(isOnlyReadModal)
       setBombId(bomb.id)
       setExistingPhotoName(bomb.photo?.name ?? null)
       setIsModalOpen(true)
       form.reset({
+        companyId: bomb.companyId ?? '',
         mark: bomb.mark,
         model: bomb.model,
         stages: bomb.stages,
         potency: String(bomb.potency),
-        photoId: bomb.photoId || undefined,
+        photoId: bomb.photoId ?? '',
       })
+      form.setValue('companyId', bomb.companyId ?? '')
+      form.setValue('mark', bomb.mark)
+      form.setValue('model', bomb.model)
+      form.setValue('stages', bomb.stages)
+      form.setValue('potency', String(bomb.potency))
+      form.setValue('photoId', bomb.photoId ?? '')
     },
     close: () => setIsModalOpen(false),
   }))
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open && form.formState.isSubmitting) {
-      // Prevent closing while submitting
-      return
-    }
-    setIsModalOpen(open)
-    if (!open) {
-      // Reset form when closing
-      form.reset({
-        mark: '',
-        model: '',
-        stages: '',
-        potency: '',
-        photoId: undefined,
-      })
-    }
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={handleOpenChange}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>
+              {isOnlyRead ? 'Visualizar bomba' : 'Editar bomba'}
+            </DrawerTitle>
+            <DrawerDescription>
+              {isOnlyRead
+                ? 'Visualize os dados da bomba.'
+                : 'Preencha os campos abaixo para editar a bomba.'}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button type="button" variant="outline">
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+
+            {!isOnlyRead && (
+              <Button type="submit" form="bomb-edit-form">
+                Editar
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
   }
 
   return (
@@ -160,126 +373,11 @@ export function BombEditModal({ ref }: BombEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="bomb-edit-form"
-            onSubmit={form.handleSubmit(
-              handleUpdateBomb,
-              (errors) => {
-                // Handle validation errors
-                console.log('Validation errors:', errors)
-                // Form won't submit if there are validation errors
-              },
-            )}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="mark"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Marca</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. KSB"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="model"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Modelo</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. Meganorm"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="stages"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estágios</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="e.g. 2"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="potency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Potência (CV)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 10.00"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="photoId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Foto da Bomba</FormLabel>
-                  <FormControl>
-                    <ImageUploadField
-                      value={field.value || undefined}
-                      onChange={(documentId) => {
-                        const newValue = documentId || ''
-                        field.onChange(newValue)
-                        // Trigger validation immediately when image is removed
-                        if (!documentId) {
-                          form.trigger('photoId')
-                        }
-                      }}
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                      existingImageName={existingPhotoName ?? undefined}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">
+            <Button type="button" variant="outline">
               {isOnlyRead ? 'Fechar' : 'Cancelar'}
             </Button>
           </DialogClose>

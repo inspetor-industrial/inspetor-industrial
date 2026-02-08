@@ -1,12 +1,8 @@
 'use client'
 
 import { useRouter } from '@bprogress/next'
-import type {
-  UserResponsibility,
-  UserRole,
-} from '@inspetor/generated/prisma/enums'
+import { useAbility } from '@inspetor/casl/context'
 import { useSession } from '@inspetor/lib/auth/context'
-import { Permission } from '@inspetor/permission'
 import { formatUsername } from '@inspetor/utils/format-username'
 import {
   ChevronRight,
@@ -75,68 +71,24 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const session = useSession()
   const router = useRouter()
+  const ability = useAbility()
 
-  const mustBeHideStorageManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/storage',
+  const isAdmin = session.data?.user?.role === 'ADMIN'
+  const mustBeHideStorageManagement = !ability.can('read', 'Storage')
+  const mustBeHideCompanyManagement = !isAdmin
+  const mustBeHideUsersManagement = !isAdmin
+  const mustBeHideDailyMaintenance = !ability.can('read', 'MaintenanceDaily')
+  const mustBeHideEquipmentManagement = !ability.can(
+    'read',
+    'MaintenanceEquipment',
   )
-
-  const mustBeHideCompanyManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/company',
-  )
-
-  const mustBeHideUsersManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/users',
-  )
-
-  const mustBeHideDailyMaintenance = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/maintenance/daily',
-  )
-
-  const mustBeHideEquipmentManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/maintenance/equipment',
-  )
-
-  const mustBeHideClientManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/client',
-  )
-
-  const mustBeHideInstrumentsManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/instruments',
-  )
-
+  const mustBeHideClientManagement = !ability.can('read', 'Client')
+  const mustBeHideInstrumentsManagement = !ability.can('read', 'Instruments')
   const mustBeHideBoilerManagement =
-    flags.disableBoilerReport ||
-    Permission.canNotAccess(
-      (session.data?.user.role || '') as UserRole,
-      '/dashboard/reports/boiler',
-    ) ||
-    (session.data?.user.responsibility as UserResponsibility) === 'SECRETARY'
-
-  const mustBeHideDocumentsManagement = Permission.canNotAccess(
-    (session.data?.user.role || '') as UserRole,
-    '/dashboard/documents',
-  )
-
-  const mustBeHideValveManagement =
-    Permission.canNotAccess(
-      (session.data?.user.role || '') as UserRole,
-      '/dashboard/valve',
-    ) &&
-    (session.data?.user.responsibility as UserResponsibility) !== 'ENGINEER'
-
-  const mustBeHideBombManagement =
-    Permission.canNotAccess(
-      (session.data?.user.role || '') as UserRole,
-      '/dashboard/bomb',
-    ) &&
-    (session.data?.user.responsibility as UserResponsibility) !== 'ENGINEER'
+    flags.disableBoilerReport || !ability.can('read', 'ReportBoiler')
+  const mustBeHideDocumentsManagement = !ability.can('read', 'Documents')
+  const mustBeHideValveManagement = !isAdmin
+  const mustBeHideBombManagement = !isAdmin
 
   const mustBeHideInspectionManagement =
     mustBeHideInstrumentsManagement && mustBeHideBoilerManagement
@@ -359,7 +311,7 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <SidebarMenuSub>
-                            {!mustBeHideStorageManagement && (
+                            {!mustBeHideInstrumentsManagement && (
                               <SidebarMenuSubItem>
                                 <SidebarMenuSubButton
                                   isActive={
@@ -587,7 +539,7 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
                   }}
                 >
                   <GitPullRequestIcon className="size-4" />
-                  Changelogs
+                  Registro de atualizações
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <LogoutButton />

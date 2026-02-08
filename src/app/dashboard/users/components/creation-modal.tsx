@@ -1,9 +1,7 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createUserAction } from '@inspetor/actions/create-user'
-import { listCompanyAction } from '@inspetor/actions/list-company'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
-import { Combobox } from '@inspetor/components/ui/combobox'
 import {
   Dialog,
   DialogClose,
@@ -14,6 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@inspetor/components/ui/dialog'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@inspetor/components/ui/drawer'
 import {
   Form,
   FormControl,
@@ -31,9 +39,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
-import type { Company } from '@inspetor/generated/prisma/client'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { getUsersQueryKey } from '@inspetor/hooks/use-users-query'
 import { IconPlus } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
@@ -73,15 +83,13 @@ type Schema = z.infer<typeof schema>
 export function UserCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createUserAction)
+  const queryClient = useQueryClient()
 
-  const [companies, setCompanies] = useState<Company[]>([])
-  const listCompanies = useServerAction(listCompanyAction)
+  const isMobile = useIsMobile()
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
   })
-
-  const router = useRouter()
 
   async function handleCreateUser(data: Schema) {
     const [result, resultError] = await action.execute(data)
@@ -93,7 +101,7 @@ export function UserCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getUsersQueryKey() })
     } else {
       toast.error(result?.message)
     }
@@ -119,23 +127,165 @@ export function UserCreationModal() {
     setIsModalOpen(false)
   }
 
-  useEffect(() => {
-    async function fetchCompanies() {
-      const [result, resultError] = await listCompanies.execute()
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="company-creation-form"
+        onSubmit={form.handleSubmit(handleCreateUser)}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g pedro augusto" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      if (resultError) {
-        toast.error('Erro ao listar empresas')
-      }
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g pedroaba" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      if (result?.success) {
-        setCompanies(result.others.companies)
-      }
-    }
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g pedroaba@gmail.com" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-    fetchCompanies()
+        <FormField
+          control={form.control}
+          name="companyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Empresa</FormLabel>
+              <FormControl>
+                <CompanySelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione uma empresa"
+                  label="Empresa"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Permissão</FormLabel>
+              <FormControl>
+                <Select
+                  {...field}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="operator">Operador</SelectItem>
+                    <SelectItem value="user">Usuário</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Senha</FormLabel>
+              <FormControl>
+                <Password {...field} placeholder="e.g 123456" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirmar senha</FormLabel>
+              <FormControl>
+                <Password {...field} placeholder="e.g 123456" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerTrigger asChild>
+          <Button icon={IconPlus}>Novo usuário</Button>
+        </DrawerTrigger>
+
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Cadastrar usuário</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para cadastrar um novo usuário.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+            <Button type="submit" form="company-creation-form">
+              Cadastrar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -151,135 +301,7 @@ export function UserCreationModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleCreateUser)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g pedro augusto" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g pedroaba" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g pedroaba@gmail.com" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="companyId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Empresa</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      options={companies.map((company) => ({
-                        id: company.id,
-                        value: company.name.toLowerCase(),
-                        label: company.name,
-                      }))}
-                      placeholder="Selecione uma empresa"
-                      label="Empresa"
-                      isLoading={listCompanies.isPending}
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Permissão</FormLabel>
-                  <FormControl>
-                    <Select
-                      {...field}
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma permissão" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="operator">Operador</SelectItem>
-                        <SelectItem value="user">Usuário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <Password {...field} placeholder="e.g 123456" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirmar senha</FormLabel>
-                  <FormControl>
-                    <Password {...field} placeholder="e.g 123456" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>

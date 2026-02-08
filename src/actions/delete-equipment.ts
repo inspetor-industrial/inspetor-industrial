@@ -1,6 +1,9 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
@@ -14,18 +17,9 @@ export const deleteEquipmentAction = authProcedure
     }),
   )
   .handler(async ({ input, ctx }) => {
-    if (!ctx.user.organization.id) {
-      return returnsDefaultActionMessage({
-        message: 'Usuário não possui empresa ou não está autenticado',
-        success: false,
-      })
-    }
-
     const equipment = await prisma.equipment.findUnique({
-      where: {
-        id: input.equipmentId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.equipmentId },
+      select: { id: true, companyId: true },
     })
 
     if (!equipment) {
@@ -35,11 +29,25 @@ export const deleteEquipmentAction = authProcedure
       })
     }
 
-    await prisma.equipment.delete({
-      where: {
-        id: input.equipmentId,
-      },
-    })
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectEquipment = subject('MaintenanceEquipment', {
+      companyId: equipment.companyId,
+    }) as unknown as Subjects
+    if (!ability.can('delete', subjectEquipment)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para excluir equipamento',
+        success: false,
+      })
+    }
+
+    await prisma.$transaction([
+      prisma.dailyMaintenance.deleteMany({
+        where: { equipmentId: input.equipmentId },
+      }),
+      prisma.equipment.delete({
+        where: { id: input.equipmentId },
+      }),
+    ])
 
     return returnsDefaultActionMessage({
       message: 'Equipamento deletado com sucesso',

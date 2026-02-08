@@ -15,10 +15,18 @@ export const getStructureFurnaceInfoByBoilerReportIdAction = authProcedure
   .input(z.object({ boilerReportId: z.string() }))
   .handler(async ({ input, ctx }) => {
     try {
+      const organizationId = ctx.user.organization?.id
+      if (!organizationId) {
+        return returnsDefaultActionMessage({
+          message: 'Organização não encontrada',
+          success: false,
+        })
+      }
+
       const boilerReport = await prisma.boilerReport.findUnique({
         where: {
           id: input.boilerReportId,
-          companyId: ctx.user.organization.id,
+          companyId: organizationId,
         },
       })
 

@@ -1,4 +1,3 @@
-import { prisma } from '@inspetor/lib/prisma'
 import {
   COOKIE_CONFIG,
   generateToken,
@@ -6,13 +5,16 @@ import {
   getRefreshTokenExpiry,
   isExpired,
 } from '@inspetor/lib/auth/token'
+import { prisma } from '@inspetor/lib/prisma'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
   try {
     const cookieStore = await cookies()
-    const refreshToken = cookieStore.get(COOKIE_CONFIG.REFRESH_TOKEN_NAME)?.value
+    const refreshToken = cookieStore.get(
+      COOKIE_CONFIG.REFRESH_TOKEN_NAME,
+    )?.value
 
     if (!refreshToken) {
       return NextResponse.json(

@@ -1,15 +1,11 @@
 model Operator {
-  id                      String        @id @default(cuid())
-
-  boilerReport            BoilerReport @relation(fields: [boilerReportId], references: [id])
-  boilerReportId          String       @unique
-
+  id                      String                  @id @default(cuid())
+  boilerReportId          String                  @unique
   name                    String
   isAbleToOperateWithNR13 String
-
-  certificate             BoilerReportAttachment? @relation(fields: [certificateId], references: [id])
-  certificateId           String?      @unique
-
+  certificateId           String?                 @unique
   provisionsForOperator   String?
   observations            String?
+  boilerReport            BoilerReport            @relation(fields: [boilerReportId], references: [id])
+  certificate             BoilerReportAttachment? @relation(fields: [certificateId], references: [id])
 }

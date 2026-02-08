@@ -1,6 +1,8 @@
-import { useRouter } from '@bprogress/next'
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createBombAction } from '@inspetor/actions/create-bomb'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -13,6 +15,16 @@ import {
   DialogTrigger,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -22,7 +34,11 @@ import {
 } from '@inspetor/components/ui/form'
 import { ImageUploadField } from '@inspetor/components/ui/image-upload-field'
 import { Input } from '@inspetor/components/ui/input'
+import { getBombsQueryKey } from '@inspetor/hooks/use-bombs-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { useSession } from '@inspetor/lib/auth/context'
 import { IconPlus } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -30,6 +46,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   mark: z.string({
     message: 'Marca é obrigatória',
   }),
@@ -53,14 +70,42 @@ export function BombCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createBombAction)
 
+  const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
+
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
+
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      companyId: '',
+      mark: '',
+      model: '',
+      stages: '',
+      potency: '',
+      photoId: '',
+    },
   })
 
-  const router = useRouter()
-
   async function handleCreateBomb(data: Schema) {
-    const [result, resultError] = await action.execute(data)
+    if (isAdmin && !data.companyId) {
+      toast.error('Selecione a empresa em que a bomba será criada')
+      return
+    }
+
+    const payload =
+      isAdmin && data.companyId
+        ? data
+        : {
+            mark: data.mark,
+            model: data.model,
+            stages: data.stages,
+            potency: data.potency,
+            photoId: data.photoId,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
       toast.error('Erro ao criar bomba')
@@ -69,26 +114,188 @@ export function BombCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
-    } else {
-      toast.error(result?.message)
+      await queryClient.invalidateQueries({ queryKey: getBombsQueryKey() })
+      form.reset({
+        companyId: '',
+        mark: '',
+        model: '',
+        stages: '',
+        potency: '',
+        photoId: '',
+      })
+      setIsModalOpen(false)
+      return
     }
 
-    form.reset({
-      mark: '',
-      model: '',
-      stages: '',
-      potency: '',
-      photoId: '',
-    })
+    toast.error(result?.message)
+  }
 
-    setIsModalOpen(false)
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="bomb-creation-form"
+        onSubmit={form.handleSubmit(handleCreateBomb)}
+        className="space-y-4"
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="mark"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Marca</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. KSB"
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modelo</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. Meganorm"
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="stages"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estágios</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="e.g. 2"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="potency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Potência (CV)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 10.00"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="photoId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Foto da Bomba</FormLabel>
+              <FormControl>
+                <ImageUploadField
+                  value={field.value}
+                  onChange={(documentId) => field.onChange(documentId ?? '')}
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerTrigger asChild>
+          <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
+            Cadastrar bomba
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Cadastrar bomba</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para cadastrar uma nova bomba.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+            <Button type="submit" form="bomb-creation-form">
+              Cadastrar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
   }
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button icon={IconPlus}>Cadastrar bomba</Button>
+        <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
+          Cadastrar bomba
+        </Button>
       </DialogTrigger>
 
       <DialogContent>
@@ -99,97 +306,13 @@ export function BombCreationModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="bomb-creation-form"
-            onSubmit={form.handleSubmit(handleCreateBomb)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="mark"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Marca</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g. KSB" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="model"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Modelo</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g. Meganorm" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="stages"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estágios</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. 2" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="potency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Potência (CV)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 10.00"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="photoId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Foto da Bomba</FormLabel>
-                  <FormControl>
-                    <ImageUploadField
-                      value={field.value}
-                      onChange={(documentId) => field.onChange(documentId ?? '')}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
+            <Button type="button" variant="outline">
+              Cancelar
+            </Button>
           </DialogClose>
 
           <Button

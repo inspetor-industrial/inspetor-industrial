@@ -1,6 +1,9 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
@@ -16,7 +19,29 @@ export const updateMaintenanceAction = authProcedure
       description: z.string(),
     }),
   )
-  .handler(async ({ input }) => {
+  .handler(async ({ input, ctx }) => {
+    const dailyMaintenance = await prisma.dailyMaintenance.findUnique({
+      where: { id: input.dailyMaintenanceId },
+    })
+
+    if (!dailyMaintenance) {
+      return returnsDefaultActionMessage({
+        message: 'Manutenção diária não encontrada',
+        success: false,
+      })
+    }
+
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectMaintenance = subject('MaintenanceDaily', {
+      companyId: dailyMaintenance.companyId,
+    }) as unknown as Subjects
+    if (!ability.can('update', subjectMaintenance)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para atualizar manutenção diária',
+        success: false,
+      })
+    }
+
     await prisma.dailyMaintenance.update({
       where: {
         id: input.dailyMaintenanceId,

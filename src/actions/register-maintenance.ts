@@ -1,6 +1,9 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
@@ -16,33 +19,33 @@ export const registerMaintenanceAction = authProcedure
     }),
   )
   .handler(async ({ input, ctx }) => {
-    if (!ctx.user.email) {
+    const equipment = await prisma.equipment.findUnique({
+      where: { id: input.equipmentId },
+      select: { companyId: true },
+    })
+
+    if (!equipment) {
       return returnsDefaultActionMessage({
-        message: 'Usuário não autenticado',
+        message: 'Equipamento não encontrado',
         success: false,
       })
     }
 
-    const company = await prisma.company.findFirst({
-      where: {
-        users: {
-          some: {
-            email: ctx.user.email,
-          },
-        },
-      },
-    })
-
-    if (!company) {
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectMaintenance = subject('MaintenanceDaily', {
+      companyId: equipment.companyId,
+    }) as unknown as Subjects
+    if (!ability.can('create', subjectMaintenance)) {
       return returnsDefaultActionMessage({
-        message: 'Usuário não possui empresa',
+        message:
+          'Sem permissão para registrar manutenção diária neste equipamento',
         success: false,
       })
     }
 
     await prisma.dailyMaintenance.create({
       data: {
-        companyId: company?.id,
+        companyId: equipment.companyId,
         equipmentId: input.equipmentId,
         operatorName: input.operatorName,
         description: input.description,

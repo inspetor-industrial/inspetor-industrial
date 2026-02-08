@@ -1,9 +1,7 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { listCompanyAction } from '@inspetor/actions/list-company'
 import { registerStorageAction } from '@inspetor/actions/register-storage'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
-import { Combobox } from '@inspetor/components/ui/combobox'
 import {
   Dialog,
   DialogClose,
@@ -15,6 +13,16 @@ import {
   DialogTrigger,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -23,9 +31,11 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
-import type { Company } from '@inspetor/generated/prisma/client'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { getStoragesQueryKey } from '@inspetor/hooks/use-storages-query'
 import { IconPlus } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
@@ -44,16 +54,15 @@ type Schema = z.infer<typeof schema>
 
 export function StorageCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [companies, setCompanies] = useState<Company[]>([])
 
   const action = useServerAction(registerStorageAction)
-  const listCompanies = useServerAction(listCompanyAction)
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
 
   async function handleRegisterStorage(data: Schema) {
     const [result, resultError] = await action.execute(data)
@@ -65,7 +74,7 @@ export function StorageCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getStoragesQueryKey() })
     } else {
       toast.error(result?.message)
     }
@@ -81,28 +90,95 @@ export function StorageCreationModal() {
     setIsModalOpen(false)
   }
 
-  useEffect(() => {
-    async function fetchCompanies() {
-      const [result, resultError] = await listCompanies.execute()
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="company-creation-form"
+        onSubmit={form.handleSubmit(handleRegisterStorage)}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="companyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Empresa</FormLabel>
+              <FormControl>
+                <CompanySelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione uma empresa"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      if (resultError) {
-        toast.error('Erro ao listar empresas')
-      }
+        <FormField
+          control={form.control}
+          name="relativeLink"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Link para a pasta</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g /pedroaba-tech" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
 
-      if (result?.success) {
-        setCompanies(result.others.companies)
-      }
-    }
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerTrigger asChild>
+          <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
+            Registrar pasta
+          </Button>
+        </DrawerTrigger>
 
-    fetchCompanies()
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Registrar pasta</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para registrar uma nova pasta.
+            </DrawerDescription>
+          </DrawerHeader>
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+
+            <Button
+              type="submit"
+              form="company-creation-form"
+              isLoading={form.formState.isSubmitting}
+            >
+              Registrar pasta
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button icon={IconPlus}>Registrar pasta</Button>
+        <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
+          Registrar pasta
+        </Button>
       </DialogTrigger>
 
       <DialogContent>
@@ -113,52 +189,7 @@ export function StorageCreationModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="company-creation-form"
-            onSubmit={form.handleSubmit(handleRegisterStorage)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="companyId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Empresa</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      options={companies.map((company) => ({
-                        id: company.id,
-                        value: company.name.toLowerCase(),
-                        label: company.name,
-                      }))}
-                      placeholder="Selecione uma empresa"
-                      label="Empresa"
-                      isLoading={listCompanies.isPending}
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="relativeLink"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Link para a pasta</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g /pedroaba-tech" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>

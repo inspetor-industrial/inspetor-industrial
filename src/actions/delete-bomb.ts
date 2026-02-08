@@ -1,9 +1,12 @@
 'use server'
 
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { subject } from '@casl/ability'
+import { defineAbilityFor, type Subjects } from '@inspetor/casl/ability'
 import { env } from '@inspetor/env'
 import { prisma } from '@inspetor/lib/prisma'
 import { r2 } from '@inspetor/lib/r2'
+import type { AuthUser } from '@inspetor/types/auth'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
 
@@ -14,10 +17,7 @@ export const deleteBombAction = authProcedure
   .input(z.object({ bombId: z.string() }))
   .handler(async ({ input, ctx }) => {
     const bomb = await prisma.bomb.findUnique({
-      where: {
-        id: input.bombId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.bombId },
       include: {
         photo: true,
       },
@@ -30,17 +30,32 @@ export const deleteBombAction = authProcedure
       })
     }
 
-    const photo = bomb.photo
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectBomb = subject('ReportBomb', {
+      companyId: bomb.companyId,
+    }) as unknown as Subjects
+    if (!ability.can('delete', subjectBomb)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para excluir bomba',
+        success: false,
+      })
+    }
 
-    // Delete bomb first (to release foreign key)
+    if (bomb.powerSupplyId) {
+      return returnsDefaultActionMessage({
+        message:
+          'Não é possível excluir esta bomba pois ela está vinculada a um relatório de caldeira (alimentação de energia). Remova o vínculo no relatório antes de excluir.',
+        success: false,
+        conflict: true,
+      })
+    }
+
+    const photo = bomb.photo as { id: string; cloudflareR2Key: string } | null
+
     await prisma.bomb.delete({
-      where: {
-        id: input.bombId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.bombId },
     })
 
-    // Delete photo from R2 and database
     if (photo) {
       try {
         await r2.send(
@@ -55,8 +70,8 @@ export const deleteBombAction = authProcedure
             id: photo.id,
           },
         })
-      } catch (error) {
-        console.error('[deleteBombAction] Failed to delete photo:', error)
+      } catch {
+        // Photo cleanup failed; bomb was already deleted
       }
     }
 

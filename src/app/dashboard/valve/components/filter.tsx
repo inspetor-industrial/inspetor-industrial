@@ -1,43 +1,82 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
-import { invalidatePageCache } from '@inspetor/actions/utils/invalidate-page-cache'
+import { Can } from '@inspetor/casl/context'
+import { CompanySelect } from '@inspetor/components/company-select'
+import { Button } from '@inspetor/components/ui/button'
 import { Input } from '@inspetor/components/ui/input'
-import { useDebouncedCallback } from '@mantine/hooks'
-import { parseAsString, useQueryState } from 'nuqs'
-import { useState } from 'react'
+import { useSession } from '@inspetor/lib/auth/context'
+import { BrushCleaning } from 'lucide-react'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 
 import { ValveCreationModal } from './creation-modal'
 
 export function ValveFilter() {
-  const [searchCache, setSearchCache] = useState('')
-  const [, setSearch] = useQueryState('search', parseAsString.withDefault(''))
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
 
-  const router = useRouter()
+  const [search, setSearch] = useQueryState(
+    'search',
+    parseAsString.withDefault(''),
+  )
+  const [companyId, setCompanyId] = useQueryState(
+    'companyId',
+    parseAsString.withDefault(''),
+  )
+  const [, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
 
-  const handleSearch = useDebouncedCallback(async (value: string) => {
+  function handleSearchChange(value: string) {
     setSearch(value)
+    setPage(1)
+  }
 
-    try {
-      await invalidatePageCache('/dashboard/valve')
-    } finally {
-      router.refresh()
-    }
-  }, 300)
+  function handleCompanyChange(value: string) {
+    setCompanyId(value)
+    setPage(1)
+  }
+
+  function handleClearFilters() {
+    setSearch('')
+    setCompanyId('')
+    setPage(1)
+  }
 
   return (
-    <div className="@container/filter flex @items-center gap-2 @justify-between flex-col md:flex-row">
-      <Input
-        placeholder="Pesquisar pelo número de série"
-        className="w-full"
-        value={searchCache}
-        onChange={(e) => {
-          setSearchCache(e.target.value)
-          handleSearch(e.target.value)
-        }}
-      />
+    <div className="@container/filter flex md:items-center gap-2 md:justify-between flex-col md:flex-row">
+      <div className="flex gap-2 items-center flex-col md:flex-row w-full md:w-1/2">
+        <div className="flex gap-2 flex-col sm:flex-row w-full">
+          <Input
+            placeholder="Pesquisar pelo número de série"
+            className="w-full"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="Pesquisar válvula pelo número de série"
+          />
+          {isAdmin && (
+            <CompanySelect
+              value={companyId}
+              onValueChange={handleCompanyChange}
+              placeholder="Filtrar por empresa"
+              label="Empresa"
+            />
+          )}
+        </div>
+      </div>
 
-      <ValveCreationModal />
+      <div className="flex flex-col md:flex-row gap-2 items-center w-full md:w-auto">
+        <Button
+          type="button"
+          className="w-full md:w-auto"
+          icon={BrushCleaning}
+          onClick={handleClearFilters}
+        >
+          Limpar filtros
+        </Button>
+        <Can I="create" a="ReportValve">
+          <div className="w-full md:w-auto">
+            <ValveCreationModal />
+          </div>
+        </Can>
+      </div>
     </div>
   )
 }

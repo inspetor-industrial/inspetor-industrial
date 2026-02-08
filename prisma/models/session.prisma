@@ -1,21 +1,16 @@
 model Session {
-  id               String    @id @default(cuid())
   userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  accessToken      String    @unique
-  refreshToken     String    @unique
-
-  expiresAt        DateTime  // Access token expiration
-  refreshExpiresAt DateTime  // Refresh token expiration
-
-  userAgent        String?
-  ipAddress        String?
-
-  revokedAt        DateTime? // Null if active, timestamp if revoked
-
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  accessToken      String    @unique
+  expiresAt        DateTime
+  id               String    @id @default(cuid())
+  ipAddress        String?
+  refreshExpiresAt DateTime
+  refreshToken     String    @unique
+  revokedAt        DateTime?
+  userAgent        String?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([accessToken])
   @@index([refreshToken])

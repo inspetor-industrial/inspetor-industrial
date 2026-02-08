@@ -1,9 +1,11 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { BoilerReportWithRelations } from '@inspetor/actions/boiler/get-boiler-report-by-id'
 import { updateBoilerReportAction } from '@inspetor/actions/boiler/update-boiler-report'
+import { ClientSelect } from '@inspetor/components/client-select'
+import { CompanySelect } from '@inspetor/components/company-select'
+import { EngineerSelect } from '@inspetor/components/engineer-select'
 import { Button } from '@inspetor/components/ui/button'
 import { DatePicker } from '@inspetor/components/ui/date-picker'
 import {
@@ -15,6 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
 import {
   Form,
   FormControl,
@@ -32,11 +43,11 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import {
-  BoilerReportType,
-  type Clients,
-  type User,
-} from '@inspetor/generated/prisma/browser'
+import { BoilerReportType } from '@inspetor/generated/prisma/browser'
+import { getBoilerReportsQueryKey } from '@inspetor/hooks/use-boiler-reports-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
+import { useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { Save } from 'lucide-react'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -45,6 +56,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   type: z.enum(BoilerReportType, {
     message: 'Tipo de relatório é obrigatório',
   }),
@@ -74,23 +86,21 @@ type Schema = z.infer<typeof schema>
 
 type BoilerReportEditModalProps = {
   ref?: RefObject<any>
-  clients: Clients[]
-  engineers: User[]
 }
 
-export function BoilerReportEditModal({
-  ref,
-  clients,
-  engineers,
-}: BoilerReportEditModalProps) {
+export function BoilerReportEditModal({ ref }: BoilerReportEditModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [boilerReportId, setBoilerReportId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
   const action = useServerAction(updateBoilerReportAction)
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
+      companyId: '',
       type: BoilerReportType.INITIAL,
       clientId: '',
       motivation: '',
@@ -101,15 +111,26 @@ export function BoilerReportEditModal({
     },
   })
 
-  const router = useRouter()
-
   async function handleUpdateBoilerReport(data: Schema) {
     if (!boilerReportId) return
 
-    const [result, resultError] = await action.execute({
-      boilerReportId,
-      ...data,
-    })
+    const payload =
+      isAdmin && data.companyId
+        ? { boilerReportId, ...data }
+        : {
+            boilerReportId,
+            type: data.type,
+            clientId: data.clientId,
+            motivation: data.motivation,
+            date: data.date,
+            startTimeOfInspection: data.startTimeOfInspection,
+            endTimeOfInspection: data.endTimeOfInspection,
+            inspectionValidation: data.inspectionValidation,
+            nextInspectionDate: data.nextInspectionDate,
+            engineerId: data.engineerId,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
       toast.error('Erro ao atualizar relatório de inspeção de caldeira')
@@ -118,7 +139,9 @@ export function BoilerReportEditModal({
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({
+        queryKey: getBoilerReportsQueryKey(),
+      })
       setIsModalOpen(false)
       return
     }
@@ -127,11 +150,12 @@ export function BoilerReportEditModal({
   }
 
   useImperativeHandle(ref, () => ({
-    open: (report: BoilerReportWithRelations, isOnlyRead: boolean = false) => {
-      setIsOnlyRead(isOnlyRead)
+    open: (report: BoilerReportWithRelations, isOnlyReadModal = false) => {
+      setIsOnlyRead(isOnlyReadModal)
       setBoilerReportId(report.id)
       setIsModalOpen(true)
       form.reset({
+        companyId: report.companyId ?? '',
         type: report.type,
         clientId: report.clientId,
         motivation: report.motivation ?? '',
@@ -148,6 +172,272 @@ export function BoilerReportEditModal({
     close: () => setIsModalOpen(false),
   }))
 
+  const isMobile = useIsMobile()
+
+  const FormContent = (
+    <Form {...form}>
+      <form
+        id="boiler-report-edit-form"
+        className="grid md:grid-cols-2 gap-4"
+        onSubmit={form.handleSubmit(handleUpdateBoilerReport)}
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                    label="Empresa"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de relatório</FormLabel>
+              <FormControl>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  >
+                    <SelectValue placeholder="Selecione o tipo de relatório" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={BoilerReportType.INITIAL}>
+                      Inicial
+                    </SelectItem>
+                    <SelectItem value={BoilerReportType.PERIODIC}>
+                      Periódico
+                    </SelectItem>
+                    <SelectItem value={BoilerReportType.EXTRAORDINARY}>
+                      Extraordinário
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="clientId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cliente</FormLabel>
+              <FormControl>
+                <ClientSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione o cliente"
+                  label="Cliente"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="motivation"
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel>Motivação</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  placeholder="Descreva a motivação do relatório (opcional)"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data</FormLabel>
+              <FormControl>
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Selecione a data"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nextInspectionDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data da próxima inspeção</FormLabel>
+              <FormControl>
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Próxima data"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="startTimeOfInspection"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Horário de início da inspeção</FormLabel>
+              <FormControl>
+                <Input
+                  type="time"
+                  {...field}
+                  placeholder="Selecione o horário de início"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="endTimeOfInspection"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Horário de término da inspeção</FormLabel>
+              <FormControl>
+                <Input
+                  type="time"
+                  {...field}
+                  placeholder="Selecione o horário de término"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="inspectionValidation"
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel>Validação da inspeção</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  placeholder="Descreva a validação da inspeção (opcional)"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="engineerId"
+          render={({ field }) => (
+            <FormItem className="md:col-span-2 space-y-1.5">
+              <FormLabel>Engenheiro</FormLabel>
+              <FormControl>
+                <EngineerSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione o engenheiro"
+                  label="Engenheiro"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>
+              {isOnlyRead ? 'Visualizar' : 'Editar'} Relatório de Inspeção de
+              Caldeira
+            </DrawerTitle>
+            <DrawerDescription>
+              {isOnlyRead
+                ? 'Visualize os dados do relatório de inspeção de caldeira.'
+                : 'Preencha os campos abaixo para editar o relatório de inspeção de caldeira.'}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormContent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={form.formState.isSubmitting}
+              >
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+
+            {!isOnlyRead && (
+              <Button
+                type="submit"
+                form="boiler-report-edit-form"
+                icon={Save}
+                isLoading={form.formState.isSubmitting}
+              >
+                Salvar
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -163,214 +453,15 @@ export function BoilerReportEditModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="boiler-report-edit-form"
-            className="grid md:grid-cols-2 gap-4"
-            onSubmit={form.handleSubmit(handleUpdateBoilerReport)}
-          >
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de relatório</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      >
-                        <SelectValue placeholder="Selecione o tipo de relatório" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={BoilerReportType.INITIAL}>
-                          Inicial
-                        </SelectItem>
-                        <SelectItem value={BoilerReportType.PERIODIC}>
-                          Periódico
-                        </SelectItem>
-                        <SelectItem value={BoilerReportType.EXTRAORDINARY}>
-                          Extraordinário
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="clientId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      >
-                        <SelectValue placeholder="Selecione o cliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.companyName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="motivation"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Motivação</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Descreva a motivação do relatório (opcional)"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Selecione a data"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="nextInspectionDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da próxima inspeção</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Selecione a data da próxima inspeção"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="startTimeOfInspection"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Horário de início da inspeção</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="time"
-                      {...field}
-                      placeholder="Selecione o horário de início"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="endTimeOfInspection"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Horário de término da inspeção</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="time"
-                      {...field}
-                      placeholder="Selecione o horário de término"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="inspectionValidation"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Validação da inspeção</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Descreva a validação da inspeção (opcional)"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="engineerId"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Engenheiro</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      >
-                        <SelectValue placeholder="Selecione o engenheiro" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {engineers.map((engineer) => (
-                          <SelectItem key={engineer.id} value={engineer.id}>
-                            {engineer.name ?? engineer.username}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormContent}
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" disabled={form.formState.isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={form.formState.isSubmitting}
+            >
               {isOnlyRead ? 'Fechar' : 'Cancelar'}
             </Button>
           </DialogClose>

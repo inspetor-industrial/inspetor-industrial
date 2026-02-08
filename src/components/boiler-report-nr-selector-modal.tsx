@@ -1,6 +1,5 @@
 'use client'
 
-import type { InjectorGaugeNrItem } from '@inspetor/constants/nrs-injector'
 import { Button } from '@inspetor/components/ui/button'
 import { Checkbox } from '@inspetor/components/ui/checkbox'
 import {
@@ -17,6 +16,7 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import { Separator } from '@inspetor/components/ui/separator'
+import type { InjectorGaugeNrItem } from '@inspetor/constants/nrs-injector'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -40,11 +40,15 @@ export function BoilerReportNrSelectorModal({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalNrs(
         value.map((nr) => ({
           parent: nr.parent,
           parentSelected: nr.parentSelected,
-          children: nr.children.map((c) => ({ selected: c.selected, text: c.text })),
+          children: nr.children.map((c) => ({
+            selected: c.selected,
+            text: c.text,
+          })),
         })),
       )
     }

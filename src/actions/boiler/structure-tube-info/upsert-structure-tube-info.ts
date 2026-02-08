@@ -23,6 +23,14 @@ export const upsertStructureTubeInfoAction = authProcedure
   )
   .handler(async ({ input, ctx }) => {
     try {
+      const organizationId = ctx.user.organization?.id
+      if (!organizationId) {
+        return returnsDefaultActionMessage({
+          message: 'Organização não encontrada',
+          success: false,
+        })
+      }
+
       const {
         boilerReportId,
         length,
@@ -37,7 +45,7 @@ export const upsertStructureTubeInfoAction = authProcedure
       const boilerReport = await prisma.boilerReport.findUnique({
         where: {
           id: boilerReportId,
-          companyId: ctx.user.organization.id,
+          companyId: organizationId,
         },
       })
 
@@ -68,7 +76,8 @@ export const upsertStructureTubeInfoAction = authProcedure
               await prisma.boilerReportAttachment.findFirst({
                 where: {
                   documentId: certificateId,
-                  fieldName: BoilerReportAttachmentFieldName.STRUCTURE_TUBE_CERTIFICATE,
+                  fieldName:
+                    BoilerReportAttachmentFieldName.STRUCTURE_TUBE_CERTIFICATE,
                 },
               })
 
@@ -78,7 +87,8 @@ export const upsertStructureTubeInfoAction = authProcedure
               const newAttachment = await prisma.boilerReportAttachment.create({
                 data: {
                   documentId: certificateId,
-                  fieldName: BoilerReportAttachmentFieldName.STRUCTURE_TUBE_CERTIFICATE,
+                  fieldName:
+                    BoilerReportAttachmentFieldName.STRUCTURE_TUBE_CERTIFICATE,
                 },
               })
               finalCertificateId = newAttachment.id

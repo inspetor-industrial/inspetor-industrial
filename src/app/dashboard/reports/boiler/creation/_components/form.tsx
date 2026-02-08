@@ -2,6 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createBoilerReportAction } from '@inspetor/actions/boiler/create-boiler-report'
+import { ClientSelect } from '@inspetor/components/client-select'
+import { CompanySelect } from '@inspetor/components/company-select'
+import { EngineerSelect } from '@inspetor/components/engineer-select'
 import { Button } from '@inspetor/components/ui/button'
 import { DatePicker } from '@inspetor/components/ui/date-picker'
 import {
@@ -21,11 +24,7 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { Textarea } from '@inspetor/components/ui/textarea'
-import {
-  BoilerReportType,
-  type Clients,
-  type User,
-} from '@inspetor/generated/prisma/browser'
+import { BoilerReportType } from '@inspetor/generated/prisma/browser'
 import { cn } from '@inspetor/lib/utils'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
@@ -36,6 +35,9 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string({
+    message: 'Empresa é obrigatória',
+  }),
   type: z.enum(BoilerReportType, {
     message: 'Tipo de relatório é obrigatório',
   }),
@@ -63,26 +65,20 @@ const schema = z.object({
 
 type Schema = z.infer<typeof schema>
 
-type BoilerCreationFormProps = {
-  clients: Clients[]
-  engineers: User[]
-}
-
-export function BoilerCreationForm({
-  clients,
-  engineers,
-}: BoilerCreationFormProps) {
+export function BoilerCreationForm() {
   const action = useServerAction(createBoilerReportAction)
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      companyId: '',
+    },
   })
 
   const router = useRouter()
 
   async function handleCreateBoilerReport(data: Schema) {
     const [result, resultError] = await action.execute(data)
-    console.log(result, resultError)
 
     if (resultError) {
       toast.error('Erro ao criar relatório de inspeção de caldeira')
@@ -105,6 +101,25 @@ export function BoilerCreationForm({
         className="grid md:grid-cols-2 gap-4"
         onSubmit={form.handleSubmit(handleCreateBoilerReport)}
       >
+        <FormField
+          control={form.control}
+          name="companyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Empresa</FormLabel>
+              <FormControl>
+                <CompanySelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione a empresa"
+                  label="Empresa"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="type"
@@ -141,18 +156,12 @@ export function BoilerCreationForm({
             <FormItem>
               <FormLabel>Cliente</FormLabel>
               <FormControl>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.companyName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ClientSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione o cliente"
+                  label="Cliente"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -272,18 +281,12 @@ export function BoilerCreationForm({
             <FormItem>
               <FormLabel>Engenheiro</FormLabel>
               <FormControl>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o engenheiro" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {engineers.map((engineer) => (
-                      <SelectItem key={engineer.id} value={engineer.id}>
-                        {engineer.name ?? engineer.username}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <EngineerSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Selecione o engenheiro"
+                  label="Engenheiro"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

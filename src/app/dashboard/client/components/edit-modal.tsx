@@ -1,4 +1,3 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateClientAction } from '@inspetor/actions/update-client'
 import { Button } from '@inspetor/components/ui/button'
@@ -11,6 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
 import {
   Form,
   FormControl,
@@ -28,8 +36,13 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { brazilianStates } from '@inspetor/constants/states'
+import {
+  type ClientListItem,
+  getClientQueryKey,
+} from '@inspetor/hooks/use-client-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { DocumentBRValidator, DocumentType } from '@inspetor/utils/document-br'
-import type { Clients } from '@inspetor/generated/prisma/client'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -107,7 +120,8 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
     },
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
 
   async function handleUpdateClient(data: Schema) {
     const [result, resultError] = await action.execute({
@@ -122,7 +136,7 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getClientQueryKey() })
     } else {
       toast.error(result?.message)
     }
@@ -150,15 +164,180 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
     setIsModalOpen(false)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="client-creation-form"
+        onSubmit={form.handleSubmit(handleUpdateClient)}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 place-content-start items-start"
+      >
+        <FormField
+          control={form.control}
+          name="companyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome do cliente</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  disabled={isOnlyRead}
+                  placeholder="e.g pedroaba tech"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="taxId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CNPJ ou CPF</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  disabled={isOnlyRead}
+                  placeholder="e.g 12345678901234"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="state"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estado</FormLabel>
+              <FormControl>
+                <Select
+                  {...field}
+                  disabled={isOnlyRead}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brazilianStates.map((state) => (
+                      <SelectItem key={state.initials} value={state.initials}>
+                        {state.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="city"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cidade</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  disabled={isOnlyRead}
+                  placeholder="e.g São Paulo"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Endereço</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  disabled={isOnlyRead}
+                  placeholder="e.g Rua das Flores"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="zipCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CEP</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  disabled={isOnlyRead}
+                  placeholder="e.g 12345678901234"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="taxRegistration"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Inscrição estadual</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  disabled={isOnlyRead}
+                  placeholder="e.g 12345678901234"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Telefone</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  disabled={isOnlyRead}
+                  placeholder="e.g (11) 99999-9999"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
   useImperativeHandle(ref, () => ({
-    open: (client: Clients, isOnlyRead: boolean = false) => {
+    open: (client: ClientListItem, isOnlyRead = false) => {
       setIsOnlyRead(isOnlyRead)
       setClientId(client.id)
       setIsModalOpen(true)
       form.reset({
         companyName: client.companyName,
         taxId: client.taxId,
-        taxRegistration: client.taxRegistration,
+        taxRegistration: client.taxRegistration ?? '',
         state: client.state,
         city: client.city,
         address: client.address,
@@ -168,7 +347,7 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
 
       form.setValue('companyName', client.companyName)
       form.setValue('taxId', client.taxId)
-      form.setValue('taxRegistration', client.taxRegistration)
+      form.setValue('taxRegistration', client.taxRegistration ?? '')
       form.setValue('state', client.state)
       form.setValue('city', client.city)
       form.setValue('address', client.address)
@@ -177,6 +356,36 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
     },
     close: () => setIsModalOpen(false),
   }))
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Editar cliente</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para editar o cliente.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+            <Button type="submit" form="client-creation-form">
+              Editar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -188,171 +397,7 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="client-creation-form"
-            onSubmit={form.handleSubmit(handleUpdateClient)}
-            className="grid md:grid-cols-2 gap-4 place-content-start items-start"
-          >
-            <FormField
-              control={form.control}
-              name="companyName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do cliente</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={isOnlyRead}
-                      placeholder="e.g pedroaba tech"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="taxId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CNPJ ou CPF</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={isOnlyRead}
-                      placeholder="e.g 12345678901234"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-                  <FormControl>
-                    <Select
-                      {...field}
-                      disabled={isOnlyRead}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {brazilianStates.map((state) => (
-                          <SelectItem
-                            key={state.initials}
-                            value={state.initials}
-                          >
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cidade</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={isOnlyRead}
-                      placeholder="e.g São Paulo"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={isOnlyRead}
-                      placeholder="e.g Rua das Flores"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="zipCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CEP</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={isOnlyRead}
-                      placeholder="e.g 12345678901234"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="taxRegistration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Inscrição estadual</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={isOnlyRead}
-                      placeholder="e.g 12345678901234"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      disabled={isOnlyRead}
-                      placeholder="e.g (11) 99999-9999"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
