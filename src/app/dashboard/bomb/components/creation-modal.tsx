@@ -15,6 +15,16 @@ import {
   DialogTrigger,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -25,9 +35,10 @@ import {
 import { ImageUploadField } from '@inspetor/components/ui/image-upload-field'
 import { Input } from '@inspetor/components/ui/input'
 import { getBombsQueryKey } from '@inspetor/hooks/use-bombs-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { useSession } from '@inspetor/lib/auth/context'
-import { useQueryClient } from '@tanstack/react-query'
 import { IconPlus } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -58,7 +69,10 @@ type Schema = z.infer<typeof schema>
 export function BombCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createBombAction)
+
   const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
+
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === 'ADMIN'
 
@@ -116,10 +130,170 @@ export function BombCreationModal() {
     toast.error(result?.message)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="bomb-creation-form"
+        onSubmit={form.handleSubmit(handleCreateBomb)}
+        className="space-y-4"
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="mark"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Marca</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. KSB"
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modelo</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. Meganorm"
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="stages"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estágios</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="e.g. 2"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="potency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Potência (CV)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 10.00"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="photoId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Foto da Bomba</FormLabel>
+              <FormControl>
+                <ImageUploadField
+                  value={field.value}
+                  onChange={(documentId) => field.onChange(documentId ?? '')}
+                  disabled={form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerTrigger asChild>
+          <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
+            Cadastrar bomba
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Cadastrar bomba</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para cadastrar uma nova bomba.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+            <Button type="submit" form="bomb-creation-form">
+              Cadastrar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button type="button" icon={IconPlus}>
+        <Button type="button" className="w-full md:w-auto" icon={IconPlus}>
           Cadastrar bomba
         </Button>
       </DialogTrigger>
@@ -132,128 +306,7 @@ export function BombCreationModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="bomb-creation-form"
-            onSubmit={form.handleSubmit(handleCreateBomb)}
-            className="space-y-4"
-          >
-            {isAdmin && (
-              <FormField
-                control={form.control}
-                name="companyId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Empresa</FormLabel>
-                    <FormControl>
-                      <CompanySelect
-                        value={field.value ?? ''}
-                        onValueChange={field.onChange}
-                        placeholder="Selecione a empresa"
-                        disabled={form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="mark"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Marca</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. KSB"
-                      disabled={form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="model"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Modelo</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. Meganorm"
-                      disabled={form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="stages"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estágios</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="e.g. 2"
-                        disabled={form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="potency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Potência (CV)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 10.00"
-                        disabled={form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="photoId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Foto da Bomba</FormLabel>
-                  <FormControl>
-                    <ImageUploadField
-                      value={field.value}
-                      onChange={(documentId) => field.onChange(documentId ?? '')}
-                      disabled={form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>

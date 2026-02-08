@@ -14,6 +14,15 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -27,6 +36,7 @@ import {
   type BombListItem,
   getBombsQueryKey,
 } from '@inspetor/hooks/use-bombs-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { useSession } from '@inspetor/lib/auth/context'
 import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
@@ -76,6 +86,8 @@ export function BombEditModal({ ref }: BombEditModalProps) {
   const [existingPhotoName, setExistingPhotoName] = useState<string | null>(
     null,
   )
+
+  const isMobile = useIsMobile()
 
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === 'ADMIN'
@@ -134,6 +146,156 @@ export function BombEditModal({ ref }: BombEditModalProps) {
     toast.error(result?.message ?? 'Erro ao editar bomba')
   }
 
+  function handleOpenChange(open: boolean) {
+    if (!open && form.formState.isSubmitting) {
+      return
+    }
+
+    setIsModalOpen(open)
+    if (!open) {
+      form.reset({
+        companyId: '',
+        mark: '',
+        model: '',
+        stages: '',
+        potency: '',
+        photoId: '',
+      })
+    }
+  }
+
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="bomb-edit-form"
+        onSubmit={form.handleSubmit(handleUpdateBomb)}
+        className="space-y-4"
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="mark"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Marca</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. KSB"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modelo</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. Meganorm"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="stages"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estágios</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="e.g. 2"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="potency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Potência (CV)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 10.00"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="photoId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Foto da Bomba</FormLabel>
+              <FormControl>
+                <ImageUploadField
+                  value={field.value || undefined}
+                  onChange={(documentId) => {
+                    const newValue = documentId ?? ''
+                    field.onChange(newValue)
+                    if (!documentId) {
+                      form.trigger('photoId')
+                    }
+                  }}
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                  existingImageName={existingPhotoName ?? undefined}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
   useImperativeHandle(ref, () => ({
     open: (bomb: BombListItem, isOnlyReadModal = false) => {
       setIsOnlyRead(isOnlyReadModal)
@@ -158,21 +320,43 @@ export function BombEditModal({ ref }: BombEditModalProps) {
     close: () => setIsModalOpen(false),
   }))
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open && form.formState.isSubmitting) {
-      return
-    }
-    setIsModalOpen(open)
-    if (!open) {
-      form.reset({
-        companyId: '',
-        mark: '',
-        model: '',
-        stages: '',
-        potency: '',
-        photoId: '',
-      })
-    }
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={handleOpenChange}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>
+              {isOnlyRead ? 'Visualizar bomba' : 'Editar bomba'}
+            </DrawerTitle>
+            <DrawerDescription>
+              {isOnlyRead
+                ? 'Visualize os dados da bomba.'
+                : 'Preencha os campos abaixo para editar a bomba.'}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button type="button" variant="outline">
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+
+            {!isOnlyRead && (
+              <Button type="submit" form="bomb-edit-form">
+                Editar
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
   }
 
   return (
@@ -189,135 +373,7 @@ export function BombEditModal({ ref }: BombEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="bomb-edit-form"
-            onSubmit={form.handleSubmit(handleUpdateBomb)}
-            className="space-y-4"
-          >
-            {isAdmin && (
-              <FormField
-                control={form.control}
-                name="companyId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Empresa</FormLabel>
-                    <FormControl>
-                      <CompanySelect
-                        value={field.value ?? ''}
-                        onValueChange={field.onChange}
-                        placeholder="Selecione a empresa"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="mark"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Marca</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. KSB"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="model"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Modelo</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. Meganorm"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="stages"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estágios</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="e.g. 2"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="potency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Potência (CV)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g. 10.00"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="photoId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Foto da Bomba</FormLabel>
-                  <FormControl>
-                    <ImageUploadField
-                      value={field.value || undefined}
-                      onChange={(documentId) => {
-                        const newValue = documentId ?? ''
-                        field.onChange(newValue)
-                        if (!documentId) {
-                          form.trigger('photoId')
-                        }
-                      }}
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                      existingImageName={existingPhotoName ?? undefined}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
