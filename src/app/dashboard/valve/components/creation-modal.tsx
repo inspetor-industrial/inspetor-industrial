@@ -1,6 +1,8 @@
-import { useRouter } from '@bprogress/next'
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createValveAction } from '@inspetor/actions/create-valve'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -21,6 +23,9 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
+import { getValvesQueryKey } from '@inspetor/hooks/use-valves-query'
+import { useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -29,6 +34,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   serialNumber: z.string({
     message: 'Número de série é obrigatório',
   }),
@@ -54,15 +60,36 @@ type Schema = z.infer<typeof schema>
 export function ValveCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createValveAction)
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      companyId: '',
+    },
   })
 
-  const router = useRouter()
-
   async function handleCreateValve(data: Schema) {
-    const [result, resultError] = await action.execute(data)
+    if (isAdmin && !data.companyId) {
+      toast.error('Selecione a empresa em que a válvula será criada')
+      return
+    }
+
+    const payload =
+      isAdmin && data.companyId
+        ? data
+        : {
+            serialNumber: data.serialNumber,
+            model: data.model,
+            diameter: data.diameter,
+            flow: data.flow,
+            openingPressure: data.openingPressure,
+            closingPressure: data.closingPressure,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
       toast.error('Erro ao criar válvula')
@@ -71,34 +98,29 @@ export function ValveCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
-    } else {
-      toast.error(result?.message)
+      await queryClient.invalidateQueries({ queryKey: getValvesQueryKey() })
+      form.reset({
+        companyId: '',
+        serialNumber: '',
+        model: '',
+        diameter: '',
+        flow: '',
+        openingPressure: '',
+        closingPressure: '',
+      })
+      setIsModalOpen(false)
+      return
     }
 
-    form.reset({
-      serialNumber: '',
-      model: '',
-      diameter: '',
-      flow: '',
-      openingPressure: '',
-      closingPressure: '',
-    })
-
-    form.setValue('serialNumber', '')
-    form.setValue('model', '')
-    form.setValue('diameter', '')
-    form.setValue('flow', '')
-    form.setValue('openingPressure', '')
-    form.setValue('closingPressure', '')
-
-    setIsModalOpen(false)
+    toast.error(result?.message)
   }
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button icon={IconPlus}>Cadastrar válvula</Button>
+        <Button type="button" icon={IconPlus}>
+          Cadastrar válvula
+        </Button>
       </DialogTrigger>
 
       <DialogContent>
@@ -115,6 +137,27 @@ export function ValveCreationModal() {
             onSubmit={form.handleSubmit(handleCreateValve)}
             className="space-y-4"
           >
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="companyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Empresa</FormLabel>
+                    <FormControl>
+                      <CompanySelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Selecione a empresa"
+                        label="Empresa"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="serialNumber"
@@ -122,7 +165,11 @@ export function ValveCreationModal() {
                 <FormItem>
                   <FormLabel>Número de série</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. VSN-123456" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. VSN-123456"
+                      aria-label="Número de série"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,7 +183,11 @@ export function ValveCreationModal() {
                 <FormItem>
                   <FormLabel>Modelo</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. VLV-2000" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. VLV-2000"
+                      aria-label="Modelo"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,6 +207,7 @@ export function ValveCreationModal() {
                         type="number"
                         step="0.01"
                         placeholder="e.g. 50.00"
+                        aria-label="Diâmetro"
                       />
                     </FormControl>
                     <FormMessage />
@@ -175,6 +227,7 @@ export function ValveCreationModal() {
                         type="number"
                         step="0.01"
                         placeholder="e.g. 100.00"
+                        aria-label="Vazão"
                       />
                     </FormControl>
                     <FormMessage />
@@ -196,6 +249,7 @@ export function ValveCreationModal() {
                         type="number"
                         step="0.01"
                         placeholder="e.g. 10.00"
+                        aria-label="Pressão de abertura"
                       />
                     </FormControl>
                     <FormMessage />
@@ -215,6 +269,7 @@ export function ValveCreationModal() {
                         type="number"
                         step="0.01"
                         placeholder="e.g. 8.00"
+                        aria-label="Pressão de fechamento"
                       />
                     </FormControl>
                     <FormMessage />
@@ -227,7 +282,9 @@ export function ValveCreationModal() {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
+            <Button type="button" variant="outline">
+              Cancelar
+            </Button>
           </DialogClose>
 
           <Button

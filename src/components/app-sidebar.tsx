@@ -87,8 +87,8 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
   const mustBeHideBoilerManagement =
     flags.disableBoilerReport || !ability.can('read', 'ReportBoiler')
   const mustBeHideDocumentsManagement = !ability.can('read', 'Documents')
-  const mustBeHideValveManagement = !ability.can('read', 'ReportValve')
-  const mustBeHideBombManagement = !ability.can('read', 'ReportBomb')
+  const mustBeHideValveManagement = !isAdmin
+  const mustBeHideBombManagement = !isAdmin
 
   const mustBeHideInspectionManagement =
     mustBeHideInstrumentsManagement && mustBeHideBoilerManagement

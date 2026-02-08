@@ -1,6 +1,8 @@
-import { useRouter } from '@bprogress/next'
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateBombAction } from '@inspetor/actions/update-bomb'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -21,7 +23,12 @@ import {
 } from '@inspetor/components/ui/form'
 import { ImageUploadField } from '@inspetor/components/ui/image-upload-field'
 import { Input } from '@inspetor/components/ui/input'
-import type { Bomb, Documents } from '@inspetor/generated/prisma/client'
+import {
+  type BombListItem,
+  getBombsQueryKey,
+} from '@inspetor/hooks/use-bombs-query'
+import { useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -29,6 +36,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   mark: z.string({
     message: 'Marca é obrigatória',
   }),
@@ -52,12 +60,11 @@ const schema = z.object({
 
 type Schema = z.infer<typeof schema>
 
-type BombWithPhoto = Bomb & {
-  photo: Documents
-}
-
 type BombEditModalProps = {
-  ref?: RefObject<any>
+  ref?: RefObject<{
+    open: (bomb: BombListItem, isOnlyRead?: boolean) => void
+    close: () => void
+  } | null>
 }
 
 export function BombEditModal({ ref }: BombEditModalProps) {
@@ -70,24 +77,39 @@ export function BombEditModal({ ref }: BombEditModalProps) {
     null,
   )
 
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
+
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
+      companyId: '',
       mark: '',
       model: '',
       stages: '',
       potency: '',
-      photoId: undefined,
+      photoId: '',
     },
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
   async function handleUpdateBomb(data: Schema) {
-    const [result, resultError] = await action.execute({
-      bombId: bombId!,
-      ...data,
-    })
+    if (!bombId) return
+
+    const payload =
+      isAdmin && data.companyId
+        ? { bombId, ...data }
+        : {
+            bombId,
+            mark: data.mark,
+            model: data.model,
+            stages: data.stages,
+            potency: data.potency,
+            photoId: data.photoId,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
       toast.error('Erro ao editar bomba')
@@ -96,52 +118,59 @@ export function BombEditModal({ ref }: BombEditModalProps) {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getBombsQueryKey() })
       form.reset({
+        companyId: '',
         mark: '',
         model: '',
         stages: '',
         potency: '',
-        photoId: undefined,
+        photoId: '',
       })
       setIsModalOpen(false)
-    } else {
-      toast.error(result?.message || 'Erro ao editar bomba')
-      // Don't close modal on error - keep it open so user can fix the issue
+      return
     }
+
+    toast.error(result?.message ?? 'Erro ao editar bomba')
   }
 
   useImperativeHandle(ref, () => ({
-    open: (bomb: BombWithPhoto, isOnlyRead: boolean = false) => {
-      setIsOnlyRead(isOnlyRead)
+    open: (bomb: BombListItem, isOnlyReadModal = false) => {
+      setIsOnlyRead(isOnlyReadModal)
       setBombId(bomb.id)
       setExistingPhotoName(bomb.photo?.name ?? null)
       setIsModalOpen(true)
       form.reset({
+        companyId: bomb.companyId ?? '',
         mark: bomb.mark,
         model: bomb.model,
         stages: bomb.stages,
         potency: String(bomb.potency),
-        photoId: bomb.photoId || undefined,
+        photoId: bomb.photoId ?? '',
       })
+      form.setValue('companyId', bomb.companyId ?? '')
+      form.setValue('mark', bomb.mark)
+      form.setValue('model', bomb.model)
+      form.setValue('stages', bomb.stages)
+      form.setValue('potency', String(bomb.potency))
+      form.setValue('photoId', bomb.photoId ?? '')
     },
     close: () => setIsModalOpen(false),
   }))
 
   const handleOpenChange = (open: boolean) => {
     if (!open && form.formState.isSubmitting) {
-      // Prevent closing while submitting
       return
     }
     setIsModalOpen(open)
     if (!open) {
-      // Reset form when closing
       form.reset({
+        companyId: '',
         mark: '',
         model: '',
         stages: '',
         potency: '',
-        photoId: undefined,
+        photoId: '',
       })
     }
   }
@@ -163,16 +192,30 @@ export function BombEditModal({ ref }: BombEditModalProps) {
         <Form {...form}>
           <form
             id="bomb-edit-form"
-            onSubmit={form.handleSubmit(
-              handleUpdateBomb,
-              (errors) => {
-                // Handle validation errors
-                console.log('Validation errors:', errors)
-                // Form won't submit if there are validation errors
-              },
-            )}
+            onSubmit={form.handleSubmit(handleUpdateBomb)}
             className="space-y-4"
           >
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="companyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Empresa</FormLabel>
+                    <FormControl>
+                      <CompanySelect
+                        value={field.value ?? ''}
+                        onValueChange={field.onChange}
+                        placeholder="Selecione a empresa"
+                        disabled={isOnlyRead || form.formState.isSubmitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="mark"
@@ -259,9 +302,8 @@ export function BombEditModal({ ref }: BombEditModalProps) {
                     <ImageUploadField
                       value={field.value || undefined}
                       onChange={(documentId) => {
-                        const newValue = documentId || ''
+                        const newValue = documentId ?? ''
                         field.onChange(newValue)
-                        // Trigger validation immediately when image is removed
                         if (!documentId) {
                           form.trigger('photoId')
                         }
@@ -279,7 +321,7 @@ export function BombEditModal({ ref }: BombEditModalProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">
+            <Button type="button" variant="outline">
               {isOnlyRead ? 'Fechar' : 'Cancelar'}
             </Button>
           </DialogClose>

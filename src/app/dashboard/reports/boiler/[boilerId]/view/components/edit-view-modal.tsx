@@ -1,9 +1,10 @@
 'use client'
 
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { BoilerReportWithRelations } from '@inspetor/actions/boiler/get-boiler-report-by-id'
 import { updateBoilerReportAction } from '@inspetor/actions/boiler/update-boiler-report'
+import { CompanySelect } from '@inspetor/components/company-select'
+import { EngineerSelect } from '@inspetor/components/engineer-select'
 import { Button } from '@inspetor/components/ui/button'
 import { DatePicker } from '@inspetor/components/ui/date-picker'
 import {
@@ -37,6 +38,9 @@ import {
   type Clients,
   type User,
 } from '@inspetor/generated/prisma/browser'
+import { getBoilerReportsQueryKey } from '@inspetor/hooks/use-boiler-reports-query'
+import { useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { Save } from 'lucide-react'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -45,6 +49,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   type: z.enum(BoilerReportType, {
     message: 'Tipo de relatório é obrigatório',
   }),
@@ -87,10 +92,14 @@ export function BoilerReportEditModal({
   const [boilerReportId, setBoilerReportId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
   const action = useServerAction(updateBoilerReportAction)
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
+      companyId: '',
       type: BoilerReportType.INITIAL,
       clientId: '',
       motivation: '',
@@ -101,15 +110,26 @@ export function BoilerReportEditModal({
     },
   })
 
-  const router = useRouter()
-
   async function handleUpdateBoilerReport(data: Schema) {
     if (!boilerReportId) return
 
-    const [result, resultError] = await action.execute({
-      boilerReportId,
-      ...data,
-    })
+    const payload =
+      isAdmin && data.companyId
+        ? { boilerReportId, ...data }
+        : {
+            boilerReportId,
+            type: data.type,
+            clientId: data.clientId,
+            motivation: data.motivation,
+            date: data.date,
+            startTimeOfInspection: data.startTimeOfInspection,
+            endTimeOfInspection: data.endTimeOfInspection,
+            inspectionValidation: data.inspectionValidation,
+            nextInspectionDate: data.nextInspectionDate,
+            engineerId: data.engineerId,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
       toast.error('Erro ao atualizar relatório de inspeção de caldeira')
@@ -118,7 +138,9 @@ export function BoilerReportEditModal({
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({
+        queryKey: getBoilerReportsQueryKey(),
+      })
       setIsModalOpen(false)
       return
     }
@@ -127,11 +149,12 @@ export function BoilerReportEditModal({
   }
 
   useImperativeHandle(ref, () => ({
-    open: (report: BoilerReportWithRelations, isOnlyRead: boolean = false) => {
-      setIsOnlyRead(isOnlyRead)
+    open: (report: BoilerReportWithRelations, isOnlyReadModal = false) => {
+      setIsOnlyRead(isOnlyReadModal)
       setBoilerReportId(report.id)
       setIsModalOpen(true)
       form.reset({
+        companyId: report.companyId ?? '',
         type: report.type,
         clientId: report.clientId,
         motivation: report.motivation ?? '',
@@ -169,6 +192,28 @@ export function BoilerReportEditModal({
             className="grid md:grid-cols-2 gap-4"
             onSubmit={form.handleSubmit(handleUpdateBoilerReport)}
           >
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="companyId"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Empresa</FormLabel>
+                    <FormControl>
+                      <CompanySelect
+                        value={field.value ?? ''}
+                        onValueChange={field.onChange}
+                        placeholder="Selecione a empresa"
+                        disabled={isOnlyRead || form.formState.isSubmitting}
+                        label="Empresa"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="type"
@@ -274,7 +319,7 @@ export function BoilerReportEditModal({
                     <DatePicker
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder="Selecione a data da próxima inspeção"
+                      placeholder="Próxima data"
                       disabled={isOnlyRead || form.formState.isSubmitting}
                     />
                   </FormControl>
@@ -343,23 +388,17 @@ export function BoilerReportEditModal({
               control={form.control}
               name="engineerId"
               render={({ field }) => (
-                <FormItem className="md:col-span-2">
+                <FormItem className="md:col-span-2 space-y-1.5">
                   <FormLabel>Engenheiro</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                      >
-                        <SelectValue placeholder="Selecione o engenheiro" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {engineers.map((engineer) => (
-                          <SelectItem key={engineer.id} value={engineer.id}>
-                            {engineer.name ?? engineer.username}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <EngineerSelect
+                      engineers={engineers}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Selecione o engenheiro"
+                      label="Engenheiro"
+                      disabled={isOnlyRead || form.formState.isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -370,7 +409,11 @@ export function BoilerReportEditModal({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" disabled={form.formState.isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={form.formState.isSubmitting}
+            >
               {isOnlyRead ? 'Fechar' : 'Cancelar'}
             </Button>
           </DialogClose>

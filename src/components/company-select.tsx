@@ -16,7 +16,7 @@ import {
 } from '@inspetor/components/ui/popover'
 import { cn } from '@inspetor/lib/utils'
 import {
-  useCompaniesQuery,
+  useCompaniesForSelectQuery,
   type CompanyOption,
 } from '@inspetor/hooks/use-companies-query'
 import { CheckIcon, ChevronDownIcon, Loader2 } from 'lucide-react'
@@ -44,7 +44,7 @@ export function CompanySelect({
   const id = useId()
   const [open, setOpen] = useState(false)
 
-  const { data, isLoading, isError } = useCompaniesQuery()
+  const { data, isLoading, isError } = useCompaniesForSelectQuery()
   const companies = data?.companies ?? []
 
   const selectedCompany = companies.find((c: CompanyOption) => c.id === value)

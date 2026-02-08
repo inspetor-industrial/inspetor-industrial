@@ -1,5 +1,8 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -11,10 +14,8 @@ export const deleteInstrumentAction = authProcedure
   .input(z.object({ instrumentId: z.string() }))
   .handler(async ({ input, ctx }) => {
     const instrument = await prisma.instruments.findUnique({
-      where: {
-        id: input.instrumentId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.instrumentId },
+      select: { id: true, companyId: true },
     })
 
     if (!instrument) {
@@ -24,11 +25,19 @@ export const deleteInstrumentAction = authProcedure
       })
     }
 
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectInstrument = subject('Instruments', {
+      companyId: instrument.companyId,
+    })
+    if (!ability.can('delete', subjectInstrument)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para excluir instrumento',
+        success: false,
+      })
+    }
+
     await prisma.instruments.delete({
-      where: {
-        id: input.instrumentId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.instrumentId },
     })
 
     return returnsDefaultActionMessage({

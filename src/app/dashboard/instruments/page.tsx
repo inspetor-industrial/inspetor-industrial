@@ -1,79 +1,26 @@
+import { UserRole } from '@inspetor/generated/prisma/client'
 import { getSession } from '@inspetor/lib/auth/server'
-import { prisma } from '@inspetor/lib/prisma'
-import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { Instruments } from '@inspetor/generated/prisma/client'
+import { redirect } from 'next/navigation'
 
 import { InstrumentFilter } from './components/filter'
 import { InstrumentTable } from './components/table'
 
-type InstrumentsPageProps = {
-  searchParams: Promise<{
-    search: string
-    page: string
-  }>
-}
-
-export default async function InstrumentsPage({
-  searchParams,
-}: InstrumentsPageProps) {
-  const { search, page } = await searchParams
+export default async function InstrumentsPage() {
   const session = await getSession()
-
-  let instruments: Instruments[] = []
-  let totalInstruments = 0
-
-  try {
-    instruments = await prisma.instruments.findMany({
-      where: {
-        serialNumber: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-      ...calculatePagination(page),
-    })
-
-    totalInstruments = await prisma.instruments.count({
-      where: {
-        serialNumber: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-    })
-  } catch {
-    instruments = []
-    totalInstruments = 0
+  if (!session?.user) {
+    redirect('/auth/sign-in')
   }
 
-  const totalPages = Math.ceil(totalInstruments / 10)
+  if (session.user.role !== UserRole.ADMIN) {
+    redirect('/access-denied')
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Instrumentos</h1>
 
       <InstrumentFilter />
-      <InstrumentTable instruments={instruments} totalPages={totalPages} />
+      <InstrumentTable />
     </div>
   )
 }

@@ -1,6 +1,8 @@
-import { useRouter } from '@bprogress/next'
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateInstrumentAction } from '@inspetor/actions/update-instrument'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -28,7 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
-import type { Instruments } from '@inspetor/generated/prisma/client'
+import type { InstrumentListItem } from '@inspetor/hooks/use-instruments-query'
+import { getInstrumentsQueryKey } from '@inspetor/hooks/use-instruments-query'
+import { useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -36,6 +41,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   type: z.string({
     message: 'Tipo é obrigatório',
   }),
@@ -57,12 +63,17 @@ const schema = z.object({
 type Schema = z.infer<typeof schema>
 
 type InstrumentEditModalProps = {
-  ref?: RefObject<any>
+  ref?: RefObject<{
+    open: (instrument: InstrumentListItem, isOnlyRead?: boolean) => void
+  } | null>
 }
 
 export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(updateInstrumentAction)
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   const [instrumentId, setInstrumentId] = useState<string | null>(null)
   const [isOnlyRead, setIsOnlyRead] = useState(false)
@@ -70,87 +81,72 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
+      companyId: '',
       type: '',
       manufacturer: '',
       serialNumber: '',
       certificateNumber: '',
-      validationDate: {
-        month: '',
-        year: '',
-      },
+      validationDate: { month: '', year: '' },
     },
   })
 
-  const router = useRouter()
-
   async function handleUpdateInstrument(data: Schema) {
-    const [result, resultError] = await action.execute({
-      instrumentId: instrumentId,
-      ...data,
-    })
+    if (!instrumentId) return
+
+    const payload =
+      isAdmin && data.companyId
+        ? { instrumentId, ...data }
+        : {
+            instrumentId,
+            type: data.type,
+            manufacturer: data.manufacturer,
+            serialNumber: data.serialNumber,
+            certificateNumber: data.certificateNumber,
+            validationDate: data.validationDate,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
-      console.log(resultError)
       toast.error('Erro ao editar instrumento')
       return
     }
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
-    } else {
-      toast.error(result?.message)
+      await queryClient.invalidateQueries({ queryKey: getInstrumentsQueryKey() })
+      form.reset({
+        companyId: '',
+        type: '',
+        manufacturer: '',
+        serialNumber: '',
+        certificateNumber: '',
+        validationDate: { month: '', year: '' },
+      })
+      setIsModalOpen(false)
+      return
     }
 
-    form.reset({
-      type: '',
-      manufacturer: '',
-      serialNumber: '',
-      certificateNumber: '',
-      validationDate: {
-        month: '',
-        year: '',
-      },
-    })
-
-    form.setValue('type', '')
-    form.setValue('manufacturer', '')
-    form.setValue('serialNumber', '')
-    form.setValue('certificateNumber', '')
-    form.setValue('validationDate', {
-      month: '',
-      year: '',
-    })
-
-    setIsModalOpen(false)
+    toast.error(result?.message)
   }
 
   useImperativeHandle(ref, () => ({
-    open: (instrument: Instruments, isOnlyRead: boolean = false) => {
-      setIsOnlyRead(isOnlyRead)
+    open: (instrument: InstrumentListItem, isOnlyReadModal = false) => {
+      setIsOnlyRead(isOnlyReadModal)
       setInstrumentId(instrument.id)
       setIsModalOpen(true)
+      const month = String(instrument.validationDate.getUTCMonth() + 1).padStart(
+        2,
+        '0',
+      )
+      const year = instrument.validationDate.getFullYear().toString().slice(-2)
       form.reset({
+        companyId: instrument.companyId ?? '',
         type: instrument.type,
         manufacturer: instrument.manufacturer,
         serialNumber: instrument.serialNumber,
         certificateNumber: instrument.certificateNumber,
-        validationDate: {
-          month: instrument.validationDate.getMonth().toString(),
-          year: instrument.validationDate.getFullYear().toString(),
-        },
-      })
-
-      form.setValue('type', instrument.type)
-      form.setValue('manufacturer', instrument.manufacturer)
-      form.setValue('serialNumber', instrument.serialNumber)
-      form.setValue('certificateNumber', instrument.certificateNumber)
-      form.setValue('validationDate', {
-        month: String(instrument.validationDate.getUTCMonth() + 1).padStart(
-          2,
-          '0',
-        ),
-        year: instrument.validationDate.getFullYear().toString().slice(-2),
+        validationDate: { month, year },
       })
     },
     close: () => setIsModalOpen(false),
@@ -168,10 +164,32 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
 
         <Form {...form}>
           <form
-            id="instrument-creation-form"
+            id="instrument-edit-form"
             onSubmit={form.handleSubmit(handleUpdateInstrument)}
             className="space-y-4"
           >
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="companyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Empresa</FormLabel>
+                    <FormControl>
+                      <CompanySelect
+                        value={field.value ?? ''}
+                        onValueChange={field.onChange}
+                        placeholder="Selecione a empresa"
+                        disabled={isOnlyRead || form.formState.isSubmitting}
+                        label="Empresa"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="type"
@@ -179,7 +197,11 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
                 <FormItem>
                   <FormLabel>Tipo</FormLabel>
                   <FormControl>
-                    <Select {...field} onValueChange={field.onChange}>
+                    <Select
+                      {...field}
+                      onValueChange={field.onChange}
+                      disabled={isOnlyRead || form.formState.isSubmitting}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um tipo" />
                       </SelectTrigger>
@@ -205,7 +227,12 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
                 <FormItem>
                   <FormLabel>Fabricante</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. Pedroaba Tech" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. Pedroaba Tech"
+                      disabled={isOnlyRead || form.formState.isSubmitting}
+                      aria-label="Fabricante"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -219,7 +246,12 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
                 <FormItem>
                   <FormLabel>Número de série</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. 1234567890" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. 1234567890"
+                      disabled={isOnlyRead || form.formState.isSubmitting}
+                      aria-label="Número de série"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -233,7 +265,12 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
                 <FormItem>
                   <FormLabel>Número de certificado</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. 1234567890" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. 1234567890"
+                      disabled={isOnlyRead || form.formState.isSubmitting}
+                      aria-label="Número de certificado"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -256,12 +293,12 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
                       }
                       onChange={(event) => {
                         const value = event.target.value
-
                         field.onChange({
                           month: value.split('/')[0],
                           year: value.split('/')[1],
                         })
                       }}
+                      disabled={isOnlyRead || form.formState.isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -273,7 +310,7 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">
+            <Button type="button" variant="outline">
               {isOnlyRead ? 'Fechar' : 'Cancelar'}
             </Button>
           </DialogClose>
@@ -281,7 +318,7 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
           {!isOnlyRead && (
             <Button
               type="submit"
-              form="instrument-creation-form"
+              form="instrument-edit-form"
               isLoading={form.formState.isSubmitting}
             >
               Editar

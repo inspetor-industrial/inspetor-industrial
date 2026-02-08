@@ -18,40 +18,46 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search') ?? ''
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
-  const perPageParam = searchParams.get('perPage')
-  const take = perPageParam
-    ? Math.min(1000, Math.max(1, Number(perPageParam) || PAGE_SIZE))
-    : PAGE_SIZE
+  const companyId = searchParams.get('companyId') ?? ''
 
-  const where = search
-    ? {
-        name: {
-          contains: search,
-          mode: 'insensitive' as const,
-        },
-      }
-    : {}
+  const where = {
+    ...(search
+      ? {
+          serialNumber: {
+            contains: search,
+            mode: 'insensitive' as const,
+          },
+        }
+      : {}),
+    ...(companyId ? { companyId } : {}),
+  }
 
-  const [companies, totalCompanies] = await Promise.all([
-    prisma.company.findMany({
+  const [instruments, totalInstruments] = await Promise.all([
+    prisma.instruments.findMany({
       where,
-      skip: (page - 1) * take,
-      take,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
       select: {
         id: true,
-        name: true,
-        cnpj: true,
-        status: true,
+        companyId: true,
+        type: true,
+        manufacturer: true,
+        serialNumber: true,
+        certificateNumber: true,
+        validationDate: true,
+        company: {
+          select: { name: true },
+        },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { serialNumber: 'asc' },
     }),
-    prisma.company.count({ where }),
+    prisma.instruments.count({ where }),
   ])
 
-  const totalPages = Math.ceil(totalCompanies / take)
+  const totalPages = Math.ceil(totalInstruments / PAGE_SIZE)
 
   return NextResponse.json({
-    companies,
+    instruments,
     totalPages,
   })
 }

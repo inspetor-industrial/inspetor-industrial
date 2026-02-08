@@ -1,6 +1,8 @@
-import { useRouter } from '@bprogress/next'
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createInstrumentAction } from '@inspetor/actions/create-instrument'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -29,6 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
+import { getInstrumentsQueryKey } from '@inspetor/hooks/use-instruments-query'
+import { useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -37,6 +42,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   type: z.string({
     message: 'Tipo é obrigatório',
   }),
@@ -60,56 +66,65 @@ type Schema = z.infer<typeof schema>
 export function InstrumentCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createInstrumentAction)
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      companyId: '',
+    },
   })
 
-  const router = useRouter()
-
   async function handleCreateInstrument(data: Schema) {
-    const [result, resultError] = await action.execute(data)
+    if (isAdmin && !data.companyId) {
+      toast.error('Selecione a empresa em que o instrumento será criado')
+      return
+    }
+
+    const payload =
+      isAdmin && data.companyId
+        ? data
+        : {
+            type: data.type,
+            manufacturer: data.manufacturer,
+            serialNumber: data.serialNumber,
+            certificateNumber: data.certificateNumber,
+            validationDate: data.validationDate,
+          }
+
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
-      console.log(resultError)
       toast.error('Erro ao criar instrumento')
       return
     }
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
-    } else {
-      toast.error(result?.message)
+      await queryClient.invalidateQueries({ queryKey: getInstrumentsQueryKey() })
+      form.reset({
+        companyId: '',
+        type: '',
+        manufacturer: '',
+        serialNumber: '',
+        certificateNumber: '',
+        validationDate: { month: '', year: '' },
+      })
+      setIsModalOpen(false)
+      return
     }
 
-    form.reset({
-      type: '',
-      manufacturer: '',
-      serialNumber: '',
-      certificateNumber: '',
-      validationDate: {
-        month: '',
-        year: '',
-      },
-    })
-
-    form.setValue('type', '')
-    form.setValue('manufacturer', '')
-    form.setValue('serialNumber', '')
-    form.setValue('certificateNumber', '')
-    form.setValue('validationDate', {
-      month: '',
-      year: '',
-    })
-
-    setIsModalOpen(false)
+    toast.error(result?.message)
   }
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button icon={IconPlus}>Cadastrar instrumento</Button>
+        <Button type="button" icon={IconPlus}>
+          Cadastrar instrumento
+        </Button>
       </DialogTrigger>
 
       <DialogContent>
@@ -126,6 +141,27 @@ export function InstrumentCreationModal() {
             onSubmit={form.handleSubmit(handleCreateInstrument)}
             className="space-y-4"
           >
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="companyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Empresa</FormLabel>
+                    <FormControl>
+                      <CompanySelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Selecione a empresa"
+                        label="Empresa"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="type"
@@ -159,7 +195,11 @@ export function InstrumentCreationModal() {
                 <FormItem>
                   <FormLabel>Fabricante</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. Pedroaba Tech" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. Pedroaba Tech"
+                      aria-label="Fabricante"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -173,7 +213,11 @@ export function InstrumentCreationModal() {
                 <FormItem>
                   <FormLabel>Número de série</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. 1234567890" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. 1234567890"
+                      aria-label="Número de série"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,7 +231,11 @@ export function InstrumentCreationModal() {
                 <FormItem>
                   <FormLabel>Número de certificado</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. 1234567890" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. 1234567890"
+                      aria-label="Número de certificado"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -204,7 +252,6 @@ export function InstrumentCreationModal() {
                     <MonthInput
                       onChange={(event) => {
                         const value = event.target.value
-
                         field.onChange({
                           month: value.split('/')[0],
                           year: value.split('/')[1],
@@ -221,7 +268,9 @@ export function InstrumentCreationModal() {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
+            <Button type="button" variant="outline">
+              Cancelar
+            </Button>
           </DialogClose>
 
           <Button

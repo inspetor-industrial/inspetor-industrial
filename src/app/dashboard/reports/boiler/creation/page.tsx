@@ -1,6 +1,6 @@
 import { UserResponsibility } from '@inspetor/generated/prisma/enums'
-import { getSession } from '@inspetor/lib/auth/server'
 import { getFullAuthenticatedUser } from '@inspetor/lib/auth/get-full-user'
+import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { redirect } from 'next/navigation'
 

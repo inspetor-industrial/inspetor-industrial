@@ -18,40 +18,49 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search') ?? ''
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
-  const perPageParam = searchParams.get('perPage')
-  const take = perPageParam
-    ? Math.min(1000, Math.max(1, Number(perPageParam) || PAGE_SIZE))
-    : PAGE_SIZE
+  const companyId = searchParams.get('companyId') ?? ''
 
-  const where = search
-    ? {
-        name: {
-          contains: search,
-          mode: 'insensitive' as const,
-        },
-      }
-    : {}
+  const where = {
+    ...(search
+      ? {
+          mark: {
+            contains: search,
+            mode: 'insensitive' as const,
+          },
+        }
+      : {}),
+    ...(companyId ? { companyId } : {}),
+  }
 
-  const [companies, totalCompanies] = await Promise.all([
-    prisma.company.findMany({
+  const [bombs, totalBombs] = await Promise.all([
+    prisma.bomb.findMany({
       where,
-      skip: (page - 1) * take,
-      take,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
       select: {
         id: true,
-        name: true,
-        cnpj: true,
-        status: true,
+        companyId: true,
+        mark: true,
+        model: true,
+        stages: true,
+        potency: true,
+        photoId: true,
+        company: {
+          select: { name: true },
+        },
+        photo: {
+          select: { id: true, name: true },
+        },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { mark: 'asc' },
     }),
-    prisma.company.count({ where }),
+    prisma.bomb.count({ where }),
   ])
 
-  const totalPages = Math.ceil(totalCompanies / take)
+  const totalPages = Math.ceil(totalBombs / PAGE_SIZE)
 
   return NextResponse.json({
-    companies,
+    bombs,
     totalPages,
   })
 }

@@ -1,84 +1,26 @@
-import type { Bomb, Documents } from '@inspetor/generated/prisma/client'
+import { UserRole } from '@inspetor/generated/prisma/client'
 import { getSession } from '@inspetor/lib/auth/server'
-import { prisma } from '@inspetor/lib/prisma'
-import { calculatePagination } from '@inspetor/utils/calculate-pagination'
+import { redirect } from 'next/navigation'
 
 import { BombFilter } from './components/filter'
 import { BombTable } from './components/table'
 
-type BombPageProps = {
-  searchParams: Promise<{
-    search: string
-    page: string
-  }>
-}
-
-type BombWithPhoto = Bomb & {
-  photo: Documents
-}
-
-export default async function BombPage({ searchParams }: BombPageProps) {
-  const { search, page } = await searchParams
+export default async function BombPage() {
   const session = await getSession()
-
-  let bombs: BombWithPhoto[] = []
-  let totalBombs = 0
-
-  try {
-    bombs = await prisma.bomb.findMany({
-      where: {
-        mark: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-      include: {
-        photo: true,
-      },
-      ...calculatePagination(page),
-    })
-
-    totalBombs = await prisma.bomb.count({
-      where: {
-        mark: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-    })
-  } catch {
-    bombs = []
-    totalBombs = 0
+  if (!session?.user) {
+    redirect('/auth/sign-in')
   }
 
-  const totalPages = Math.ceil(totalBombs / 10)
+  if (session.user.role !== UserRole.ADMIN) {
+    redirect('/access-denied')
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Bombas</h1>
 
       <BombFilter />
-      <BombTable bombs={bombs} totalPages={totalPages} />
+      <BombTable />
     </div>
   )
 }

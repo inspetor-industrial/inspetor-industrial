@@ -1,5 +1,8 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -11,6 +14,7 @@ export const updateInstrumentAction = authProcedure
   .input(
     z.object({
       instrumentId: z.string(),
+      companyId: z.string().optional(),
       type: z.string(),
       manufacturer: z.string(),
       serialNumber: z.string(),
@@ -20,10 +24,8 @@ export const updateInstrumentAction = authProcedure
   )
   .handler(async ({ input, ctx }) => {
     const instrument = await prisma.instruments.findUnique({
-      where: {
-        id: input.instrumentId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.instrumentId },
+      select: { id: true, companyId: true },
     })
 
     if (!instrument) {
@@ -33,11 +35,44 @@ export const updateInstrumentAction = authProcedure
       })
     }
 
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectInstrument = subject('Instruments', {
+      companyId: instrument.companyId,
+    })
+    if (!ability.can('update', subjectInstrument)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para editar instrumento',
+        success: false,
+      })
+    }
+
+    const isAdmin = ctx.user.role === 'ADMIN'
+    const newCompanyId = isAdmin && input.companyId ? input.companyId : undefined
+
+    if (newCompanyId) {
+      const canAssignToNewCompany = ability.can('update', subject('Instruments', { companyId: newCompanyId }))
+      if (!canAssignToNewCompany) {
+        return returnsDefaultActionMessage({
+          message: 'Sem permissão para atribuir a esta empresa',
+          success: false,
+        })
+      }
+      const companyExists = await prisma.company.findUnique({
+        where: { id: newCompanyId },
+        select: { id: true },
+      })
+      if (!companyExists) {
+        return returnsDefaultActionMessage({
+          message: 'Empresa não encontrada',
+          success: false,
+        })
+      }
+    }
+
     await prisma.instruments.update({
-      where: {
-        id: input.instrumentId,
-      },
+      where: { id: input.instrumentId },
       data: {
+        ...(newCompanyId ? { companyId: newCompanyId } : {}),
         type: input.type,
         manufacturer: input.manufacturer,
         serialNumber: input.serialNumber,

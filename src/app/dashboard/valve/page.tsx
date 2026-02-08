@@ -1,77 +1,26 @@
+import { UserRole } from '@inspetor/generated/prisma/client'
 import { getSession } from '@inspetor/lib/auth/server'
-import { prisma } from '@inspetor/lib/prisma'
-import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { Valve } from '@inspetor/generated/prisma/client'
+import { redirect } from 'next/navigation'
 
 import { ValveFilter } from './components/filter'
 import { ValveTable } from './components/table'
 
-type ValvePageProps = {
-  searchParams: Promise<{
-    search: string
-    page: string
-  }>
-}
-
-export default async function ValvePage({ searchParams }: ValvePageProps) {
-  const { search, page } = await searchParams
+export default async function ValvePage() {
   const session = await getSession()
-
-  let valves: Valve[] = []
-  let totalValves = 0
-
-  try {
-    valves = await prisma.valve.findMany({
-      where: {
-        serialNumber: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-      ...calculatePagination(page),
-    })
-
-    totalValves = await prisma.valve.count({
-      where: {
-        serialNumber: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        company:
-          session?.user.role.toLowerCase() !== 'admin'
-            ? {
-                users: {
-                  some: {
-                    username: session?.user.username ?? 'unknown',
-                  },
-                },
-              }
-            : undefined,
-      },
-    })
-  } catch {
-    valves = []
-    totalValves = 0
+  if (!session?.user) {
+    redirect('/auth/sign-in')
   }
 
-  const totalPages = Math.ceil(totalValves / 10)
+  if (session.user.role !== UserRole.ADMIN) {
+    redirect('/access-denied')
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Válvulas</h1>
 
       <ValveFilter />
-      <ValveTable valves={valves} totalPages={totalPages} />
+      <ValveTable />
     </div>
   )
 }

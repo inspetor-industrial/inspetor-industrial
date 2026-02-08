@@ -1,5 +1,8 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -10,6 +13,7 @@ export const createInstrumentAction = authProcedure
   .createServerAction()
   .input(
     z.object({
+      companyId: z.string().optional(),
       type: z.string(),
       manufacturer: z.string(),
       serialNumber: z.string(),
@@ -28,15 +32,46 @@ export const createInstrumentAction = authProcedure
       })
     }
 
+    const isAdmin = ctx.user.role === 'ADMIN'
+    const resolvedCompanyId =
+      isAdmin && input.companyId
+        ? input.companyId
+        : ctx.user.organization?.id ?? undefined
+
+    if (!resolvedCompanyId) {
+      return returnsDefaultActionMessage({
+        message: isAdmin
+          ? 'Selecione a empresa para criar o instrumento'
+          : 'Empresa não encontrada',
+        success: false,
+      })
+    }
+
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const scope = subject('Instruments', { companyId: resolvedCompanyId })
+    if (!ability.can('create', scope)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para criar instrumento',
+        success: false,
+      })
+    }
+
+    const companyExists = await prisma.company.findUnique({
+      where: { id: resolvedCompanyId },
+      select: { id: true },
+    })
+    if (!companyExists) {
+      return returnsDefaultActionMessage({
+        message: 'Empresa não encontrada',
+        success: false,
+      })
+    }
+
     const instrument = await prisma.instruments.findFirst({
       where: {
         OR: [
-          {
-            serialNumber: input.serialNumber,
-          },
-          {
-            certificateNumber: input.certificateNumber,
-          },
+          { serialNumber: input.serialNumber },
+          { certificateNumber: input.certificateNumber },
         ],
       },
     })
@@ -57,7 +92,7 @@ export const createInstrumentAction = authProcedure
         validationDate: new Date(
           `20${input.validationDate.year?.trim()}-${input.validationDate.month?.trim()}-01`,
         ),
-        companyId: ctx.user.organization.id,
+        companyId: resolvedCompanyId,
       },
     })
 

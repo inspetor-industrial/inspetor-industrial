@@ -1,5 +1,8 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -11,10 +14,8 @@ export const deleteValveAction = authProcedure
   .input(z.object({ valveId: z.string() }))
   .handler(async ({ input, ctx }) => {
     const valve = await prisma.valve.findUnique({
-      where: {
-        id: input.valveId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.valveId },
+      select: { id: true, companyId: true },
     })
 
     if (!valve) {
@@ -24,11 +25,19 @@ export const deleteValveAction = authProcedure
       })
     }
 
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectValve = subject('ReportValve', {
+      companyId: valve.companyId,
+    })
+    if (!ability.can('delete', subjectValve)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para excluir válvula',
+        success: false,
+      })
+    }
+
     await prisma.valve.delete({
-      where: {
-        id: input.valveId,
-        companyId: ctx.user.organization.id,
-      },
+      where: { id: input.valveId },
     })
 
     return returnsDefaultActionMessage({

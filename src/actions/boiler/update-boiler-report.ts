@@ -1,5 +1,8 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import type { AuthUser } from '@inspetor/types/auth'
 import { BoilerReportType } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
@@ -12,6 +15,7 @@ export const updateBoilerReportAction = authProcedure
   .input(
     z.object({
       boilerReportId: z.string(),
+      companyId: z.string().optional(),
       type: z.enum(BoilerReportType),
       clientId: z.string(),
       motivation: z.string().optional(),
@@ -26,10 +30,8 @@ export const updateBoilerReportAction = authProcedure
   .handler(async ({ input, ctx }) => {
     try {
       const boilerReport = await prisma.boilerReport.findUnique({
-        where: {
-          id: input.boilerReportId,
-          companyId: ctx.user.organization.id,
-        },
+        where: { id: input.boilerReportId },
+        select: { id: true, companyId: true },
       })
 
       if (!boilerReport) {
@@ -37,6 +39,43 @@ export const updateBoilerReportAction = authProcedure
           message: 'Relatório de inspeção de caldeira não encontrado',
           success: false,
         })
+      }
+
+      const ability = defineAbilityFor(ctx.user as AuthUser)
+      const subjectReport = subject('ReportBoiler', {
+        companyId: boilerReport.companyId,
+      })
+      if (!ability.can('update', subjectReport)) {
+        return returnsDefaultActionMessage({
+          message: 'Sem permissão para editar relatório de inspeção de caldeira',
+          success: false,
+        })
+      }
+
+      const isAdmin = ctx.user.role === 'ADMIN'
+      const newCompanyId = isAdmin && input.companyId ? input.companyId : undefined
+
+      if (newCompanyId) {
+        const canAssignToNewCompany = ability.can(
+          'update',
+          subject('ReportBoiler', { companyId: newCompanyId }),
+        )
+        if (!canAssignToNewCompany) {
+          return returnsDefaultActionMessage({
+            message: 'Sem permissão para atribuir a esta empresa',
+            success: false,
+          })
+        }
+        const companyExists = await prisma.company.findUnique({
+          where: { id: newCompanyId },
+          select: { id: true },
+        })
+        if (!companyExists) {
+          return returnsDefaultActionMessage({
+            message: 'Empresa não encontrada',
+            success: false,
+          })
+        }
       }
 
       const {
@@ -53,11 +92,9 @@ export const updateBoilerReportAction = authProcedure
       } = input
 
       await prisma.boilerReport.update({
-        where: {
-          id: boilerReportId,
-          companyId: ctx.user.organization.id,
-        },
+        where: { id: boilerReportId },
         data: {
+          ...(newCompanyId ? { companyId: newCompanyId } : {}),
           type,
           clientId,
           motivation,
@@ -74,8 +111,7 @@ export const updateBoilerReportAction = authProcedure
         message: 'Relatório de inspeção de caldeira atualizado com sucesso',
         success: true,
       })
-    } catch (error) {
-      console.log('error', error)
+    } catch {
       return returnsDefaultActionMessage({
         message: 'Erro ao atualizar relatório de inspeção de caldeira',
         success: false,
