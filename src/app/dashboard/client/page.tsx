@@ -1,54 +1,27 @@
-import { prisma } from '@inspetor/lib/prisma'
-import { calculatePagination } from '@inspetor/utils/calculate-pagination'
-import type { Clients } from '@inspetor/generated/prisma/client'
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import { getSession } from '@inspetor/lib/auth/server'
+import { redirect } from 'next/navigation'
 
 import { ClientFilter } from './components/filter'
 import { ClientTable } from './components/table'
 
-type ClientPageProps = {
-  searchParams: Promise<{
-    search: string
-    page: string
-  }>
-}
-
-export default async function ClientPage({ searchParams }: ClientPageProps) {
-  const { search, page } = await searchParams
-  let clients: Clients[] = []
-  let totalClients = 0
-
-  try {
-    clients = await prisma.clients.findMany({
-      where: {
-        companyName: {
-          contains: search,
-          mode: 'insensitive',
-        },
-      },
-      ...calculatePagination(page),
-    })
-
-    totalClients = await prisma.clients.count({
-      where: {
-        companyName: {
-          contains: search,
-          mode: 'insensitive',
-        },
-      },
-    })
-  } catch {
-    clients = []
-    totalClients = 0
+export default async function ClientPage() {
+  const session = await getSession()
+  if (!session?.user) {
+    redirect('/auth/sign-in')
   }
 
-  const totalPages = Math.ceil(totalClients / 10)
+  const ability = defineAbilityFor(session.user)
+  if (!ability.can('read', 'Client')) {
+    redirect('/access-denied')
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Clientes</h1>
 
       <ClientFilter />
-      <ClientTable clients={clients} totalPages={totalPages} />
+      <ClientTable />
     </div>
   )
 }

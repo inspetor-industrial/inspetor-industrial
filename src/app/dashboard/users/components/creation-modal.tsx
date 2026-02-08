@@ -1,8 +1,8 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createUserAction } from '@inspetor/actions/create-user'
 import { listCompanyAction } from '@inspetor/actions/list-company'
 import { Button } from '@inspetor/components/ui/button'
+import { useQueryClient } from '@tanstack/react-query'
 import { Combobox } from '@inspetor/components/ui/combobox'
 import {
   Dialog,
@@ -37,6 +37,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
+import { getUsersQueryKey } from '@inspetor/hooks/use-users-query'
 import { useServerAction } from 'zsa-react'
 
 const schema = z
@@ -73,6 +74,7 @@ type Schema = z.infer<typeof schema>
 export function UserCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createUserAction)
+  const queryClient = useQueryClient()
 
   const [companies, setCompanies] = useState<Company[]>([])
   const listCompanies = useServerAction(listCompanyAction)
@@ -80,8 +82,6 @@ export function UserCreationModal() {
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
   })
-
-  const router = useRouter()
 
   async function handleCreateUser(data: Schema) {
     const [result, resultError] = await action.execute(data)
@@ -93,7 +93,7 @@ export function UserCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getUsersQueryKey() })
     } else {
       toast.error(result?.message)
     }

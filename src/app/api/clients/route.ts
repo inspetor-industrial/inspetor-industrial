@@ -1,4 +1,4 @@
-import { UserRole } from '@inspetor/generated/prisma/client'
+import { defineAbilityFor } from '@inspetor/casl/ability'
 import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (session.user.role !== UserRole.ADMIN) {
+  const ability = defineAbilityFor(session.user)
+  if (!ability.can('read', 'Client')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -19,35 +20,35 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search') ?? ''
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
 
-  const where = search
-    ? {
-        name: {
-          contains: search,
-          mode: 'insensitive' as const,
-        },
-      }
-    : {}
+  const isAdmin = session.user.role === 'ADMIN'
+  const userCompanyId = session.user.companyId ?? undefined
 
-  const [companies, totalCompanies] = await Promise.all([
-    prisma.company.findMany({
+  const where = {
+    companyName: {
+      contains: search,
+      mode: 'insensitive' as const,
+    },
+    ...(isAdmin ? {} : { companyId: userCompanyId }),
+  }
+
+  const [clients, totalClients] = await Promise.all([
+    prisma.clients.findMany({
       where,
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      select: {
-        id: true,
-        name: true,
-        cnpj: true,
-        status: true,
+      include: {
+        company: {
+          select: { name: true },
+        },
       },
-      orderBy: { name: 'asc' },
     }),
-    prisma.company.count({ where }),
+    prisma.clients.count({ where }),
   ])
 
-  const totalPages = Math.ceil(totalCompanies / PAGE_SIZE)
+  const totalPages = Math.ceil(totalClients / PAGE_SIZE)
 
   return NextResponse.json({
-    companies,
+    clients,
     totalPages,
   })
 }

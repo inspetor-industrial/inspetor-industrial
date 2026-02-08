@@ -1,5 +1,8 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -15,11 +18,30 @@ export const updateCompanyAction = authProcedure
       cnpj: z.string(),
     }),
   )
-  .handler(async ({ input }) => {
+  .handler(async ({ input, ctx }) => {
+    const company = await prisma.company.findUnique({
+      where: { id: input.companyId },
+      select: { id: true },
+    })
+
+    if (!company) {
+      return returnsDefaultActionMessage({
+        message: 'Empresa não encontrada',
+        success: false,
+      })
+    }
+
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectCompany = subject('Company', company)
+    if (!ability.can('update', subjectCompany)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para editar empresa',
+        success: false,
+      })
+    }
+
     await prisma.company.update({
-      where: {
-        id: input.companyId,
-      },
+      where: { id: input.companyId },
       data: {
         name: input.name,
         cnpj: input.cnpj,

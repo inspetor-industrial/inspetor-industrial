@@ -2,9 +2,8 @@
 
 import { Can } from '@inspetor/casl/context'
 import { Input } from '@inspetor/components/ui/input'
-import { useDebouncedCallback } from '@mantine/hooks'
 import type { Equipment } from '@inspetor/generated/prisma/browser'
-import { parseAsString, useQueryState } from 'nuqs'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useEffect, useState } from 'react'
 
 import { DailyMaintenanceCreationModal } from './creation-modal'
@@ -20,15 +19,17 @@ export function DailyMaintenanceFilter({
     'search',
     parseAsString.withDefault(''),
   )
+  const [, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
   const [searchCache, setSearchCache] = useState(search)
 
   useEffect(() => {
     setSearchCache(search)
   }, [search])
 
-  const handleSearch = useDebouncedCallback((value: string) => {
+  function handleSearch(value: string) {
     setSearch(value)
-  }, 300)
+    setPage(1)
+  }
 
   return (
     <div className="@container/filter flex @items-center gap-2 @justify-between flex-col md:flex-row">

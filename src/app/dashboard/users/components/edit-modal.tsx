@@ -29,8 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@inspetor/components/ui/select'
-import type { Company, User } from '@inspetor/generated/prisma/client'
+import type { Company } from '@inspetor/generated/prisma/client'
+import { getUsersQueryKey, type UserListItem } from '@inspetor/hooks/use-users-query'
 import { useAuth, useSession } from '@inspetor/lib/auth/context'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useEffect, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -87,11 +89,12 @@ export function UserEditModal({ ref }: UserEditModalProps) {
     },
   })
 
+  const queryClient = useQueryClient()
   const router = useRouter()
 
   async function handleUpdateUser(data: Schema) {
     const [result, resultError] = await action.execute({
-      userId: userId,
+      userId: userId ?? '',
       ...data,
     })
 
@@ -108,10 +111,9 @@ export function UserEditModal({ ref }: UserEditModalProps) {
         session.data?.user.role !== data.role
       ) {
         await logout()
-
         router.push('/auth/sign-in')
       } else {
-        router.refresh()
+        await queryClient.invalidateQueries({ queryKey: getUsersQueryKey() })
       }
     } else {
       toast.error(result?.message)
@@ -134,7 +136,7 @@ export function UserEditModal({ ref }: UserEditModalProps) {
   }
 
   useImperativeHandle(ref, () => ({
-    open: (user: User, isOnlyRead: boolean = false) => {
+    open: (user: UserListItem, isOnlyRead = false) => {
       setIsOnlyRead(isOnlyRead)
       setUserId(user.id)
       setIsModalOpen(true)

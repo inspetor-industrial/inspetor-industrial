@@ -1,7 +1,10 @@
 'use server'
 
+import { subject } from '@casl/ability'
+import { type Subjects, defineAbilityFor } from '@inspetor/casl/ability'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
+import type { AuthUser } from '@inspetor/types/auth'
 import type { UserRole } from '@inspetor/generated/prisma/client'
 import z from 'zod'
 
@@ -19,7 +22,30 @@ export const updateUserAction = authProcedure
       role: z.string(),
     }),
   )
-  .handler(async ({ input }) => {
+  .handler(async ({ input, ctx }) => {
+    const existing = await prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { id: true, companyId: true },
+    })
+
+    if (!existing) {
+      return returnsDefaultActionMessage({
+        message: 'Usuário não encontrado',
+        success: false,
+      })
+    }
+
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    const subjectUser = subject('User', {
+      companyId: existing.companyId ?? ('' as string),
+    }) as unknown as Subjects
+    if (!ability.can('update', subjectUser)) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para editar usuário',
+        success: false,
+      })
+    }
+
     const user = await prisma.user.findUnique({
       where: {
         email: input.email,

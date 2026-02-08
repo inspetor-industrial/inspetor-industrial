@@ -73,9 +73,10 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
   const router = useRouter()
   const ability = useAbility()
 
+  const isAdmin = session.data?.user?.role === 'ADMIN'
   const mustBeHideStorageManagement = !ability.can('read', 'Storage')
-  const mustBeHideCompanyManagement = !ability.can('read', 'Company')
-  const mustBeHideUsersManagement = !ability.can('read', 'User')
+  const mustBeHideCompanyManagement = !isAdmin
+  const mustBeHideUsersManagement = !isAdmin
   const mustBeHideDailyMaintenance = !ability.can('read', 'MaintenanceDaily')
   const mustBeHideEquipmentManagement = !ability.can(
     'read',

@@ -1,4 +1,4 @@
-import { UserRole } from '@inspetor/generated/prisma/client'
+import { type UserStatus, UserRole } from '@inspetor/generated/prisma/client'
 import { getSession } from '@inspetor/lib/auth/server'
 import { prisma } from '@inspetor/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
@@ -18,36 +18,40 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search') ?? ''
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
+  const statusParam = searchParams.get('status') ?? ''
 
-  const where = search
-    ? {
-        name: {
-          contains: search,
-          mode: 'insensitive' as const,
-        },
-      }
-    : {}
+  const where = {
+    ...(search
+      ? {
+          name: {
+            contains: search,
+            mode: 'insensitive' as const,
+          },
+        }
+      : {}),
+    ...(statusParam === 'ACTIVE' || statusParam === 'INACTIVE'
+      ? { status: statusParam as UserStatus }
+      : {}),
+  }
 
-  const [companies, totalCompanies] = await Promise.all([
-    prisma.company.findMany({
+  const [users, totalUsers] = await Promise.all([
+    prisma.user.findMany({
       where,
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      select: {
-        id: true,
-        name: true,
-        cnpj: true,
-        status: true,
+      include: {
+        company: {
+          select: { name: true },
+        },
       },
-      orderBy: { name: 'asc' },
     }),
-    prisma.company.count({ where }),
+    prisma.user.count({ where }),
   ])
 
-  const totalPages = Math.ceil(totalCompanies / PAGE_SIZE)
+  const totalPages = Math.ceil(totalUsers / PAGE_SIZE)
 
   return NextResponse.json({
-    companies,
+    users,
     totalPages,
   })
 }

@@ -1,4 +1,3 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateCompanyAction } from '@inspetor/actions/update-company'
 import { Button } from '@inspetor/components/ui/button'
@@ -20,7 +19,11 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
-import type { Company } from '@inspetor/generated/prisma/client'
+import {
+  type CompanyListItem,
+  getCompaniesQueryKey,
+} from '@inspetor/hooks/use-companies-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -57,39 +60,34 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
     },
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
   async function handleUpdateCompany(data: Schema) {
+    if (!companyId) return
+
     const [result, resultError] = await action.execute({
-      companyId: companyId,
+      companyId,
       ...data,
     })
 
     if (resultError) {
-      toast.error('Erro ao criar empresa')
+      toast.error('Erro ao atualizar empresa')
       return
     }
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
-    } else {
-      toast.error(result?.message)
+      await queryClient.invalidateQueries({ queryKey: getCompaniesQueryKey() })
+      form.reset({ name: '', cnpj: '' })
+      setIsModalOpen(false)
+      return
     }
 
-    form.reset({
-      name: '',
-      cnpj: '',
-    })
-
-    form.setValue('name', '')
-    form.setValue('cnpj', '')
-
-    setIsModalOpen(false)
+    toast.error(result?.message)
   }
 
   useImperativeHandle(ref, () => ({
-    open: (company: Company, isOnlyRead: boolean = false) => {
+    open: (company: CompanyListItem, isOnlyRead = false) => {
       setIsOnlyRead(isOnlyRead)
       setCompanyId(company.id)
       setIsModalOpen(true)
@@ -160,7 +158,7 @@ export function CompanyEditModal({ ref }: CompanyEditModalProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">
+            <Button type="button" variant="outline">
               {isOnlyRead ? 'Fechar' : 'Cancelar'}
             </Button>
           </DialogClose>

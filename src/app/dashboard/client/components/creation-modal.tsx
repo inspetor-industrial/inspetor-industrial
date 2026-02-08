@@ -1,6 +1,6 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createClientAction } from '@inspetor/actions/create-client'
+import { CompanySelect } from '@inspetor/components/company-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -29,8 +29,11 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { brazilianStates } from '@inspetor/constants/states'
+import { getClientQueryKey } from '@inspetor/hooks/use-client-query'
+import { useSession } from '@inspetor/lib/auth/context'
 import { DocumentBRValidator, DocumentType } from '@inspetor/utils/document-br'
 import { IconPlus } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -38,6 +41,7 @@ import z from 'zod'
 import { useServerAction } from 'zsa-react'
 
 const schema = z.object({
+  companyId: z.string().optional(),
   companyName: z.string({
     message: 'Nome é obrigatório',
   }),
@@ -86,15 +90,26 @@ type Schema = z.infer<typeof schema>
 export function ClientCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createClientAction)
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      companyId: '',
+    },
   })
 
-  const router = useRouter()
-
   async function handleCreateCompany(data: Schema) {
-    const [result, resultError] = await action.execute(data)
+    if (isAdmin && !data.companyId) {
+      toast.error('Selecione a empresa em que o cliente será criado')
+      return
+    }
+
+    const payload =
+      isAdmin && data.companyId ? data : { ...data, companyId: undefined }
+    const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
       toast.error('Erro ao criar cliente')
@@ -103,12 +118,13 @@ export function ClientCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getClientQueryKey() })
     } else {
       toast.error(result?.message)
     }
 
     form.reset({
+      companyId: '',
       companyName: '',
       taxId: '',
       taxRegistration: '',
@@ -119,6 +135,7 @@ export function ClientCreationModal() {
       phone: '',
     })
 
+    form.setValue('companyId', '')
     form.setValue('companyName', '')
     form.setValue('taxId', '')
     form.setValue('taxRegistration', '')
@@ -151,6 +168,27 @@ export function ClientCreationModal() {
             onSubmit={form.handleSubmit(handleCreateCompany)}
             className="grid md:grid-cols-2 gap-4 place-content-start items-start"
           >
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="companyId"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Empresa</FormLabel>
+                    <FormControl>
+                      <CompanySelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Selecione a empresa"
+                        label="Empresa"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="companyName"

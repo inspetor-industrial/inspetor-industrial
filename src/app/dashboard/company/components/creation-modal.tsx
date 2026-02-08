@@ -1,4 +1,5 @@
-import { useRouter } from '@bprogress/next'
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createCompanyAction } from '@inspetor/actions/create-company'
 import { Button } from '@inspetor/components/ui/button'
@@ -21,7 +22,10 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
+import { getCompaniesQueryKey } from '@inspetor/hooks/use-companies-query'
+import { DocumentBRValidator, DocumentType } from '@inspetor/utils/document-br'
 import { IconPlus } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -32,9 +36,22 @@ const schema = z.object({
   name: z.string({
     message: 'Nome é obrigatório',
   }),
-  cnpj: z.string({
-    message: 'CNPJ é obrigatório',
-  }),
+  cnpj: z
+    .string({
+      message: 'CNPJ é obrigatório',
+    })
+    .refine(
+      (taxId) =>
+        DocumentBRValidator.validate(taxId, DocumentType.CNPJ) ||
+        DocumentBRValidator.validate(taxId, DocumentType.CPF),
+      {
+        message: 'CNPJ ou CPF inválido',
+        path: ['taxId'],
+      },
+    )
+    .transform((taxId) => {
+      return taxId.replace(/[^\d]+/g, '')
+    }),
 })
 
 type Schema = z.infer<typeof schema>
@@ -42,12 +59,11 @@ type Schema = z.infer<typeof schema>
 export function CompanyCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createCompanyAction)
+  const queryClient = useQueryClient()
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
   })
-
-  const router = useRouter()
 
   async function handleCreateCompany(data: Schema) {
     const [result, resultError] = await action.execute(data)
@@ -59,26 +75,21 @@ export function CompanyCreationModal() {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
-    } else {
-      toast.error(result?.message)
+      await queryClient.invalidateQueries({ queryKey: getCompaniesQueryKey() })
+      form.reset({ name: '', cnpj: '' })
+      setIsModalOpen(false)
+      return
     }
 
-    form.reset({
-      name: '',
-      cnpj: '',
-    })
-
-    form.setValue('name', '')
-    form.setValue('cnpj', '')
-
-    setIsModalOpen(false)
+    toast.error(result?.message)
   }
 
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button icon={IconPlus}>Cadastrar empresa</Button>
+        <Button type="button" icon={IconPlus}>
+          Cadastrar empresa
+        </Button>
       </DialogTrigger>
 
       <DialogContent>
@@ -102,13 +113,16 @@ export function CompanyCreationModal() {
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g pedroaba tech" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. Pedroaba Tech"
+                      aria-label="Nome da empresa"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="cnpj"
@@ -116,7 +130,11 @@ export function CompanyCreationModal() {
                 <FormItem>
                   <FormLabel>CNPJ</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g 12345678901234" />
+                    <Input
+                      {...field}
+                      placeholder="e.g. 12345678901234"
+                      aria-label="CNPJ da empresa"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -127,7 +145,9 @@ export function CompanyCreationModal() {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
+            <Button type="button" variant="outline">
+              Cancelar
+            </Button>
           </DialogClose>
 
           <Button

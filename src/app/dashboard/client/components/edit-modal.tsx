@@ -1,4 +1,3 @@
-import { useRouter } from '@bprogress/next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateClientAction } from '@inspetor/actions/update-client'
 import { Button } from '@inspetor/components/ui/button'
@@ -28,8 +27,12 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { brazilianStates } from '@inspetor/constants/states'
+import {
+  type ClientListItem,
+  getClientQueryKey,
+} from '@inspetor/hooks/use-client-query'
 import { DocumentBRValidator, DocumentType } from '@inspetor/utils/document-br'
-import type { Clients } from '@inspetor/generated/prisma/client'
+import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -107,7 +110,7 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
     },
   })
 
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
   async function handleUpdateClient(data: Schema) {
     const [result, resultError] = await action.execute({
@@ -122,7 +125,7 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
 
     if (result?.success) {
       toast.success(result.message)
-      router.refresh()
+      await queryClient.invalidateQueries({ queryKey: getClientQueryKey() })
     } else {
       toast.error(result?.message)
     }
@@ -151,14 +154,14 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
   }
 
   useImperativeHandle(ref, () => ({
-    open: (client: Clients, isOnlyRead: boolean = false) => {
+    open: (client: ClientListItem, isOnlyRead = false) => {
       setIsOnlyRead(isOnlyRead)
       setClientId(client.id)
       setIsModalOpen(true)
       form.reset({
         companyName: client.companyName,
         taxId: client.taxId,
-        taxRegistration: client.taxRegistration,
+        taxRegistration: client.taxRegistration ?? '',
         state: client.state,
         city: client.city,
         address: client.address,
@@ -168,7 +171,7 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
 
       form.setValue('companyName', client.companyName)
       form.setValue('taxId', client.taxId)
-      form.setValue('taxRegistration', client.taxRegistration)
+      form.setValue('taxRegistration', client.taxRegistration ?? '')
       form.setValue('state', client.state)
       form.setValue('city', client.city)
       form.setValue('address', client.address)

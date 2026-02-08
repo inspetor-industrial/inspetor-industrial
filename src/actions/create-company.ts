@@ -1,8 +1,11 @@
 'use server'
 
+import { defineAbilityFor } from '@inspetor/casl/ability'
+import type { AuthUser } from '@inspetor/types/auth'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
+import { randomUUID } from 'node:crypto'
 
 import { authProcedure } from './procedures/auth'
 
@@ -11,14 +14,25 @@ export const createCompanyAction = authProcedure
   .input(
     z.object({
       name: z.string(),
-      cnpj: z.string(),
+      cnpj: z.string().optional(),
     }),
   )
-  .handler(async ({ input }) => {
+  .handler(async ({ input, ctx }) => {
+    const ability = defineAbilityFor(ctx.user as AuthUser)
+    if (!ability.can('create', 'Company')) {
+      return returnsDefaultActionMessage({
+        message: 'Sem permissão para criar empresa',
+        success: false,
+      })
+    }
+
+    const trimmedCnpj = input.cnpj?.trim() ?? ''
+    const cnpj =
+      trimmedCnpj !== '' ? trimmedCnpj : `__pending_${randomUUID()}`
     await prisma.company.create({
       data: {
         name: input.name,
-        cnpj: input.cnpj,
+        cnpj,
       },
     })
 
