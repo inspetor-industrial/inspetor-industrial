@@ -69,7 +69,7 @@ export async function Header() {
             <Link href="/changelogs">
               <DropdownMenuItem className="text-foreground">
                 <GitPullRequestIcon className="size-4 text-foreground" />
-                <Small>Changelogs</Small>
+                <Small>Registro de atualizações</Small>
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />

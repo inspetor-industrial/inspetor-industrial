@@ -539,7 +539,7 @@ export function AppSidebar({ user, flags, ...props }: AppSidebarProps) {
                   }}
                 >
                   <GitPullRequestIcon className="size-4" />
-                  Changelogs
+                  Registro de atualizações
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <LogoutButton />
