@@ -14,6 +14,15 @@ import {
   DialogTitle,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -32,6 +41,7 @@ import {
 } from '@inspetor/components/ui/select'
 import type { InstrumentListItem } from '@inspetor/hooks/use-instruments-query'
 import { getInstrumentsQueryKey } from '@inspetor/hooks/use-instruments-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { useSession } from '@inspetor/lib/auth/context'
 import { useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useImperativeHandle, useState } from 'react'
@@ -71,7 +81,10 @@ type InstrumentEditModalProps = {
 export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(updateInstrumentAction)
+
   const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
+
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === 'ADMIN'
 
@@ -114,7 +127,9 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
 
     if (result?.success) {
       toast.success(result.message)
-      await queryClient.invalidateQueries({ queryKey: getInstrumentsQueryKey() })
+      await queryClient.invalidateQueries({
+        queryKey: getInstrumentsQueryKey(),
+      })
       form.reset({
         companyId: '',
         type: '',
@@ -130,15 +145,162 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
     toast.error(result?.message)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="instrument-edit-form"
+        onSubmit={form.handleSubmit(handleUpdateInstrument)}
+        className="space-y-4"
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    disabled={isOnlyRead || form.formState.isSubmitting}
+                    label="Empresa"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo</FormLabel>
+              <FormControl>
+                <Select
+                  {...field}
+                  onValueChange={field.onChange}
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard-manometer">
+                      Manômetro padrão
+                    </SelectItem>
+                    <SelectItem value="ultrasonic-thickness-gauge">
+                      Medidor de espessura Ultrassônico
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="manufacturer"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fabricante</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. Pedroaba Tech"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                  aria-label="Fabricante"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="serialNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número de série</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. 1234567890"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                  aria-label="Número de série"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="certificateNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número de certificado</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="e.g. 1234567890"
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                  aria-label="Número de certificado"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="validationDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data de validação</FormLabel>
+              <FormControl>
+                <MonthInput
+                  value={
+                    form.getValues('validationDate.month') &&
+                    form.getValues('validationDate.year')
+                      ? `${form.getValues('validationDate.month')}/${form.getValues('validationDate.year')}`
+                      : ''
+                  }
+                  onChange={(event) => {
+                    const value = event.target.value
+                    field.onChange({
+                      month: value.split('/')[0],
+                      year: value.split('/')[1],
+                    })
+                  }}
+                  disabled={isOnlyRead || form.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
   useImperativeHandle(ref, () => ({
     open: (instrument: InstrumentListItem, isOnlyReadModal = false) => {
       setIsOnlyRead(isOnlyReadModal)
       setInstrumentId(instrument.id)
       setIsModalOpen(true)
-      const month = String(instrument.validationDate.getUTCMonth() + 1).padStart(
-        2,
-        '0',
-      )
+      const month = String(
+        instrument.validationDate.getUTCMonth() + 1,
+      ).padStart(2, '0')
       const year = instrument.validationDate.getFullYear().toString().slice(-2)
       form.reset({
         companyId: instrument.companyId ?? '',
@@ -152,6 +314,45 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
     close: () => setIsModalOpen(false),
   }))
 
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Editar instrumento</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para editar o instrumento.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button type="button" variant="outline">
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
+            </DrawerClose>
+
+            {!isOnlyRead && (
+              <Button
+                type="submit"
+                form="instrument-edit-form"
+                isLoading={form.formState.isSubmitting}
+              >
+                Editar
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogContent>
@@ -162,151 +363,7 @@ export function InstrumentEditModal({ ref }: InstrumentEditModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="instrument-edit-form"
-            onSubmit={form.handleSubmit(handleUpdateInstrument)}
-            className="space-y-4"
-          >
-            {isAdmin && (
-              <FormField
-                control={form.control}
-                name="companyId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Empresa</FormLabel>
-                    <FormControl>
-                      <CompanySelect
-                        value={field.value ?? ''}
-                        onValueChange={field.onChange}
-                        placeholder="Selecione a empresa"
-                        disabled={isOnlyRead || form.formState.isSubmitting}
-                        label="Empresa"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo</FormLabel>
-                  <FormControl>
-                    <Select
-                      {...field}
-                      onValueChange={field.onChange}
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard-manometer">
-                          Manômetro padrão
-                        </SelectItem>
-                        <SelectItem value="ultrasonic-thickness-gauge">
-                          Medidor de espessura Ultrassônico
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="manufacturer"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fabricante</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. Pedroaba Tech"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                      aria-label="Fabricante"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="serialNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número de série</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. 1234567890"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                      aria-label="Número de série"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="certificateNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número de certificado</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. 1234567890"
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                      aria-label="Número de certificado"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="validationDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data de validação</FormLabel>
-                  <FormControl>
-                    <MonthInput
-                      value={
-                        form.getValues('validationDate.month') &&
-                        form.getValues('validationDate.year')
-                          ? `${form.getValues('validationDate.month')}/${form.getValues('validationDate.year')}`
-                          : ''
-                      }
-                      onChange={(event) => {
-                        const value = event.target.value
-                        field.onChange({
-                          month: value.split('/')[0],
-                          year: value.split('/')[1],
-                        })
-                      }}
-                      disabled={isOnlyRead || form.formState.isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
