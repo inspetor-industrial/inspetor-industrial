@@ -34,12 +34,7 @@ export function EquipmentFilter() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
         />
-        <Button
-          type="button"
-          variant="outline"
-          icon={BrushCleaning}
-          onClick={handleClearFilters}
-        >
+        <Button type="button" icon={BrushCleaning} onClick={handleClearFilters}>
           Limpar filtros
         </Button>
       </div>
