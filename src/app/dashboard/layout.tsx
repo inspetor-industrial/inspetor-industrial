@@ -1,3 +1,4 @@
+import { AbilityProvider } from '@inspetor/casl/context'
 import { AppSidebar } from '@inspetor/components/app-sidebar'
 import { Header } from '@inspetor/components/header'
 import { InspetorLoading } from '@inspetor/components/inspetor-loading'
@@ -39,19 +40,21 @@ export default async function DashboardLayout({
     >
       <AuthWrapper>
         <PermissionWrapper>
-          <SidebarProvider>
-            <AppSidebar
-              user={session?.user}
-              flags={{
-                disableEquipments: isDisableEquipments,
-                disableBoilerReport: isDisableBoilerReport,
-              }}
-            />
-            <div className="flex flex-col flex-1 @container">
-              <Header />
-              <MainContainer>{children}</MainContainer>
-            </div>
-          </SidebarProvider>
+          <AbilityProvider>
+            <SidebarProvider>
+              <AppSidebar
+                user={session?.user}
+                flags={{
+                  disableEquipments: isDisableEquipments,
+                  disableBoilerReport: isDisableBoilerReport,
+                }}
+              />
+              <div className="flex flex-col flex-1 @container">
+                <Header />
+                <MainContainer>{children}</MainContainer>
+              </div>
+            </SidebarProvider>
+          </AbilityProvider>
         </PermissionWrapper>
       </AuthWrapper>
     </Suspense>
