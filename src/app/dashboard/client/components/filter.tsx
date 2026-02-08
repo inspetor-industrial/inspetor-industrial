@@ -34,19 +34,16 @@ export function ClientFilter() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
         />
-        <Button
-          type="button"
-          variant="outline"
-          icon={BrushCleaning}
-          onClick={handleClearFilters}
-        >
-          Limpar filtros
-        </Button>
       </div>
 
-      <Can I="create" a="Client">
-        <ClientCreationModal />
-      </Can>
+      <div className="flex flex-col md:flex-row gap-2 @items-center">
+        <Button type="button" icon={BrushCleaning} onClick={handleClearFilters}>
+          Limpar filtros
+        </Button>
+        <Can I="create" a="Client">
+          <ClientCreationModal />
+        </Can>
+      </div>
     </div>
   )
 }

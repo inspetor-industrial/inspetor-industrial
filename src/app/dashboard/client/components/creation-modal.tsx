@@ -13,6 +13,16 @@ import {
   DialogTrigger,
 } from '@inspetor/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@inspetor/components/ui/drawer'
+import {
   Form,
   FormControl,
   FormField,
@@ -30,6 +40,7 @@ import {
 } from '@inspetor/components/ui/select'
 import { brazilianStates } from '@inspetor/constants/states'
 import { getClientQueryKey } from '@inspetor/hooks/use-client-query'
+import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { useSession } from '@inspetor/lib/auth/context'
 import { DocumentBRValidator, DocumentType } from '@inspetor/utils/document-br'
 import { IconPlus } from '@tabler/icons-react'
@@ -90,9 +101,13 @@ type Schema = z.infer<typeof schema>
 export function ClientCreationModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const action = useServerAction(createClientAction)
+
   const queryClient = useQueryClient()
+
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === 'ADMIN'
+
+  const isMobile = useIsMobile()
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
@@ -148,6 +163,194 @@ export function ClientCreationModal() {
     setIsModalOpen(false)
   }
 
+  const FormComponent = (
+    <Form {...form}>
+      <form
+        id="client-creation-form"
+        onSubmit={form.handleSubmit(handleCreateCompany)}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 place-content-start items-start"
+      >
+        {isAdmin && (
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <CompanySelect
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione a empresa"
+                    label="Empresa"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="companyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome do cliente</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g pedroaba tech" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="taxId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CNPJ ou CPF</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g 12345678901234" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="state"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estado</FormLabel>
+              <FormControl>
+                <Select {...field} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brazilianStates.map((state) => (
+                      <SelectItem key={state.initials} value={state.initials}>
+                        {state.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="city"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cidade</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g São Paulo" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Endereço</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g Rua das Flores" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="zipCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CEP</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g 12345678901234" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="taxRegistration"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Inscrição estadual</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g 12345678901234" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Telefone</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g (11) 99999-9999" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        direction="bottom"
+      >
+        <DrawerTrigger asChild>
+          <Button icon={IconPlus}>Cadastrar cliente</Button>
+        </DrawerTrigger>
+
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Cadastrar cliente</DrawerTitle>
+            <DrawerDescription>
+              Preencha os campos abaixo para cadastrar um novo cliente.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 pb-2">{FormComponent}</div>
+
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+            <Button type="submit" form="client-creation-form">
+              Cadastrar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
@@ -162,160 +365,7 @@ export function ClientCreationModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="client-creation-form"
-            onSubmit={form.handleSubmit(handleCreateCompany)}
-            className="grid md:grid-cols-2 gap-4 place-content-start items-start"
-          >
-            {isAdmin && (
-              <FormField
-                control={form.control}
-                name="companyId"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Empresa</FormLabel>
-                    <FormControl>
-                      <CompanySelect
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Selecione a empresa"
-                        label="Empresa"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="companyName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do cliente</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g pedroaba tech" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="taxId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CNPJ ou CPF</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g 12345678901234" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-                  <FormControl>
-                    <Select {...field} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {brazilianStates.map((state) => (
-                          <SelectItem
-                            key={state.initials}
-                            value={state.initials}
-                          >
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cidade</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g São Paulo" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g Rua das Flores" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="zipCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CEP</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g 12345678901234" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="taxRegistration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Inscrição estadual</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g 12345678901234" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g (11) 99999-9999" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
+        {FormComponent}
 
         <DialogFooter>
           <DialogClose asChild>
