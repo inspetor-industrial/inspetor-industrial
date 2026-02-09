@@ -104,6 +104,8 @@ export function defineAbilityFor(user: AuthUser): AppAbility {
     for (const subject of OPERATOR_READ_SUBJECTS) {
       can('read', subject, scope)
     }
+    // Operator can manage (CRUD) DailyMaintenance only; read-only on MaintenanceEquipment
+    can('manage', 'MaintenanceDaily', scope)
     return build(abilityOptions) as AppAbility
   }
 

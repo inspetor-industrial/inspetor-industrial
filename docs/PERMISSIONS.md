@@ -146,7 +146,7 @@ Para adicionar nova rota protegida: incluir entrada em `PATH_SUBJECT_MAP` no `pe
 - **ADMIN:** `can('manage', 'all')` — acesso total.
 - **Demais roles:** dependem de `companyId` e de **responsibility**:
   - Sem `companyId` → ability vazia.
-  - **OPERATOR (responsibility):** apenas `read` em `MaintenanceDaily` e `MaintenanceEquipment`, com escopo `{ companyId }`.
+  - **OPERATOR (responsibility):** `manage` (CRUD) em `MaintenanceDaily`; `read` em `MaintenanceEquipment`. Tudo com escopo `{ companyId }`.
   - **SECRETARY:** CRUD em `Company`, `Client`, `Storage`, `User`, `Instruments`, `Documents`, `MaintenanceDaily`, `MaintenanceEquipment`; e `read`, `update`, `delete` em `ReportBoiler`, `ReportValve`, `ReportBomb`. Tudo com escopo `{ companyId }`.
   - **ENGINEER:** CRUD em todos os subjects (company-scoped + reports), com escopo `{ companyId }`.
 
