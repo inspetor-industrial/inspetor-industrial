@@ -25,6 +25,7 @@ export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete'
 
 export type Subjects =
   | 'Company'
+  | 'CompanyUnit'
   | 'Client'
   | 'Storage'
   | 'User'
@@ -41,6 +42,7 @@ export type AppAbility = PureAbility<[Actions, Subjects]>
 
 const COMPANY_SCOPED_SUBJECTS: Subjects[] = [
   'Company',
+  'CompanyUnit',
   'Client',
   'Storage',
   'User',

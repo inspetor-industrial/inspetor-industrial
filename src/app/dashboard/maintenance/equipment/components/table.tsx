@@ -40,6 +40,7 @@ import {
   getEquipmentQueryKey,
   useEquipmentQuery,
 } from '@inspetor/hooks/use-equipment-query'
+import { useSession } from '@inspetor/lib/auth/context'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeftIcon,
@@ -64,9 +65,13 @@ export function EquipmentTable() {
   const deleteAction = useServerAction(deleteEquipmentAction)
   const router = useRouter()
   const queryClient = useQueryClient()
+  const session = useSession()
+  const isAdmin = session.data?.user?.role === 'ADMIN'
 
   const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+
+  const columnCount = isAdmin ? 8 : 6
 
   const { data, isPending, isError } = useEquipmentQuery(search, page)
   const editModalRef = useRef<any>(null)
@@ -119,30 +124,31 @@ export function EquipmentTable() {
   }
 
   if (isPending || !data) {
-    return <EquipmentTableSkeleton />
+    return <EquipmentTableSkeleton isAdmin={isAdmin} />
   }
 
   const { equipments, totalPages } = data
 
   return (
     <div className="bg-background @container/table rounded-md border">
-      <div className="relative w-full overflow-auto">
-        <Table>
+      <div className="relative w-full overflow-x-auto">
+        <Table className="w-full min-w-[1000px]">
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
-              <TableHead>Empresa</TableHead>
+              {isAdmin && <TableHead>Empresa</TableHead>}
+              {isAdmin && <TableHead>Unidade</TableHead>}
               <TableHead>Equipamento</TableHead>
               <TableHead>Marca</TableHead>
-              <TableHead>Número de identificação</TableHead>
-              <TableHead>Data de criação</TableHead>
-              <TableHead>Data de atualização</TableHead>
+              <TableHead className="min-w-44">Número de identificação</TableHead>
+              <TableHead className="min-w-40">Data de criação</TableHead>
+              <TableHead className="min-w-40">Data de atualização</TableHead>
               <TableHead className="w-20">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {equipments.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={columnCount} className="text-center">
                   <div className="flex flex-col items-center gap-2 py-20">
                     <Inbox className="size-10 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
@@ -155,7 +161,16 @@ export function EquipmentTable() {
 
             {equipments.map((equipment) => (
               <TableRow key={equipment.id} className="divide-x">
-                <TableCell>{equipment.company.name}</TableCell>
+                {isAdmin && (
+                  <TableCell>{equipment.company.name}</TableCell>
+                )}
+                {isAdmin && (
+                  <TableCell>
+                    {equipment.units?.length
+                      ? equipment.units.map((u) => u.name).join(', ')
+                      : 'Todas as unidades'}
+                  </TableCell>
+                )}
                 <TableCell>{equipment.name}</TableCell>
                 <TableCell>{equipment.mark}</TableCell>
                 <TableCell>{equipment.identificationNumber}</TableCell>
@@ -231,7 +246,7 @@ export function EquipmentTable() {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={6}>
+              <TableCell colSpan={columnCount - 1}>
                 <div className="flex items-center gap-2 justify-start">
                   <span>
                     Página {page} de {totalPages}

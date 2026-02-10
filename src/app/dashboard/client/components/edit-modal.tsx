@@ -376,11 +376,22 @@ export function ClientEditModal({ ref }: ClientEditModalProps) {
 
           <DrawerFooter>
             <DrawerClose asChild>
-              <Button variant="outline">Cancelar</Button>
+              <Button
+                variant="outline"
+                disabled={form.formState.isSubmitting}
+              >
+                {isOnlyRead ? 'Fechar' : 'Cancelar'}
+              </Button>
             </DrawerClose>
-            <Button type="submit" form="client-creation-form">
-              Editar
-            </Button>
+            {!isOnlyRead && (
+              <Button
+                type="submit"
+                form="client-creation-form"
+                isLoading={form.formState.isSubmitting}
+              >
+                Editar
+              </Button>
+            )}
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

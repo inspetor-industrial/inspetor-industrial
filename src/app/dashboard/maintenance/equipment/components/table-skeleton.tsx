@@ -11,14 +11,22 @@ import {
 
 const ROWS = 4
 
-export function EquipmentTableSkeleton() {
+type EquipmentTableSkeletonProps = {
+  isAdmin?: boolean
+}
+
+export function EquipmentTableSkeleton({
+  isAdmin = false,
+}: EquipmentTableSkeletonProps) {
+  const columnCount = isAdmin ? 8 : 6
   return (
     <div className="bg-background @container/table rounded-md border">
       <div className="relative w-full overflow-auto">
         <Table>
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
-              <TableHead>Empresa</TableHead>
+              {isAdmin && <TableHead>Empresa</TableHead>}
+              {isAdmin && <TableHead>Unidade</TableHead>}
               <TableHead>Equipamento</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead>Número de identificação</TableHead>
@@ -30,9 +38,16 @@ export function EquipmentTableSkeleton() {
           <TableBody>
             {Array.from({ length: ROWS }).map((_, index) => (
               <TableRow key={index} className="divide-x">
-                <TableCell>
-                  <Skeleton className="h-5 w-24" />
-                </TableCell>
+                {isAdmin && (
+                  <TableCell>
+                    <Skeleton className="h-5 w-24" />
+                  </TableCell>
+                )}
+                {isAdmin && (
+                  <TableCell>
+                    <Skeleton className="h-5 w-32" />
+                  </TableCell>
+                )}
                 <TableCell>
                   <Skeleton className="h-5 w-32" />
                 </TableCell>
@@ -58,7 +73,7 @@ export function EquipmentTableSkeleton() {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={6}>
+              <TableCell colSpan={columnCount - 1}>
                 <Skeleton className="h-5 w-24" />
               </TableCell>
               <TableCell colSpan={1} className="flex justify-end">

@@ -1,5 +1,6 @@
 'use server'
 
+import { UserRole } from '@inspetor/generated/prisma/enums'
 import { prisma } from '@inspetor/lib/prisma'
 import { returnsDefaultActionMessage } from '@inspetor/utils/returns-default-action-message'
 import z from 'zod'
@@ -10,20 +11,21 @@ export const registerStorageAction = authProcedure
   .createServerAction()
   .input(
     z.object({
-      companyId: z.string(),
+      companyId: z.string().optional(),
       relativeLink: z.string(),
+      unitScope: z.enum(['all', 'restricted']),
+      unitIds: z.array(z.string()),
     }),
   )
-  .handler(async ({ input }) => {
-    const storage = await prisma.storage.findFirst({
-      where: {
-        companyId: input.companyId,
-      },
-    })
+  .handler(async ({ input, ctx }) => {
+    const resolvedCompanyId =
+      ctx.user.role === UserRole.ADMIN && input.companyId
+        ? input.companyId
+        : (ctx.user.organization?.id ?? ctx.user.companyId ?? null)
 
-    if (storage) {
+    if (!resolvedCompanyId) {
       return returnsDefaultActionMessage({
-        message: 'A empresa já possui uma pasta registrada',
+        message: 'Empresa é obrigatória para registrar pasta',
         success: false,
       })
     }
@@ -33,12 +35,43 @@ export const registerStorageAction = authProcedure
       '',
     )
 
-    await prisma.storage.create({
+    const resolvedUnitIds =
+      input.unitScope === 'all' ? [] : (input.unitIds ?? [])
+
+    if (resolvedUnitIds.length > 0) {
+      const unitsInCompany = await prisma.companyUnit.findMany({
+        where: {
+          companyId: resolvedCompanyId,
+          id: { in: resolvedUnitIds },
+        },
+        select: { id: true },
+      })
+      const validIds = new Set(unitsInCompany.map((u) => u.id))
+      const invalid = resolvedUnitIds.filter((id: string) => !validIds.has(id))
+      if (invalid.length > 0) {
+        return returnsDefaultActionMessage({
+          message:
+            'Uma ou mais unidades não pertencem à empresa selecionada.',
+          success: false,
+        })
+      }
+    }
+
+    const created = await prisma.storage.create({
       data: {
-        companyId: input.companyId,
+        companyId: resolvedCompanyId,
         relativeLink,
       },
     })
+
+    if (resolvedUnitIds.length > 0) {
+      await prisma.storageUnit.createMany({
+        data: resolvedUnitIds.map((unitId: string) => ({
+          storageId: created.id,
+          unitId,
+        })),
+      })
+    }
 
     return returnsDefaultActionMessage({
       message: 'Pasta registrada com sucesso',

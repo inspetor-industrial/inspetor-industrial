@@ -14,8 +14,11 @@ model User {
   responsibility     UserResponsibility? @default(OPERATOR)
   registrationNumber String?             @default("N-A")
   crea               String?             @default("N-A")
+  defaultUnitId      String?
   boilerReports      BoilerReport[]
   documents          Documents[]
   sessions           Session[]
   company            Company?            @relation(fields: [companyId], references: [id])
+  defaultUnit        CompanyUnit?       @relation(fields: [defaultUnitId], references: [id], onDelete: SetNull)
+  userUnitAccesses   UserUnitAccess[]
 }

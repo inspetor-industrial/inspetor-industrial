@@ -1,0 +1,9 @@
+model EquipmentUnit {
+  id          String      @id @default(cuid())
+  equipmentId String
+  unitId      String
+  equipment   Equipment   @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  unit        CompanyUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([equipmentId, unitId])
+}

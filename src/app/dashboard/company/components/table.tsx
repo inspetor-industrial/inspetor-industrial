@@ -46,6 +46,7 @@ import {
 import { cn } from '@inspetor/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
 import {
+  Building2,
   ChevronLeftIcon,
   ChevronRightIcon,
   Edit,
@@ -55,6 +56,7 @@ import {
   Trash2Icon,
   View,
 } from 'lucide-react'
+import Link from 'next/link'
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -167,8 +169,12 @@ export function CompanyTable() {
                 'Company',
                 company,
               ) as unknown as Subjects
+              const subjectCompanyUnit = subject('CompanyUnit', {
+                companyId: company.id,
+              }) as unknown as Subjects
               const canUpdate = ability.can('update', subjectCompany)
               const canDelete = ability.can('delete', subjectCompany)
+              const canReadUnits = ability.can('read', subjectCompanyUnit)
 
               return (
                 <TableRow key={company.id} className="divide-x">
@@ -217,6 +223,16 @@ export function CompanyTable() {
                             >
                               <View className="size-4" />
                               Visualizar
+                            </DropdownMenuItem>
+                          )}
+                          {canReadUnits && (
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/dashboard/company/${company.id}/units`}
+                              >
+                                <Building2 className="size-4" />
+                                Unidades
+                              </Link>
                             </DropdownMenuItem>
                           )}
 

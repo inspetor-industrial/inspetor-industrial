@@ -24,6 +24,7 @@ export const updateEquipmentAction = authProcedure
       pmta: z.string(),
       model: z.string(),
       companyId: z.string().optional(),
+      unitIds: z.array(z.string()).optional(),
     }),
   )
   .handler(async ({ input, ctx }) => {
@@ -65,6 +66,13 @@ export const updateEquipmentAction = authProcedure
       })
     }
 
+    const resolvedCompanyId =
+      ctx.user.role === UserRole.ADMIN &&
+      input.companyId != null &&
+      input.companyId !== ''
+        ? input.companyId
+        : equipment.companyId
+
     const updateData: Parameters<typeof prisma.equipment.update>[0]['data'] = {
       name: input.name,
       mark: input.mark,
@@ -92,10 +100,43 @@ export const updateEquipmentAction = authProcedure
       updateData.companyId = input.companyId
     }
 
+    const unitIds = input.unitIds ?? []
+
+    if (unitIds.length > 0) {
+      const unitsInCompany = await prisma.companyUnit.findMany({
+        where: {
+          companyId: resolvedCompanyId,
+          id: { in: unitIds },
+        },
+        select: { id: true },
+      })
+      const validIds = new Set(unitsInCompany.map((u) => u.id))
+      const invalid = unitIds.filter((id: string) => !validIds.has(id))
+      if (invalid.length > 0) {
+        return returnsDefaultActionMessage({
+          message:
+            'Uma ou mais unidades não pertencem à empresa selecionada.',
+          success: false,
+        })
+      }
+    }
+
     await prisma.equipment.update({
       where: { id: input.equipmentId },
       data: updateData,
     })
+
+    await prisma.equipmentUnit.deleteMany({
+      where: { equipmentId: input.equipmentId },
+    })
+    if (unitIds.length > 0) {
+      await prisma.equipmentUnit.createMany({
+        data: unitIds.map((unitId: string) => ({
+          equipmentId: input.equipmentId,
+          unitId,
+        })),
+      })
+    }
 
     return returnsDefaultActionMessage({
       message: 'Equipamento atualizado com sucesso',

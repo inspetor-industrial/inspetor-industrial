@@ -340,9 +340,18 @@ export function ClientCreationModal() {
 
           <DrawerFooter>
             <DrawerClose asChild>
-              <Button variant="outline">Cancelar</Button>
+              <Button
+                variant="outline"
+                disabled={form.formState.isSubmitting}
+              >
+                Cancelar
+              </Button>
             </DrawerClose>
-            <Button type="submit" form="client-creation-form">
+            <Button
+              type="submit"
+              form="client-creation-form"
+              isLoading={form.formState.isSubmitting}
+            >
               Cadastrar
             </Button>
           </DrawerFooter>

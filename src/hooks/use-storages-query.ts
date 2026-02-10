@@ -11,6 +11,7 @@ export type StorageListItem = {
     name: string
     id: string
   }
+  units: { id: string; name: string }[]
 }
 
 type StoragesListResponse = {
@@ -45,6 +46,7 @@ async function fetchStoragesList(
   return {
     storages: data.storages.map((s) => ({
       ...s,
+      units: s.units ?? [],
       createdAt: new Date(s.createdAt),
       updatedAt: new Date(s.updatedAt),
     })),

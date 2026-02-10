@@ -16,6 +16,7 @@ export type EquipmentWithCompany = {
   company: {
     name: string
   }
+  units: { id: string; name: string }[]
 }
 
 type EquipmentListResponse = {
@@ -41,7 +42,10 @@ async function fetchEquipmentList(
     throw new Error('Failed to fetch equipment')
   }
   const data = (await res.json()) as {
-    equipments: (Omit<EquipmentWithCompany, 'createdAt' | 'updatedAt'> & {
+    equipments: (Omit<
+      EquipmentWithCompany,
+      'createdAt' | 'updatedAt'
+    > & {
       createdAt: string
       updatedAt: string
     })[]
@@ -50,6 +54,7 @@ async function fetchEquipmentList(
   return {
     equipments: data.equipments.map((e) => ({
       ...e,
+      units: e.units ?? [],
       createdAt: new Date(e.createdAt),
       updatedAt: new Date(e.updatedAt),
     })),

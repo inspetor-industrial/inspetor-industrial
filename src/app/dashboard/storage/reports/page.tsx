@@ -1,3 +1,4 @@
+import type { StorageWhereInput } from '@inspetor/generated/prisma/models'
 import { getSession } from '@inspetor/lib/auth/server'
 import { getGoogleDriveClient } from '@inspetor/lib/google'
 import { prisma } from '@inspetor/lib/prisma'
@@ -25,30 +26,47 @@ export default async function StorageReportsPage({
       return redirect('/auth/sign-in')
     }
 
-    const userEmail = session.user.email
-    if (!userEmail) {
+    const userCompanyId = session.user.companyId ?? null
+    if (!userCompanyId) {
       return redirect('/access-denied')
     }
 
-    const company = await prisma.company.findFirst({
-      where: {
-        users: {
-          some: {
-            email: userEmail,
-            status: 'ACTIVE',
-          },
-        },
-      },
-    })
+    const isAdmin = session.user.role === 'ADMIN'
 
-    if (!company) {
-      return redirect('/access-denied')
+    let storageWhere: StorageWhereInput = {
+      companyId: userCompanyId,
+    }
+
+    if (!isAdmin) {
+      const accessRows = await prisma.userUnitAccess.findMany({
+        where: {
+          userId: session.user.id,
+          companyId: userCompanyId,
+        },
+        select: { unitId: true },
+      })
+      const hasFullAccess = accessRows.some((r) => r.unitId === null)
+      const allowedUnitIds = accessRows
+        .filter((r): r is { unitId: string } => r.unitId !== null)
+        .map((r) => r.unitId)
+
+      if (!hasFullAccess && allowedUnitIds.length > 0) {
+        storageWhere = {
+          ...storageWhere,
+          OR: [
+            { storageUnits: { none: {} } },
+            {
+              storageUnits: {
+                some: { unitId: { in: allowedUnitIds } },
+              },
+            },
+          ],
+        }
+      }
     }
 
     const storage = await prisma.storage.findFirst({
-      where: {
-        companyId: company?.id,
-      },
+      where: storageWhere,
     })
 
     if (!storage) {
