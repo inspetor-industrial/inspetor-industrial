@@ -66,6 +66,7 @@ export function UserTable() {
   const { data, isPending, isError } = useUsersQuery(search, page, status)
   const editModalRef = useRef<{
     open: (user: UserListItem, isOnlyRead?: boolean) => void
+    close: () => void
   } | null>(null)
 
   function handlePageChange(newPage: number) {

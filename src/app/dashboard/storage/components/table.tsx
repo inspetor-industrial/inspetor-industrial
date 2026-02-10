@@ -30,6 +30,7 @@ import {
   type StorageListItem,
   useStoragesQuery,
 } from '@inspetor/hooks/use-storages-query'
+import { useSession } from '@inspetor/lib/auth/context'
 import { cn } from '@inspetor/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -52,13 +53,18 @@ import { StorageTableSkeleton } from './table-skeleton'
 export function StorageTable() {
   const deleteAction = useServerAction(deleteStorageAction)
   const queryClient = useQueryClient()
+  const session = useSession()
+  const isAdmin = session.data?.user?.role === 'ADMIN'
 
   const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
 
+  const columnCount = isAdmin ? 6 : 4
+
   const { data, isPending, isError } = useStoragesQuery(search, page)
   const editModalRef = useRef<{
     open: (storage: StorageListItem, isOnlyRead?: boolean) => void
+    close: () => void
   } | null>(null)
 
   function handlePageChange(newPage: number) {
@@ -102,7 +108,7 @@ export function StorageTable() {
   }
 
   if (isPending || !data) {
-    return <StorageTableSkeleton />
+    return <StorageTableSkeleton isAdmin={isAdmin} />
   }
 
   const { storages, totalPages } = data
@@ -114,7 +120,8 @@ export function StorageTable() {
           <Table className="min-w-[500px]">
             <TableHeader className="bg-muted">
               <TableRow className="divide-x">
-                <TableHead>Empresa</TableHead>
+                {isAdmin && <TableHead>Empresa</TableHead>}
+                {isAdmin && <TableHead>Unidade</TableHead>}
                 <TableHead>Link relativo</TableHead>
                 <TableHead>Data de criação</TableHead>
                 <TableHead>Status</TableHead>
@@ -124,7 +131,7 @@ export function StorageTable() {
             <TableBody>
               {storages.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={columnCount} className="text-center">
                     <div className="flex flex-col items-center gap-2 py-20">
                       <Inbox className="size-10 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
@@ -137,7 +144,16 @@ export function StorageTable() {
 
               {storages.map((storage) => (
                 <TableRow key={storage.id} className="divide-x">
-                  <TableCell>{storage.company.name}</TableCell>
+                  {isAdmin && (
+                    <TableCell>{storage.company.name}</TableCell>
+                  )}
+                  {isAdmin && (
+                    <TableCell>
+                      {storage.units?.length
+                        ? storage.units.map((u) => u.name).join(', ')
+                        : 'Todas as unidades'}
+                    </TableCell>
+                  )}
                   <TableCell>{storage.relativeLink}</TableCell>
                   <TableCell>
                     {storage.createdAt.toLocaleDateString('pt-BR', {
@@ -206,7 +222,7 @@ export function StorageTable() {
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={4}>
+                <TableCell colSpan={columnCount - 1}>
                   <div className="flex items-center gap-2 justify-start">
                     <span>
                       Página {page} de {totalPages}

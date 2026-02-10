@@ -23,6 +23,7 @@ export const createEquipmentAction = authProcedure
       category: z.string(),
       pmta: z.string(),
       companyId: z.string().optional(),
+      unitIds: z.array(z.string()).optional(),
     }),
   )
   .handler(async ({ input, ctx }) => {
@@ -71,7 +72,27 @@ export const createEquipmentAction = authProcedure
       }
     }
 
-    await prisma.equipment.create({
+    const unitIds = input.unitIds ?? []
+    if (unitIds.length > 0) {
+      const unitsInCompany = await prisma.companyUnit.findMany({
+        where: {
+          companyId: resolvedCompanyId,
+          id: { in: unitIds },
+        },
+        select: { id: true },
+      })
+      const validIds = new Set(unitsInCompany.map((u) => u.id))
+      const invalid = unitIds.filter((id: string) => !validIds.has(id))
+      if (invalid.length > 0) {
+        return returnsDefaultActionMessage({
+          message:
+            'Uma ou mais unidades não pertencem à empresa selecionada.',
+          success: false,
+        })
+      }
+    }
+
+    const equipment = await prisma.equipment.create({
       data: {
         name: input.name,
         mark: input.mark,
@@ -84,6 +105,15 @@ export const createEquipmentAction = authProcedure
         companyId: resolvedCompanyId,
       },
     })
+
+    if (unitIds.length > 0) {
+      await prisma.equipmentUnit.createMany({
+        data: unitIds.map((unitId: string) => ({
+          equipmentId: equipment.id,
+          unitId,
+        })),
+      })
+    }
 
     return returnsDefaultActionMessage({
       message: 'Equipamento criado com sucesso',

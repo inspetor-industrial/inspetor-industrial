@@ -1,0 +1,13 @@
+model CompanyUnit {
+  id                 String             @id @default(cuid())
+  companyId          String
+  name               String
+  status             CompanyStatus      @default(ACTIVE)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  company            Company            @relation(fields: [companyId], references: [id])
+  equipmentUnits     EquipmentUnit[]
+  storageUnits       StorageUnit[]
+  userUnitAccesses   UserUnitAccess[]
+  usersDefaultUnit   User[]
+}

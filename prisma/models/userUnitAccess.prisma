@@ -1,0 +1,11 @@
+model UserUnitAccess {
+  id        String       @id @default(cuid())
+  userId    String
+  companyId String
+  unitId    String?
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  unit      CompanyUnit? @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId, unitId])
+}

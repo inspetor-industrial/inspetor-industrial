@@ -1,0 +1,9 @@
+model StorageUnit {
+  id        String     @id @default(cuid())
+  storageId String
+  unitId    String
+  storage   Storage    @relation(fields: [storageId], references: [id], onDelete: Cascade)
+  unit      CompanyUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([storageId, unitId])
+}

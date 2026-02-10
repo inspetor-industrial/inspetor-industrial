@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const isAdmin = session.user.role === 'ADMIN'
   const userCompanyId = session.user.companyId ?? null
 
-  const where: EquipmentWhereInput = {
+  let where: EquipmentWhereInput = {
     ...(search
       ? {
           name: {
@@ -30,12 +30,47 @@ export async function GET(request: NextRequest) {
     ...(isAdmin ? {} : { companyId: userCompanyId ?? undefined }),
   }
 
-  const [equipments, totalEquipments] = await Promise.all([
+  if (!isAdmin && userCompanyId) {
+    const accessRows = await prisma.userUnitAccess.findMany({
+      where: {
+        userId: session.user.id,
+        companyId: userCompanyId,
+      },
+      select: { unitId: true },
+    })
+    const hasFullAccess = accessRows.some((r) => r.unitId === null)
+    const allowedUnitIds = accessRows
+      .filter((r): r is { unitId: string } => r.unitId !== null)
+      .map((r) => r.unitId)
+
+    if (!hasFullAccess && allowedUnitIds.length > 0) {
+      where = {
+        ...where,
+        OR: [
+          { equipmentUnits: { none: {} } },
+          {
+            equipmentUnits: {
+              some: { unitId: { in: allowedUnitIds } },
+            },
+          },
+        ],
+      }
+    }
+  }
+
+  const [equipmentsRaw, totalEquipments] = await Promise.all([
     prisma.equipment.findMany({
       where,
       include: {
         company: {
           select: { name: true },
+        },
+        equipmentUnits: {
+          include: {
+            unit: {
+              select: { id: true, name: true },
+            },
+          },
         },
       },
       skip: (page - 1) * PAGE_SIZE,
@@ -43,6 +78,17 @@ export async function GET(request: NextRequest) {
     }),
     prisma.equipment.count({ where }),
   ])
+
+  const equipments = equipmentsRaw.map((e) => {
+    const { equipmentUnits, ...rest } = e
+    return {
+      ...rest,
+      units: equipmentUnits.map((eu) => ({
+        id: eu.unit.id,
+        name: eu.unit.name,
+      })),
+    }
+  })
 
   const totalPages = Math.ceil(totalEquipments / PAGE_SIZE)
 

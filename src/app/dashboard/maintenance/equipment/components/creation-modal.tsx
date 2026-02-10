@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createEquipmentAction } from '@inspetor/actions/create-equipment'
 import { CompanySelect } from '@inspetor/components/company-select'
+import { UnitMultiSelect } from '@inspetor/components/unit-multi-select'
 import { Button } from '@inspetor/components/ui/button'
 import {
   Dialog,
@@ -33,6 +34,11 @@ import {
   FormMessage,
 } from '@inspetor/components/ui/form'
 import { Input } from '@inspetor/components/ui/input'
+import { Label } from '@inspetor/components/ui/label'
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@inspetor/components/ui/radio-group'
 import {
   Select,
   SelectContent,
@@ -41,12 +47,14 @@ import {
   SelectValue,
 } from '@inspetor/components/ui/select'
 import { getEquipmentQueryKey } from '@inspetor/hooks/use-equipment-query'
+import { useCompanyUnitsQuery } from '@inspetor/hooks/use-company-units-query'
 import { useIsMobile } from '@inspetor/hooks/use-mobile'
 import { useSession } from '@inspetor/lib/auth/context'
 import { IconPlus } from '@tabler/icons-react'
+import Link from 'next/link'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
 import { useServerAction } from 'zsa-react'
@@ -84,7 +92,22 @@ const schema = z.object({
     message: 'PMTA é obrigatório',
   }),
   companyId: z.string().optional(),
+  unitScope: z.enum(['all', 'restricted']),
+  unitIds: z.array(z.string()),
 })
+  .refine(
+    (data) => {
+      if (data.unitScope === 'restricted') {
+        return data.unitIds.length >= 1
+      }
+      return data.unitIds.length === 0
+    },
+    {
+      message:
+        'Escopo restrito exige ao menos uma unidade; escopo "todas" exige nenhuma unidade selecionada.',
+      path: ['unitIds'],
+    },
+  )
 
 type Schema = z.infer<typeof schema>
 
@@ -100,11 +123,40 @@ export function EquipmentCreationModal() {
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      unitScope: 'all',
+      unitIds: [],
+    },
   })
 
+  const companyIdFromForm = useWatch({ control: form.control, name: 'companyId' })
+  const unitScope = useWatch({ control: form.control, name: 'unitScope' })
+  const effectiveCompanyId =
+    isAdmin && companyIdFromForm
+      ? companyIdFromForm
+      : (session.data?.user?.companyId ?? '')
+
+  const { data: unitsData } = useCompanyUnitsQuery(
+    effectiveCompanyId || null,
+    1,
+  )
+  const hasNoUnits = Boolean(
+    effectiveCompanyId && (unitsData?.totalPages ?? 0) === 0,
+  )
+
+  useEffect(() => {
+    if (!companyIdFromForm) return
+    form.setValue('unitScope', 'all')
+    form.setValue('unitIds', [])
+  }, [companyIdFromForm, form])
+
   async function handleCreateEquipment(data: Schema) {
+    const resolvedUnitIds =
+      data.unitScope === 'all' ? [] : (data.unitIds ?? [])
     const payload =
-      isAdmin && data.companyId ? data : { ...data, companyId: undefined }
+      isAdmin && data.companyId
+        ? { ...data, unitIds: resolvedUnitIds }
+        : { ...data, companyId: undefined, unitIds: resolvedUnitIds }
     const [result, resultError] = await action.execute(payload)
 
     if (resultError) {
@@ -133,6 +185,8 @@ export function EquipmentCreationModal() {
       category: '',
       pmta: '',
       companyId: '',
+      unitScope: 'all',
+      unitIds: [],
     })
 
     form.setValue('name', '')
@@ -143,6 +197,8 @@ export function EquipmentCreationModal() {
     form.setValue('category', '')
     form.setValue('pmta', '')
     form.setValue('companyId', '')
+    form.setValue('unitScope', 'all')
+    form.setValue('unitIds', [])
 
     setIsModalOpen(false)
   }
@@ -175,6 +231,111 @@ export function EquipmentCreationModal() {
             />
           </div>
         )}
+
+        {isAdmin && effectiveCompanyId ? (
+          <div className="md:col-span-2 rounded-md border p-3 space-y-3">
+            <FormField
+              control={form.control}
+              name="unitScope"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Escopo das unidades</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value}
+                      onValueChange={(val) => {
+                        field.onChange(val)
+                        if (val === 'all') form.setValue('unitIds', [])
+                      }}
+                      className="flex flex-col gap-2"
+                      disabled={hasNoUnits}
+                    >
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem
+                          value="all"
+                          id="equipment-unit-scope-all"
+                          aria-label="Todas as unidades"
+                        />
+                        <Label
+                          htmlFor="equipment-unit-scope-all"
+                          className="font-normal cursor-pointer"
+                        >
+                          Todas as unidades
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem
+                          value="restricted"
+                          id="equipment-unit-scope-restricted"
+                          aria-label="Unidades específicas"
+                        />
+                        <Label
+                          htmlFor="equipment-unit-scope-restricted"
+                          className="font-normal cursor-pointer"
+                        >
+                          Unidades específicas
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {unitScope === 'restricted' && (
+              <>
+                {hasNoUnits ? (
+                  <div className="rounded-md border border-dashed p-4 text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma unidade cadastrada para esta empresa.
+                    </p>
+                    <Button type="button" variant="link" asChild>
+                      <Link
+                        href={
+                          effectiveCompanyId
+                            ? `/dashboard/company/${effectiveCompanyId}/units`
+                            : '/dashboard/company'
+                        }
+                      >
+                        Gerenciar unidades
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="unitIds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unidades permitidas</FormLabel>
+                        <FormControl>
+                          <UnitMultiSelect
+                            companyId={effectiveCompanyId}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Selecione as unidades"
+                            label="Unidades"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Escopo:{' '}
+              {unitScope === 'all'
+                ? 'Todas as unidades'
+                : 'Restrito'}
+              {unitScope === 'restricted' &&
+                ` — ${form.watch('unitIds').length} selecionada(s)`}
+            </p>
+          </div>
+        ) : null}
 
         <FormField
           control={form.control}

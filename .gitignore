@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+restore_neon/
+backup*.*
+
 .idea
 
 /postgres-data

@@ -62,7 +62,7 @@ export const createUserAction = authProcedure
     }
 
     const hashedPassword = await hashPassword(password)
-    await prisma.user.create({
+    const created = await prisma.user.create({
       data: {
         name,
         username,
@@ -71,10 +71,12 @@ export const createUserAction = authProcedure
         companyId,
         role: input.role.toUpperCase() as UserRole,
       },
+      select: { id: true },
     })
 
     return returnsDefaultActionMessage({
       message: 'Usuário criado com sucesso',
       success: true,
+      userId: created.id,
     })
   })
