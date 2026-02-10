@@ -66,12 +66,13 @@ export function EquipmentTable() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const session = useSession()
-  const isAdmin = session.data?.user?.role === 'ADMIN'
+  const role = session.data?.user?.role
+  const showCompanyAndUnitsColumns = role === 'ADMIN' || role === 'OPERATOR'
 
   const [search] = useQueryState('search', parseAsString.withDefault(''))
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
 
-  const columnCount = isAdmin ? 8 : 6
+  const columnCount = showCompanyAndUnitsColumns ? 8 : 6
 
   const { data, isPending, isError } = useEquipmentQuery(search, page)
   const editModalRef = useRef<any>(null)
@@ -124,7 +125,7 @@ export function EquipmentTable() {
   }
 
   if (isPending || !data) {
-    return <EquipmentTableSkeleton isAdmin={isAdmin} />
+    return <EquipmentTableSkeleton isAdmin={showCompanyAndUnitsColumns} />
   }
 
   const { equipments, totalPages } = data
@@ -135,11 +136,13 @@ export function EquipmentTable() {
         <Table className="w-full min-w-[1000px]">
           <TableHeader className="bg-muted">
             <TableRow className="divide-x">
-              {isAdmin && <TableHead>Empresa</TableHead>}
-              {isAdmin && <TableHead>Unidade</TableHead>}
+              {showCompanyAndUnitsColumns && <TableHead>Empresa</TableHead>}
+              {showCompanyAndUnitsColumns && <TableHead>Unidade</TableHead>}
               <TableHead>Equipamento</TableHead>
               <TableHead>Marca</TableHead>
-              <TableHead className="min-w-44">Número de identificação</TableHead>
+              <TableHead className="min-w-44">
+                Número de identificação
+              </TableHead>
               <TableHead className="min-w-40">Data de criação</TableHead>
               <TableHead className="min-w-40">Data de atualização</TableHead>
               <TableHead className="w-20">Ações</TableHead>
@@ -161,10 +164,10 @@ export function EquipmentTable() {
 
             {equipments.map((equipment) => (
               <TableRow key={equipment.id} className="divide-x">
-                {isAdmin && (
+                {showCompanyAndUnitsColumns && (
                   <TableCell>{equipment.company.name}</TableCell>
                 )}
-                {isAdmin && (
+                {showCompanyAndUnitsColumns && (
                   <TableCell>
                     {equipment.units?.length
                       ? equipment.units.map((u) => u.name).join(', ')
