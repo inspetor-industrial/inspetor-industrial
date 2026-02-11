@@ -128,7 +128,7 @@ const subSections = [
     icon: Clipboard,
   },
   {
-    id: 'eletronic-panel',
+    id: 'electronic-panel',
     title: 'Painel Eletrônico',
     icon: Cpu,
   },

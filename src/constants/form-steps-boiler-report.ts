@@ -80,7 +80,7 @@ export const formSteps = [
     id: 'calibration-order',
     icon: Clipboard,
   },
-  { number: 16, title: 'Painel Eletrônico', id: 'eletronic-panel', icon: Cpu },
+  { number: 16, title: 'Painel Eletrônico', id: 'electronic-panel', icon: Cpu },
   {
     number: 17,
     title: 'Sistema de Descarga',
