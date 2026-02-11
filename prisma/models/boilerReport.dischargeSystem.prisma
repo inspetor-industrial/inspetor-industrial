@@ -1,0 +1,8 @@
+model DischargeSystem {
+  id             String       @id @default(cuid())
+  boilerReportId String       @unique
+  tests          Json
+  observations   String?
+
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+}

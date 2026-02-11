@@ -1,4 +1,5 @@
 import { BoilerInfoForm } from './boiler-info-form'
+import { DischargeSystemForm } from './discharge-system-form'
 import { ElectronicPanelForm } from './electronic-panel-form'
 import { ExternalPerformedTestsForm } from './external-performed-tests-form'
 import { GeneralPerformedTestsForm } from './general-performed-tests-form'
@@ -46,6 +47,7 @@ export default async function BoilerViewformStepssPage({
     'internal-tests': InternalPerformedTestsForm,
     'local-installation-tests': LocalInstallationPerformedTestsForm,
     'electronic-panel': ElectronicPanelForm,
+    'discharge-system': DischargeSystemForm,
   }
 
   const FormComponent = formComponents[step]
