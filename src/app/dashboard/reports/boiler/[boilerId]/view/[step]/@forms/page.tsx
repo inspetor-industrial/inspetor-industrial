@@ -3,6 +3,7 @@ import { ExternalPerformedTestsForm } from './external-performed-tests-form'
 import { GeneralPerformedTestsForm } from './general-performed-tests-form'
 import { InjectorGaugeForm } from './injector-gauge-form'
 import { InternalPerformedTestsForm } from './internal-performed-tests-form'
+import { LocalInstallationPerformedTestsForm } from './local-installation-performed-tests-form'
 import { OperatorDataForm } from './operator-data-form'
 import { PowerSupplyForm } from './power-supply-form'
 import { StructureMirrorInfoForm } from './sctructure-mirror-info-form'
@@ -42,6 +43,7 @@ export default async function BoilerViewformStepssPage({
     'power-supply': PowerSupplyForm,
     'external-tests': ExternalPerformedTestsForm,
     'internal-tests': InternalPerformedTestsForm,
+    'local-installation-tests': LocalInstallationPerformedTestsForm,
   }
 
   const FormComponent = formComponents[step]
