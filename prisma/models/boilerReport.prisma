@@ -28,4 +28,5 @@ model BoilerReport {
   internalPerformedTests  InternalPerformedTests?
   localInstallationPerformedTests LocalInstallationPerformedTests?
   electronicPanel ElectronicPanel?
+  dischargeSystem DischargeSystem?
 }
