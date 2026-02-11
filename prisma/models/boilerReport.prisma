@@ -26,4 +26,5 @@ model BoilerReport {
   structureMirrorInfo    StructureMirrorInfo?
   structureTubeInfo      StructureTubeInfo?
   internalPerformedTests  InternalPerformedTests?
+  localInstallationPerformedTests LocalInstallationPerformedTests?
 }
