@@ -25,4 +25,5 @@ model BoilerReport {
   structureFurnaceInfo   StructureFurnaceInfo?
   structureMirrorInfo    StructureMirrorInfo?
   structureTubeInfo      StructureTubeInfo?
+  internalPerformedTests  InternalPerformedTests?
 }
