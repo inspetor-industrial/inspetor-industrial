@@ -1,0 +1,9 @@
+model WaterQuality {
+  id             String       @id @default(cuid())
+  boilerReportId String       @unique
+  tests          Json
+  observations   String?
+  waterPh        String?
+
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+}
