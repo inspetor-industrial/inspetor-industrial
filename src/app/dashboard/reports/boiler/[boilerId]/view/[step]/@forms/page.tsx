@@ -1,4 +1,5 @@
 import { BoilerInfoForm } from './boiler-info-form'
+import { CalibrationOrderForm } from './calibration-order-form'
 import { DischargeSystemForm } from './discharge-system-form'
 import { ElectronicPanelForm } from './electronic-panel-form'
 import { ExternalPerformedTestsForm } from './external-performed-tests-form'
@@ -50,6 +51,7 @@ export default async function BoilerViewformStepssPage({
     'electronic-panel': ElectronicPanelForm,
     'discharge-system': DischargeSystemForm,
     'level-indicator': LevelIndicatorForm,
+    'calibration-order': CalibrationOrderForm,
   }
 
   const FormComponent = formComponents[step]
