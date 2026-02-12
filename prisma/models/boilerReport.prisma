@@ -29,4 +29,8 @@ model BoilerReport {
   localInstallationPerformedTests LocalInstallationPerformedTests?
   electronicPanel ElectronicPanel?
   dischargeSystem DischargeSystem?
+  levelIndicator LevelIndicator?
+  calibrationOrder CalibrationOrder?
+  waterQuality WaterQuality?
+  hydrostaticTest HydrostaticTest?
 }

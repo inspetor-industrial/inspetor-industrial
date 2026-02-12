@@ -1,0 +1,11 @@
+model LevelIndicator {
+  id             String       @id @default(cuid())
+  boilerReportId String       @unique
+  tests          Json
+  observations   String?
+  mark           String?
+  glassDiameter  String?
+  glassLength    String?
+
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+}

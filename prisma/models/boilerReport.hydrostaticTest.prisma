@@ -1,0 +1,11 @@
+model HydrostaticTest {
+  id             String       @id @default(cuid())
+  boilerReportId String       @unique
+  tests          Json
+  observations   String?
+  pressure       String?
+  duration       String?
+  procedure      String?
+
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+}

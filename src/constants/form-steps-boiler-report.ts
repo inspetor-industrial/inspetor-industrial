@@ -91,7 +91,7 @@ export const formSteps = [
   {
     number: 19,
     title: 'Teste Hidrostático',
-    id: 'hidrostatic-test',
+    id: 'hydrostatic-test',
     icon: Waves,
   },
   {

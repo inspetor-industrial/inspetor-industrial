@@ -143,7 +143,7 @@ const subSections = [
     icon: Beaker,
   },
   {
-    id: 'hidrostatic-test',
+    id: 'hydrostatic-test',
     title: 'Teste Hidrostático',
     icon: Waves,
   },
