@@ -14,6 +14,7 @@ import { StructureMirrorInfoForm } from './sctructure-mirror-info-form'
 import { StructureBodyInfoForm } from './structure-body-info-form'
 import { StructureFurnaceInfoForm } from './structure-furnace-info-form'
 import { StructureTubeInfoForm } from './structure-tube-info-form'
+import { WaterQualityForm } from './water-quality-form'
 
 type BoilerViewformStepssPageProps = {
   params: Promise<{
@@ -52,6 +53,7 @@ export default async function BoilerViewformStepssPage({
     'discharge-system': DischargeSystemForm,
     'level-indicator': LevelIndicatorForm,
     'calibration-order': CalibrationOrderForm,
+    'water-quality': WaterQualityForm,
   }
 
   const FormComponent = formComponents[step]
