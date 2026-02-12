@@ -4,6 +4,7 @@ import { DischargeSystemForm } from './discharge-system-form'
 import { ElectronicPanelForm } from './electronic-panel-form'
 import { ExternalPerformedTestsForm } from './external-performed-tests-form'
 import { GeneralPerformedTestsForm } from './general-performed-tests-form'
+import { HydrostaticTestForm } from './hydrostatic-test-form'
 import { InjectorGaugeForm } from './injector-gauge-form'
 import { InternalPerformedTestsForm } from './internal-performed-tests-form'
 import { LevelIndicatorForm } from './level-indicator-form'
@@ -54,6 +55,7 @@ export default async function BoilerViewformStepssPage({
     'level-indicator': LevelIndicatorForm,
     'calibration-order': CalibrationOrderForm,
     'water-quality': WaterQualityForm,
+    'hydrostatic-test': HydrostaticTestForm,
   }
 
   const FormComponent = formComponents[step]
