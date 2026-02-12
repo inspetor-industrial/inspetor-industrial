@@ -1,0 +1,12 @@
+model CalibrationOrder {
+  id             String       @id @default(cuid())
+  boilerReportId String       @unique
+  tests          Json
+  observations   String?
+  capacity       String?
+  diameter       String?
+  mark           String?
+  serialNumber   String?
+
+  boilerReport   BoilerReport @relation(fields: [boilerReportId], references: [id])
+}

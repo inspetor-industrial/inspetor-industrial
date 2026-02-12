@@ -30,4 +30,5 @@ model BoilerReport {
   electronicPanel ElectronicPanel?
   dischargeSystem DischargeSystem?
   levelIndicator LevelIndicator?
+  calibrationOrder CalibrationOrder?
 }
