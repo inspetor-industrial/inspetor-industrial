@@ -1,10 +1,12 @@
 import { BoilerInfoForm } from './boiler-info-form'
+import { CalibrationOrderForm } from './calibration-order-form'
 import { DischargeSystemForm } from './discharge-system-form'
 import { ElectronicPanelForm } from './electronic-panel-form'
 import { ExternalPerformedTestsForm } from './external-performed-tests-form'
 import { GeneralPerformedTestsForm } from './general-performed-tests-form'
 import { InjectorGaugeForm } from './injector-gauge-form'
 import { InternalPerformedTestsForm } from './internal-performed-tests-form'
+import { LevelIndicatorForm } from './level-indicator-form'
 import { LocalInstallationPerformedTestsForm } from './local-installation-performed-tests-form'
 import { OperatorDataForm } from './operator-data-form'
 import { PowerSupplyForm } from './power-supply-form'
@@ -48,6 +50,8 @@ export default async function BoilerViewformStepssPage({
     'local-installation-tests': LocalInstallationPerformedTestsForm,
     'electronic-panel': ElectronicPanelForm,
     'discharge-system': DischargeSystemForm,
+    'level-indicator': LevelIndicatorForm,
+    'calibration-order': CalibrationOrderForm,
   }
 
   const FormComponent = formComponents[step]
