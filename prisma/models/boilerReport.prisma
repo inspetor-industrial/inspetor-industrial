@@ -31,4 +31,5 @@ model BoilerReport {
   dischargeSystem DischargeSystem?
   levelIndicator LevelIndicator?
   calibrationOrder CalibrationOrder?
+  waterQuality WaterQuality?
 }
